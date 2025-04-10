@@ -1,0 +1,27 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base Theme -->
+    <style name="Base.Theme.TikDownloader" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Warna utama bisa disesuaikan -->
+        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <item name="colorSurface">@color/colorSurface</item>
+        <item name="colorOnSurface">@color/colorOnSurface</item>
+    </style>
+
+    <!-- Theme utama aplikasi -->
+    <style name="PopupMenuStyle" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@color/colorSurface</item>
+        <item name="android:textColor">@color/colorOnSurface</item>
+    </style>
+
+    <!-- Tema EditText -->
+    <style name="EditTextTheme" parent="Widget.Material3.TextInputEditText.OutlinedBox">
+        <item name="android:backgroundTint">@color/colorOnSurface</item>
+        <item name="android:textColor">@color/colorOnSurface</item>
+        <item name="android:textColorHint">@color/colorHint</item>
+        <item name="boxStrokeColor">@drawable/edit_text_border</item>
+    </style>
+
+    <style name="Theme.Splash" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+    </style>
+</resources>

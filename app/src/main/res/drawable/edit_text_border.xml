@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Warna saat fokus -->
+    <item android:state_focused="true" android:color="@color/colorPrimary" />
+
+    <!-- Warna saat error -->
+    <item android:state_activated="true" android:color="@color/colorAccent" />
+
+    <!-- Warna default (tidak aktif) -->
+    <item android:color="@color/colorOutline" />
+</selector>

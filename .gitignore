@@ -1,0 +1,32 @@
+# ========== Android Studio ==========
+.idea/
+*.iml
+*.iws
+
+# ========== Gradle ==========
+.gradle/
+build/
+**/build/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# ========== Local Configuration ==========
+local.properties
+*.keystore
+*.jks
+
+# ========== OS/Editor Files ==========
+.DS_Store
+Thumbs.db
+
+# ========== Log & Temporary Files ==========
+*.log
+*.tmp
+
+# ========== Misc ==========
+*.apk
+*.ap_
+
+# ========== Exclude hidden files (backup) ==========
+*~

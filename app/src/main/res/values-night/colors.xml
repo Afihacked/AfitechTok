@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorSurface">#303030</color> <!-- Latar belakang gelap -->
+    <color name="colorOnSurface">#FFFFFF</color> <!-- Warna teks putih -->
+    <color name="colorHint">#BBBBBB</color>
+    <color name="colorPrimary">#FA0000</color> <!-- Warna saat fokus dalam mode gelap -->
+    <color name="colorOutline">#FFFFFF</color> <!-- Warna saat tidak aktif dalam mode gelap -->
+    <color name="colorAccent">#FF5722</color>
+    <color name="blackTab">#FFFFFF</color>
+
+</resources>
+

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="colorSurface">#FFFFFF</color> <!-- Latar belakang terang -->
+    <color name="colorOnSurface">#000000</color> <!-- Warna teks hitam -->
+    <color name="colorHint">#888888</color> <!-- Warna hint -->
+
+        <color name="colorPrimary">#FF0000</color> <!-- Warna saat fokus -->
+        <color name="colorOutline">#000000</color> <!-- Warna saat tidak aktif -->
+        <color name="colorAccent">#FF5722</color>
+    <color name="dark_gray">#474747</color>
+    <color name="light_gray">#BCBCBC</color>
+    <color name="dark_red">#780000</color>
+    <color name="colorDisabled">#A0A0A0</color>
+    <color name="blackTab">#000000</color>
+
+</resources>

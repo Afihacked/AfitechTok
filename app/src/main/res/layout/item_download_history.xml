@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/colorSurface"
+    android:padding="8dp">
+
+    <!-- Thumbnail (MP4/JPG) -->
+    <ImageView
+        android:id="@+id/imageThumbnail"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:scaleType="centerCrop"
+        android:background="?attr/colorSurface"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:contentDescription="@string/thumbnail"/>
+
+    <!-- Nama File -->
+    <TextView
+        android:id="@+id/textFileName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/nama_file"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorOnSurface"
+        app:layout_constraintStart_toEndOf="@id/imageThumbnail"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btnPlay"
+        android:layout_marginStart="8dp"/>
+
+    <!-- Jenis File (MP4, MP3, JPG) -->
+    <TextView
+        android:id="@+id/textFileType"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/video"
+        android:textSize="14sp"
+        android:textColor="?attr/colorOnSurface"
+        app:layout_constraintStart_toEndOf="@id/imageThumbnail"
+        app:layout_constraintTop_toBottomOf="@id/textFileName"
+        android:layout_marginStart="8dp"/>
+
+    <!-- Tombol Play -->
+    <ImageButton
+        android:id="@+id/btnPlay"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:contentDescription="@string/btnplay"
+        android:src="@drawable/ic_play"
+        app:tint="?attr/colorOnSurface"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        app:layout_constraintEnd_toStartOf="@id/btnShare"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <!-- Tombol Share -->
+    <ImageButton
+        android:id="@+id/btnShare"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:src="@drawable/ic_share"
+        android:contentDescription="@string/btnshare"
+        app:tint="?attr/colorOnSurface"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        app:layout_constraintEnd_toStartOf="@id/btnDelete"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <!-- Tombol Delete -->
+    <ImageButton
+        android:id="@+id/btnDelete"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:contentDescription="@string/btndel"
+        android:src="@drawable/ic_delete"
+        app:tint="?attr/colorOnSurface"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
