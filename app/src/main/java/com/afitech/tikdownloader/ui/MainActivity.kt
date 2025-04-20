@@ -31,7 +31,7 @@ class MainActivity : AppCompatActivity() {
         val adapter = ViewPagerAdapter(this)
         viewPager.adapter = adapter
 
-        val tabTitles = listOf("Offline", "Riwayat Offline")
+        val tabTitles = listOf("TT Offline", "WA Offline", "Riwayat Offline")
 
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
             val tabTextView = TextView(this).apply {

@@ -11,9 +11,9 @@
       "type": "SINGLE",
       "filters": [],
       "attributes": [],
-      "versionCode": 1,
-      "versionName": "1.0",
-      "outputFile": "Tik Downloader No Watermark_v1.3-beta_(4).apk"
+      "versionCode": 3,
+      "versionName": "1.7-beta",
+      "outputFile": "Offline TT HD No Watermark_v1.7-beta_(3).apk"
     }
   ],
   "elementType": "File",
@@ -22,14 +22,14 @@
       "minApi": 28,
       "maxApi": 30,
       "baselineProfiles": [
-        "baselineProfiles/1/Tik Downloader No Watermark_v1.3-beta_(4).dm"
+        "baselineProfiles/1/Offline TT HD No Watermark_v1.7-beta_(3).dm"
       ]
     },
     {
       "minApi": 31,
       "maxApi": 2147483647,
       "baselineProfiles": [
-        "baselineProfiles/0/Tik Downloader No Watermark_v1.3-beta_(4).dm"
+        "baselineProfiles/0/Offline TT HD No Watermark_v1.7-beta_(3).dm"
       ]
     }
   ],

@@ -67,11 +67,6 @@ class HistoryFragment : Fragment() {
             tab.customView = textView
         }.attach()
 
-
-
-
-
-
     }
 
     override fun onDestroyView() {

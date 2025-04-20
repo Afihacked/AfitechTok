@@ -24,6 +24,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.PopupMenu
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
+import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.afitech.tikdownloader.R
@@ -47,9 +48,9 @@ import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
-import com.google.android.gms.ads.rewarded.RewardItem
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
+import com.google.android.material.button.MaterialButton
 import java.net.HttpURLConnection
 import java.net.URL
 import java.text.SimpleDateFormat
@@ -63,7 +64,7 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
     private lateinit var inputLayout: TextInputLayout
     private lateinit var editText: TextInputEditText
     private lateinit var downloadButton: LinearLayout
-    private lateinit var themeSwitch: SwitchCompat
+    private lateinit var themeToggleButton: MaterialButton
     private lateinit var switchAd: SwitchCompat
     private lateinit var arrowIcon: ImageView
     private lateinit var clipboardManager: ClipboardManager
@@ -99,7 +100,9 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
         inputLayout = view.findViewById(R.id.inputLayout)
         editText = view.findViewById(R.id.inputLink)
         downloadButton = view.findViewById(R.id.btnDownload)
-        themeSwitch = view.findViewById(R.id.themeSwitch)
+        themeToggleButton = view.findViewById(R.id.themeToggleButton)
+//        themeSwitch = view.findViewById(R.id.themeSwitch)
+
         switchAd = view.findViewById(R.id.switchAd) // Switch untuk mengaktifkan/menonaktifkan iklan
         arrowIcon = view.findViewById(R.id.arrowIcon)
         progressDownload = view.findViewById(R.id.progressDownload)
@@ -107,75 +110,59 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
         adView = view.findViewById(R.id.adView)
         val guideText: TextView = view.findViewById(R.id.guideText)
 
-        val textCount = view.findViewById<TextView>(R.id.textCount)
-        val maxCharacters = 35
-        val tolerance = 5
-        val maxWithTolerance = maxCharacters + tolerance
-
-        editText.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val currentLength = s?.length ?: 0
-                textCount.text = "$currentLength/$maxCharacters"
-
-                // Warna merah jika melebihi batas normal
-                if (currentLength > maxCharacters) {
-                    textCount.setTextColor(ContextCompat.getColor(requireActivity(), android.R.color.holo_red_dark))
-                } else {
-                    textCount.setTextColor(ContextCompat.getColor(requireActivity(), android.R.color.darker_gray))
-                }
-
-                // Jika melebihi batas toleransi, hapus karakter yang kelebihan
-                if (currentLength > maxWithTolerance) {
-                    val trimmed = s?.substring(0, maxWithTolerance)
-                    editText.setText(trimmed)
-                    editText.setSelection(trimmed?.length ?: 0) // Pindahkan kursor ke akhir
-                }
-            }
-
-            override fun afterTextChanged(s: Editable?) {}
-        })
-
-
-
-        // Memuat Iklan Banner
-        val adRequest = AdRequest.Builder().build()
-        adView.loadAd(adRequest)
-
-        // Load Iklan Rewarded & Interstitial
-        loadRewardedAd()
-        loadInterstitialAd()
-
         // Inisialisasi SharedPreferences
         sharedPreferences = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val isAdEnabled = sharedPreferences.getBoolean(KEY_AD_STATUS, true)
 
-// Atur Switch sesuai dengan status tersimpan
+//BLOK KONFIGURASI IKLAN
+// Variabel untuk menandai proses inisialisasi agar listener tidak langsung terpanggil
+        var isInitializing = true
+
+// Matikan sementara listener sebelum setChecked
+        switchAd.setOnCheckedChangeListener(null)
+
+// Atur posisi switch sesuai dengan status tersimpan
         switchAd.isChecked = isAdEnabled
         updateSwitchUI(isAdEnabled)
 
 // Kontrol visibilitas iklan saat pertama kali aplikasi dibuka
         adView.visibility = if (isAdEnabled) View.VISIBLE else View.GONE
 
-// Event Listener untuk SwitchAd
+// Memuat Iklan Banner
+        val adRequest = AdRequest.Builder().build()
+        adView.loadAd(adRequest)
+
+// Load Iklan Rewarded & Interstitial jika diaktifkan
+        if (isAdEnabled) {
+            loadRewardedAd()
+            loadInterstitialAd()
+        }
+
+// Pasang ulang listener setelah inisialisasi selesai
         switchAd.setOnCheckedChangeListener { _, isChecked ->
-            sharedPreferences.edit().putBoolean(KEY_AD_STATUS, isChecked)
-                .apply() // Simpan status switch
+            if (isInitializing) return@setOnCheckedChangeListener
+
+            // Simpan status ke SharedPreferences
+            sharedPreferences.edit().putBoolean(KEY_AD_STATUS, isChecked).apply()
+
+            // Update UI dan visibilitas iklan
             adView.visibility = if (isChecked) View.VISIBLE else View.GONE
             updateSwitchUI(isChecked)
 
             if (isChecked) {
-                // Muat ulang iklan jika diaktifkan
                 loadInterstitialAd()
                 loadRewardedAd()
             } else {
-                // Hapus referensi iklan jika dinonaktifkan
                 interstitialAd = null
                 rewardedAd = null
             }
+
+            Log.d("AdsSwitch", "Status iklan diubah: $isChecked")
         }
 
+// Selesai proses inisialisasi
+        isInitializing = false
+//END IKLAN
 
         // Event Listener untuk input teks
         editText.addTextChangedListener(object : TextWatcher {
@@ -196,31 +183,125 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
 
         // Tombol Download dengan Dropdown
         downloadButton.setOnClickListener {
-            showDownloadMenu(it)
-        }
+            val link = editText.text.toString().trim()
+            if (!hasUserInput && link.isEmpty()) {
+                Toast.makeText(requireContext(), "Silakan masukkan link terlebih dahulu", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            // lanjut proses jika tidak kosong
+            if (isLinkValid(link)) {
+                if (downloadButton.isClickable) {
+                    // Jalankan download
+                    showDownloadMenu(it)
+                }
+            } else {
+                Toast.makeText(requireContext(), "Link tidak valid", Toast.LENGTH_SHORT).show()
+            }
 
-        // Tema Gelap/Terang Switch
-        themeSwitch.setOnCheckedChangeListener { _, isChecked ->
-            ThemeHelper.toggleTheme(sharedPreferences, isChecked)
         }
 
         // Klik Panduan
         guideText.setOnClickListener {
             GuideDialogFragment().show(parentFragmentManager, "GuideDialog")
         }
+
+        editText.addTextChangedListener {
+            hasUserInput = !it.isNullOrBlank()
+        }
+
+        val textCount = view.findViewById<TextView>(R.id.textCount)
+        val maxCharacters = 100
+        val tolerance = 5
+        val maxWithTolerance = maxCharacters + tolerance
+
+        // Regex ketat di luar listener
+        val YOUTUBE_REGEX = Regex("^https://(www\\.)?youtube\\.com/watch\\?v=[\\w-]{11}$")
+        val YOUTUBE_SHORTS_REGEX = Regex("^https://(www\\.)?youtube\\.com/shorts/[\\w-]{11}$")
+        val YOUTUBE_SHORTLINK_REGEX = Regex("^https://youtu\\.be/[\\w-]{11}$")
+        val TIKTOK_REGEX = Regex("^https://(vt\\.|www\\.)?tiktok\\.com/[^\\s]+$")
+
+        fun detectPlatformPrecise(url: String): String {
+            return when {
+                YOUTUBE_REGEX.matches(url) ||
+                        YOUTUBE_SHORTS_REGEX.matches(url) ||
+                        YOUTUBE_SHORTLINK_REGEX.matches(url) -> "youtube"
+
+                TIKTOK_REGEX.matches(url) -> "tiktok"
+
+                else -> "invalid"
+            }
+        }
+
+        // TextWatcher
+        editText.addTextChangedListener(object : TextWatcher {
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val url = s?.toString()?.trim() ?: ""
+                val currentLength = url.length
+                textCount.text = "$currentLength/$maxCharacters"
+
+                // Warna merah jika melebihi batas normal
+                if (currentLength > maxCharacters) {
+                    textCount.setTextColor(ContextCompat.getColor(requireActivity(), android.R.color.holo_red_dark))
+                } else {
+                    textCount.setTextColor(ContextCompat.getColor(requireActivity(), android.R.color.darker_gray))
+                }
+
+                // Potong otomatis jika melebihi batas toleransi
+                if (currentLength > maxWithTolerance) {
+                    val trimmed = url.substring(0, maxWithTolerance)
+                    editText.setText(trimmed)
+                    editText.setSelection(trimmed.length)
+                }
+
+                // 🌐 Validasi URL presisi
+                val platform = detectPlatformPrecise(url)
+                if (url.isEmpty()) {
+                    inputLayout.error = null
+                } else if (platform == "invalid") {
+                    inputLayout.error = "Link tidak valid atau formatnya salah (pastikan lengkap)"
+                } else {
+                    inputLayout.error = null
+                }
+                setDownloadButtonEnabled(platform != "invalid")
+
+            }
+
+            override fun afterTextChanged(s: Editable?) {}
+        })
+    }    //end oncreated
+
+    //inisialisasi
+    private var toastCooldown = false
+    private var hasUserInput = false
+
+    private fun isLinkValid(link: String): Boolean {
+        val pattern = Regex("^(https?://)?(www\\.)?(tiktok\\.com|vt\\.tiktok\\.com|youtube\\.com|youtu\\.be)/.+")
+        return pattern.matches(link)
+    }
+
+    private fun setDownloadButtonEnabled(enabled: Boolean) {
+        downloadButton.isEnabled = enabled         // Tetap dipakai biar aman walau LinearLayout
+        downloadButton.isClickable = enabled
+        downloadButton.isFocusable = enabled
+        downloadButton.alpha = if (enabled) 1f else 0.5f  // Visual efek: buram saat nonaktif
     }
 
     // Fungsi untuk memperbarui warna switch agar sesuai statusnya
     private fun updateSwitchUI(isChecked: Boolean) {
-        val thumbColor = if (isChecked) android.R.color.holo_red_dark else android.R.color.white
-        val trackColor = if (isChecked) R.color.dark_gray else R.color.light_gray
+        context?.let {
+            val thumbColor = if (isChecked) android.R.color.holo_red_dark else android.R.color.white
+            val trackColor = if (isChecked) R.color.dark_gray else R.color.light_gray
 
-        switchAd.thumbTintList = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), thumbColor))
-        switchAd.trackTintList = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), trackColor))
+            switchAd.thumbTintList = ColorStateList.valueOf(ContextCompat.getColor(it, thumbColor))
+            switchAd.trackTintList = ColorStateList.valueOf(ContextCompat.getColor(it, trackColor))
+        }
     }
 
     private fun loadInterstitialAd() {
-        if (!switchAd.isChecked) return // Jangan load iklan jika switch mati
+        if (!switchAd.isChecked || context == null) return
 
         val adRequest = AdRequest.Builder().build()
         InterstitialAd.load(requireContext(), getString(R.string.admob_interstitial_id), adRequest, object : InterstitialAdLoadCallback() {
@@ -230,14 +311,14 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
             }
 
             override fun onAdFailedToLoad(adError: LoadAdError) {
-                Log.e("AdMob", "Gagal memuat iklan Interstitial: ${adError.message}")
                 interstitialAd = null
+                Log.e("AdMob", "Gagal memuat iklan Interstitial: ${adError.message}")
             }
         })
     }
 
     private fun showInterstitialAd(onAdComplete: () -> Unit) {
-        if (!switchAd.isChecked || interstitialAd == null) { // Cek switch sebelum tampilkan iklan
+        if (!switchAd.isChecked || interstitialAd == null) {
             Log.e("AdMob", "Iklan Interstitial tidak tersedia atau switch mati, lanjutkan download.")
             onAdComplete()
             return
@@ -246,9 +327,9 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
         interstitialAd?.let { ad ->
             ad.fullScreenContentCallback = object : FullScreenContentCallback() {
                 override fun onAdDismissedFullScreenContent() {
-                    Log.d("AdMob", "Iklan Interstitial selesai, lanjutkan download.")
+                    Log.d("AdMob", "Iklan Interstitial ditutup.")
                     interstitialAd = null
-                    loadInterstitialAd() // Muat ulang setelah ditutup
+                    loadInterstitialAd()
                     onAdComplete()
                 }
 
@@ -257,12 +338,13 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
                     onAdComplete()
                 }
             }
+
             ad.show(requireActivity())
         }
     }
 
     private fun loadRewardedAd() {
-        if (!switchAd.isChecked) return // Jangan load iklan jika switch mati
+        if (!switchAd.isChecked || context == null) return
 
         val adRequest = AdRequest.Builder().build()
         RewardedAd.load(requireContext(), getString(R.string.admob_rewarded_id), adRequest, object : RewardedAdLoadCallback() {
@@ -272,84 +354,139 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
             }
 
             override fun onAdFailedToLoad(adError: LoadAdError) {
-                Log.e("AdMob", "Gagal memuat iklan Rewarded: ${adError.message}")
                 rewardedAd = null
+                Log.e("AdMob", "Gagal memuat iklan Rewarded: ${adError.message}")
             }
         })
     }
 
     private fun showRewardedAd(onAdComplete: () -> Unit) {
-        if (!switchAd.isChecked || rewardedAd == null) { // Cek switch sebelum tampilkan iklan
+        if (!switchAd.isChecked || rewardedAd == null) {
             Log.e("AdMob", "Iklan Rewarded tidak tersedia atau switch mati, langsung mulai download.")
             onAdComplete()
             return
         }
 
+        var isRewardEarned = false
+        var isAdClosed = false
+
         rewardedAd?.let { ad ->
-            ad.show(requireActivity()) { rewardItem: RewardItem ->
-                Log.d("AdMob", "User mendapatkan reward: ${rewardItem.amount} ${rewardItem.type}")
-                onAdComplete() // Jalankan download setelah iklan selesai
+            ad.fullScreenContentCallback = object : FullScreenContentCallback() {
+                override fun onAdDismissedFullScreenContent() {
+                    Log.d("AdMob", "Iklan Rewarded ditutup.")
+                    rewardedAd = null
+                    loadRewardedAd()
+
+                    isAdClosed = true
+                    if (isRewardEarned) onAdComplete()
+                }
+
+                override fun onAdFailedToShowFullScreenContent(adError: AdError) {
+                    Log.e("AdMob", "Gagal menampilkan iklan: ${adError.message}")
+                    onAdComplete()
+                }
+            }
+
+            ad.show(requireActivity()) { rewardItem ->
+                Log.d("AdMob", "User mendapat reward: ${rewardItem.amount} ${rewardItem.type}")
+                isRewardEarned = true
+                if (isAdClosed) onAdComplete()
             }
         }
-
-        // Muat ulang iklan setelah ditampilkan
-        loadRewardedAd()
     }
-
-
 
     private fun setupTheme() {
         val isDarkMode = sharedPreferences.getBoolean("dark_mode", false)
-        themeSwitch.isChecked = isDarkMode
         ThemeHelper.applyTheme(isDarkMode)
+        updateThemeButtonIcon(isDarkMode)
 
-        // Pastikan warna switch sesuai dengan mode tema saat ini
-        if (isDarkMode) {
-            themeSwitch.thumbTintList = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), android.R.color.black))
-            themeSwitch.trackTintList = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.dark_gray))
-        } else {
-            themeSwitch.thumbTintList = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), android.R.color.white))
-            themeSwitch.trackTintList = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.light_gray))
+        themeToggleButton.setOnClickListener {
+            val newMode = !sharedPreferences.getBoolean("dark_mode", false)
+            ThemeHelper.toggleTheme(sharedPreferences, newMode)
+            updateThemeButtonIcon(newMode)
         }
+    }
+
+    private fun updateThemeButtonIcon(isDarkMode: Boolean) {
+        val iconRes = if (isDarkMode) R.drawable.sun else R.drawable.moon
+        themeToggleButton.setIconResource(iconRes)
     }
 
     private fun checkClipboardOnStart() {
         val clipData = clipboardManager.primaryClip
         if (clipData != null && clipData.itemCount > 0) {
-            val copiedText = clipData.getItemAt(0).text.toString()
-            if (copiedText.isNotEmpty() && detectPlatform(copiedText) != "unknown") {
-                editText.setText(copiedText)
+            val copiedText = clipData.getItemAt(0).text.toString().trim()
+            when (detectPlatform(copiedText)) {
+                "youtube", "tiktok" -> {
+                    editText.setText(copiedText)
+                }
+                "invalid" -> {
+                    if (!toastCooldown) {
+                        toastCooldown = true
+                        Toast.makeText(
+                            requireContext(),
+                            "Link tidak valid. Hanya TikTok atau YouTube yang didukung.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            toastCooldown = false
+                        }, 2000)
+                    }
+                }
+
             }
         }
     }
+
     private fun checkClipboardForLink() {
         clipboardManager.addPrimaryClipChangedListener {
             val clipData = clipboardManager.primaryClip
             if (clipData != null && clipData.itemCount > 0) {
-                val copiedText = clipData.getItemAt(0).text.toString()
-                if (copiedText.isNotEmpty() && detectPlatform(copiedText) != "unknown") {
-                    editText.setText(copiedText)
+                val copiedText = clipData.getItemAt(0).text.toString().trim()
+                when (detectPlatform(copiedText)) {
+                    "youtube", "tiktok" -> {
+                        editText.setText(copiedText)
+                    }
+
+                    "invalid" -> {
+                        if (!toastCooldown) {
+                            toastCooldown = true
+                            Toast.makeText(
+                                requireContext(),
+                                "Link yang disalin bukan dari TikTok atau YouTube.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            Handler(Looper.getMainLooper()).postDelayed({
+                                toastCooldown = false
+                            }, 2000)
+                        }
+                    }
                 }
             }
         }
     }
 
-
     private fun detectPlatform(url: String): String {
+        val youtubePattern = Regex("""^https:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w\-]{11}.*$""")
+        val tiktokPattern = Regex("""^https:\/\/(vm|vt)\.tiktok\.com\/[A-Za-z0-9]{8,}\/?$""")
+
         return when {
-            url.contains("tiktok.com", true) -> "tiktok"
-            url.contains("youtube.com", true) || url.contains("youtu.be", true) -> "youtube"
-            else -> "unknown"
+            youtubePattern.matches(url) -> "youtube"
+            tiktokPattern.matches(url) -> "tiktok"
+            else -> "invalid"
         }
     }
-
+    // Fungsi bantu konversi dp ke px
+    private fun Context.dpToPx(dp: Int): Int {
+        return (dp * resources.displayMetrics.density).toInt()
+    }
 
     private fun showDownloadMenu(view: View) {
         val url = editText.text.toString().trim()
         val platform = detectPlatform(url)
 
         if (platform == "unknown") {
-            Toast.makeText(requireContext(), "Masukkan link TikTok yang valid!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Masukkan link yang valid!", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -357,8 +494,9 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
         buttonLayout.isEnabled = false // Nonaktifkan sementara agar tidak bisa diklik dua kali
 
         // **Buat ProgressBar**
-        val progressBar = ProgressBar(requireContext()).apply {
+        val progressBar = ProgressBar(context, null, android.R.attr.progressBarStyleSmall).apply {
             isIndeterminate = true
+            indeterminateTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.white))
             visibility = View.VISIBLE
         }
 
@@ -369,15 +507,17 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
             return
         }
 
+        // **Gunakan ukuran kecil eksplisit saat addView**
         val layoutParams = LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
+            requireContext().dpToPx(27),  // <= kecilin di sini
+            requireContext().dpToPx(27)
         ).apply {
             gravity = CENTER
-            topMargin = 16
+            topMargin = requireContext().dpToPx(11)
+            leftMargin = requireContext().dpToPx(5)
         }
 
-        // **Tambahkan ProgressBar di bawah tombol**
+// **Tambahkan ProgressBar di bawah tombol**
         Handler(Looper.getMainLooper()).post {
             parent.addView(progressBar, parent.indexOfChild(buttonLayout) + 1, layoutParams)
         }
@@ -388,8 +528,9 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
                 val isSlide = withContext(Dispatchers.IO) { TikTokDownloader.isTikTokSlide(url) }
 
                 val formats = when {
-                    platform == "tiktok" && isSlide -> listOf("JPG")
+                    platform == "tiktok" && isSlide -> listOf("Gambar")
                     platform == "tiktok" -> listOf("MP4", "MP3")
+                    platform == "youtube" -> listOf("MP4", "MP3")
                     else -> emptyList()
                 }
 
@@ -404,7 +545,7 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
 
                 popupMenu.setOnMenuItemClickListener { item ->
                     val selectedFormat = formats[item.itemId]
-                    if (selectedFormat == "JPG" && isSlide) {
+                    if (selectedFormat == "Gambar" && isSlide) {
                         showSlideSelectionPopup(url)
                     } else {
                         startDownload(url, selectedFormat)
@@ -423,6 +564,96 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
         }
     }
 
+    private fun startDownload(url: String, format: String) {
+        if (isAdShowing) return  // Cegah duplikat download
+        isAdShowing = true       // Tandai bahwa proses sedang berjalan
+
+        showRewardedAd {
+            lifecycleScope.launch(Dispatchers.IO) {
+                withContext(Dispatchers.Main) {
+                    progressDownload.visibility = View.VISIBLE
+                    textProgress.visibility = View.VISIBLE
+                    arrowIcon.visibility = View.GONE
+                    progressDownload.progress = 0
+                    textProgress.text = "0%"
+                }
+
+                try {
+                    val downloadUrl = TikTokDownloader.getDownloadUrl(url, format)
+
+                    if (downloadUrl == null) {
+                        showError("Gagal mendapatkan link unduhan untuk format $format!")
+                        return@launch
+                    }
+
+                    val mimeType = when (format) {
+                        "MP4" -> "video/mp4"
+                        "MP3" -> "audio/mp3"
+                        "Gambar" -> "image/jpeg"
+                        else -> "application/octet-stream"
+                    }
+
+                    val username = extractUsernameFromUrl(url) ?: "unknown"
+                    val timeStamp = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(Date())
+                    val finalFileName = "${username}_${timeStamp}.$format".lowercase()
+
+                    val uniqueFileName = Downloader.generateUniqueFileName(
+                        context = requireContext(),
+                        fileName = finalFileName,
+                        mimeType = mimeType
+                    )
+
+                    val uri = Downloader.downloadFile(
+                        context = requireContext(),
+                        fileUrl = downloadUrl,
+                        fileName = uniqueFileName,
+                        mimeType = mimeType,
+                        onProgressUpdate = { progress ->
+                            lifecycleScope.launch(Dispatchers.Main) {
+                                progressDownload.progress = progress
+                                textProgress.text = "$progress%"
+                            }
+                        },
+                        downloadHistoryDao
+                    )
+
+                    withContext(Dispatchers.Main) {
+                        if (uri != null) {
+                            Toast.makeText(
+                                requireContext(),
+                                "Unduhan $format selesai dan tersimpan di Galeri!",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            showError("File path tidak ditemukan setelah download.")
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("Download", "Gagal mengunduh file: ${e.message}")
+                    showError("Gagal mengunduh $format!")
+                } finally {
+                    withContext(Dispatchers.Main) {
+                        progressDownload.visibility = View.GONE
+                        textProgress.visibility = View.GONE
+                        arrowIcon.visibility = View.VISIBLE
+                    }
+                    isAdShowing = false  // Reset status
+                }
+            }
+        }
+    }
+
+    private fun showError(message: String) {
+        lifecycleScope.launch(Dispatchers.Main) {
+            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+            progressDownload.visibility = View.GONE
+            textProgress.visibility = View.GONE
+            arrowIcon.visibility = View.VISIBLE
+            isAdShowing = false
+        }
+    }
+
+    //gambar
     private fun showSlideSelectionPopup(url: String) {
         CoroutineScope(Dispatchers.IO).launch {
             val slideImages = TikTokDownloader.getSlideImages(url)
@@ -433,85 +664,119 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
                     return@withContext
                 }
 
-                Log.d("MainActivity", "Menampilkan popup dengan ${slideImages.size} gambar.")
-
                 val selectedImages = mutableSetOf<String>()
-                val builder = AlertDialog.Builder(requireContext())
-                builder.setTitle("Pilih Gambar yang Akan Diunduh")
 
+                // Buat adapter untuk GridView
+                val imageAdapter = object : BaseAdapter() {
+                    override fun getCount(): Int = slideImages.size
+                    override fun getItem(position: Int): String = slideImages[position]
+                    override fun getItemId(position: Int): Long = position.toLong()
+
+                    override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                        val view = convertView ?: layoutInflater.inflate(R.layout.item_image_selection, parent, false)
+                        val imageView = view.findViewById<ImageView>(R.id.imageView)
+                        val checkOverlay = view.findViewById<ImageView>(R.id.checkOverlay)
+                        val imageUrl = getItem(position)
+
+                        imageView.outlineProvider = object : ViewOutlineProvider() {
+                            override fun getOutline(v: View, outline: Outline) {
+                                outline.setRoundRect(0, 0, v.width, v.height, 16f)
+                            }
+                        }
+                        imageView.clipToOutline = true
+
+                        checkOverlay.visibility = if (selectedImages.contains(imageUrl)) View.VISIBLE else View.GONE
+
+                        Glide.with(requireContext())
+                            .load(imageUrl)
+                            .placeholder(R.drawable.ic_placeholder)
+                            .into(imageView)
+
+                        view.setOnClickListener {
+                            if (selectedImages.contains(imageUrl)) {
+                                selectedImages.remove(imageUrl)
+                                checkOverlay.visibility = View.GONE
+                            } else {
+                                selectedImages.add(imageUrl)
+                                checkOverlay.visibility = View.VISIBLE
+                            }
+                        }
+                        return view
+                    }
+                }
+
+                // Siapkan GridView
                 val gridView = GridView(requireContext()).apply {
                     numColumns = 3
                     stretchMode = GridView.STRETCH_COLUMN_WIDTH
                     verticalSpacing = 8
                     horizontalSpacing = 8
                     setPadding(16, 16, 16, 16)
-
-                    adapter = object : BaseAdapter() {
-                        override fun getCount(): Int = slideImages.size
-                        override fun getItem(position: Int): String = slideImages[position]
-                        override fun getItemId(position: Int): Long = position.toLong()
-
-                        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                            val view = convertView ?: layoutInflater.inflate(R.layout.item_image_selection, parent, false)
-                            val imageView = view.findViewById<ImageView>(R.id.imageView)
-                            val checkOverlay = view.findViewById<ImageView>(R.id.checkOverlay)
-
-                            val imageUrl = getItem(position)
-                            imageView.outlineProvider = object : ViewOutlineProvider() {
-                                override fun getOutline(view: View, outline: Outline) {
-                                    outline.setRoundRect(0, 0, view.width, view.height, 16f)
-                                }
-                            }
-                            imageView.clipToOutline = true
-
-                            checkOverlay.visibility = if (selectedImages.contains(imageUrl)) View.VISIBLE else View.GONE
-
-                            Glide.with(context)
-                                .load(imageUrl)
-                                .placeholder(R.drawable.ic_placeholder)
-                                .into(imageView)
-
-                            view.setOnClickListener {
-                                if (selectedImages.contains(imageUrl)) {
-                                    selectedImages.remove(imageUrl)
-                                    checkOverlay.visibility = View.GONE
-                                } else {
-                                    selectedImages.add(imageUrl)
-                                    checkOverlay.visibility = View.VISIBLE
-                                }
-                            }
-
-                            return view
-                        }
-                    }
+                    adapter = imageAdapter
                 }
 
-                builder.setView(gridView)
-                builder.setPositiveButton("Unduh yang Dipilih") { _, _ ->
-                    if (selectedImages.isNotEmpty()) {
-                        if (!isAdShowing) {  // Cek apakah iklan sedang tayang
-                            isAdShowing = true  // Set flag agar tidak memulai download sebelum iklan selesai
+                // Build dialog tanpa listener langsung
+                val dialog = AlertDialog.Builder(requireContext())
+                    .setTitle("Pilih Gambar yang Akan Diunduh")
+                    .setView(gridView)
+                    .setPositiveButton("Unduh yang Dipilih", null)
+                    .setNeutralButton("Pilih Semua", null)
+                    .setNegativeButton("Batal", null)
+                    .create()
 
-                            showInterstitialAd {
-                                isAdShowing = false  // Reset flag setelah iklan selesai
-                                downloadSelectedImages(selectedImages.toList())  // Mulai proses download setelah iklan selesai
-                            }
-                        }
+                dialog.show()
+
+                // Override tombol "Pilih Semua" supaya tidak menutup dialog
+                dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
+                    if (selectedImages.size == slideImages.size) {
+                        // Jika semua gambar sudah dipilih, batalkan pemilihan
+                        selectedImages.clear()
                     } else {
+                        // Pilih semua gambar
+                        selectedImages.clear()
+                        selectedImages.addAll(slideImages)
+                    }
+                    imageAdapter.notifyDataSetChanged() // Update adapter untuk menampilkan perubahan
+                }
+
+                // Override tombol "Unduh yang Dipilih" untuk validasi dan download
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                    if (selectedImages.isEmpty()) {
                         Toast.makeText(requireContext(), "Pilih setidaknya satu gambar!", Toast.LENGTH_SHORT).show()
+                        return@setOnClickListener
+                    }
+                    dialog.dismiss()  // tutup dialog sebelum iklan+download
+                    if (!isAdShowing) {
+                        isAdShowing = true
+                        showInterstitialAd {
+                            isAdShowing = false
+                            downloadSelectedImages(selectedImages.toList())
+                        }
                     }
                 }
 
-                builder.setNegativeButton("Batal") { dialog, _ -> dialog.dismiss() }
-                builder.show()
+                // Tombol batal tutup seperti biasa
+                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener {
+                    dialog.dismiss()
+                }
             }
         }
     }
 
+    //gambar
     private fun downloadSelectedImages(images: List<String>) {
         lifecycleScope.launch(Dispatchers.IO) {
             val timeStamp = SimpleDateFormat("dd-MM-yyyy_HH-mm-ss", Locale.getDefault()).format(Date())
             var isToastShown = false  // Flag untuk mencegah notifikasi ganda
+
+            // Setup progres
+            withContext(Dispatchers.Main) {
+                progressDownload.visibility = View.VISIBLE
+                textProgress.visibility = View.VISIBLE
+                arrowIcon.visibility = View.GONE
+                progressDownload.progress = 0
+                textProgress.text = "0%"
+            }
 
             for ((index, imageUrl) in images.withIndex()) {
                 try {
@@ -522,9 +787,11 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
                         fileUrl = imageUrl,
                         fileName = fileName,
                         mimeType = "image/jpeg",
-                        onProgressUpdate = { _ ->
+                        onProgressUpdate = { progress -> // Update progress setiap unduhan
                             lifecycleScope.launch(Dispatchers.Main) {
-                                // Bisa tambahkan UI update jika perlu
+                                val currentProgress = ((index + 1) * 100) / images.size // Total progres
+                                progressDownload.progress = currentProgress
+                                textProgress.text = "$currentProgress%"
                             }
                         },
                         downloadHistoryDao // Simpan ke database
@@ -545,98 +812,12 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
                     }
                 }
             }
-        }
-    }
 
-
-
-    private fun startDownload(url: String, format: String) {
-        showRewardedAd {
-            if (!isAdShowing) {  // Pastikan download hanya dimulai setelah iklan selesai
-                isAdShowing = true  // Set flag agar download tidak dimulai sebelum iklan selesai
-
-                requireActivity().runOnUiThread {
-                    progressDownload.visibility = View.VISIBLE
-                    textProgress.visibility = View.VISIBLE
-                    arrowIcon.visibility = View.GONE
-
-                    progressDownload.progress = 0
-                    textProgress.text = "0%"
-                }
-
-                lifecycleScope.launch(Dispatchers.IO) {
-                    val downloadUrl = TikTokDownloader.getDownloadUrl(url, format)
-
-                    if (downloadUrl != null) {
-                        val mimeType = when (format) {
-                            "MP4" -> "video/mp4"
-                            "MP3" -> "audio/mp3"
-                            "JPG" -> "image/jpeg"
-                            else -> "application/octet-stream"
-                        }
-
-                        val username = extractUsernameFromUrl(url) ?: "unknown"
-                        val timeStamp = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(Date())
-                        val finalFileName = "${username}_${timeStamp}.$format".lowercase()
-
-                        try {
-                            val uniqueFileName = Downloader.generateUniqueFileName(
-                                context = requireContext(),
-                                fileName = finalFileName,
-                                mimeType = mimeType
-                            )
-
-                            val uri = Downloader.downloadFile(
-                                context = requireContext(),
-                                fileUrl = downloadUrl,
-                                fileName = uniqueFileName,
-                                mimeType = mimeType,
-                                onProgressUpdate = { progress ->
-                                    lifecycleScope.launch(Dispatchers.Main) {
-                                        progressDownload.progress = progress
-                                        textProgress.text = "$progress%"
-                                    }
-                                },
-                                downloadHistoryDao
-                            )
-
-
-                            withContext(Dispatchers.Main) {
-                                if (uri != null) {
-                                    Toast.makeText(
-                                        requireContext(),
-                                        "Unduhan $format selesai dan tersimpan di Galeri!",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                } else {
-                                    throw Exception("File path tidak ditemukan setelah download.")
-                                }
-
-                                progressDownload.visibility = View.GONE
-                                textProgress.visibility = View.GONE
-                                arrowIcon.visibility = View.VISIBLE
-                            }
-                        } catch (e: Exception) {
-                            Log.e("Download", "Gagal mengunduh file: ${e.message}")
-                            withContext(Dispatchers.Main) {
-                                Toast.makeText(requireContext(), "Gagal mengunduh $format!", Toast.LENGTH_SHORT).show()
-                                progressDownload.visibility = View.GONE
-                                textProgress.visibility = View.GONE
-                                arrowIcon.visibility = View.VISIBLE
-                            }
-                        }
-                    } else {
-                        Log.e("Download", "Gagal mendapatkan link unduhan untuk format $format!")
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(requireContext(), "Gagal mendapatkan link unduhan!", Toast.LENGTH_SHORT).show()
-                            progressDownload.visibility = View.GONE
-                            textProgress.visibility = View.GONE
-                            arrowIcon.visibility = View.VISIBLE
-                        }
-                    }
-
-                    isAdShowing = false  // Reset flag setelah proses selesai
-                }
+            // Setelah selesai, sembunyikan progress bar dan text
+            withContext(Dispatchers.Main) {
+                progressDownload.visibility = View.GONE
+                textProgress.visibility = View.GONE
+                arrowIcon.visibility = View.VISIBLE
             }
         }
     }

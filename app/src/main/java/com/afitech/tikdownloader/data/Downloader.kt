@@ -17,6 +17,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 object Downloader {
+
     suspend fun downloadFile(
         context: Context,
         fileUrl: String,
@@ -24,7 +25,6 @@ object Downloader {
         mimeType: String,
         onProgressUpdate: (Int) -> Unit,
         downloadHistoryDao: DownloadHistoryDao
-
     ) {
         withContext(Dispatchers.IO) {
             try {
@@ -39,7 +39,6 @@ object Downloader {
 
                 val uniqueFileName = generateUniqueFileName(context, fileName, mimeType)
                 val uri = saveToMediaStore(context, inputStream, uniqueFileName, mimeType, fileSize, onProgressUpdate)
-
 
                 inputStream.close()
                 connection.disconnect()
@@ -69,6 +68,107 @@ object Downloader {
             }
         }
     }
+
+    private fun saveToMediaStore(
+        context: Context,
+        inputStream: InputStream,
+        fileName: String,
+        mimeType: String,
+        fileSize: Int,
+        onProgressUpdate: (Int) -> Unit
+    ): Uri? {
+        // Cek apakah konten berasal dari YouTube
+        val isYouTube = fileName.contains("youtube", ignoreCase = true)
+
+        val mediaStoreResult = if (isYouTube) {
+            getMediaStoreOutputStreamForYouTube(context, fileName, mimeType)
+        } else {
+            getMediaStoreOutputStream(context, fileName, mimeType)
+        }
+
+        return mediaStoreResult?.let { (uri, outputStream) ->
+            copyStreamWithProgress(inputStream, outputStream, fileSize, onProgressUpdate)
+            outputStream.flush()
+            outputStream.close()
+            uri
+        }
+    }
+
+    // Untuk TikTok atau default folder
+    private fun getMediaStoreOutputStream(
+        context: Context,
+        fileName: String,
+        mimeType: String
+    ): Pair<Uri, OutputStream>? {
+        return try {
+            val relativePath = when {
+                mimeType.startsWith("video") -> Environment.DIRECTORY_MOVIES + "/TikTokDownloads"
+                mimeType.startsWith("audio") -> Environment.DIRECTORY_MUSIC + "/TikTokDownloads"
+                mimeType.startsWith("image") -> Environment.DIRECTORY_PICTURES + "/TikTokImages"
+                else -> Environment.DIRECTORY_DOWNLOADS + "/TikTokDownloads"
+            }
+
+            val mediaUri = when {
+                mimeType.startsWith("video") -> MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                mimeType.startsWith("audio") -> MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+                mimeType.startsWith("image") -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                else -> MediaStore.Files.getContentUri("external")
+            }
+
+            val contentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+                put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath)
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
+            }
+
+            val uri = context.contentResolver.insert(mediaUri, contentValues)
+            val outputStream = uri?.let { context.contentResolver.openOutputStream(it) }
+
+            if (uri != null && outputStream != null) {
+                contentValues.clear()
+                contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                context.contentResolver.update(uri, contentValues, null, null)
+                Pair(uri, outputStream)
+            } else null
+        } catch (e: Exception) {
+            Log.e("Downloader", "Gagal MediaStore TikTok: ${e.message}", e)
+            null
+        }
+    }
+
+    // Untuk YouTube
+    private fun getMediaStoreOutputStreamForYouTube(
+        context: Context,
+        fileName: String,
+        mimeType: String
+    ): Pair<Uri, OutputStream>? {
+        return try {
+            val contentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+                put(
+                    MediaStore.MediaColumns.RELATIVE_PATH,
+                    if (mimeType.contains("video")) "Movies/YouTubeDownloader" else "Music/YouTubeDownloader"
+                )
+            }
+
+            val uri = context.contentResolver.insert(
+                if (mimeType.contains("video"))
+                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                else
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                contentValues
+            )
+
+            val outputStream = uri?.let { context.contentResolver.openOutputStream(it) }
+            if (uri != null && outputStream != null) Pair(uri, outputStream) else null
+        } catch (e: Exception) {
+            Log.e("YouTubeDownloader", "Gagal MediaStore: ${e.message}", e)
+            null
+        }
+    }
+
     fun generateUniqueFileName(
         context: Context,
         fileName: String,
@@ -97,58 +197,6 @@ object Downloader {
         }
 
         return finalName
-    }
-
-
-
-    private fun saveToMediaStore(
-        context: Context,
-        inputStream: InputStream,
-        fileName: String,
-        mimeType: String,
-        fileSize: Int,
-        onProgressUpdate: (Int) -> Unit
-    ): Uri? {
-        val contentResolver = context.contentResolver
-
-        val relativePath = when {
-            mimeType.startsWith("video") -> Environment.DIRECTORY_MOVIES + "/TikTokDownloads"
-            mimeType.startsWith("audio") -> Environment.DIRECTORY_MUSIC + "/TikTokDownloads"
-            mimeType.startsWith("image") -> Environment.DIRECTORY_PICTURES + "/TikTokImages"
-            else -> Environment.DIRECTORY_DOWNLOADS + "/TikTokDownloads"
-        }
-
-        val mediaUri = when {
-            mimeType.startsWith("video") -> MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-            mimeType.startsWith("audio") -> MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
-            mimeType.startsWith("image") -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-            else -> MediaStore.Files.getContentUri("external")
-        }
-
-        val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
-            put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-            put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath)
-            put(MediaStore.MediaColumns.IS_PENDING, 1)
-        }
-
-        val uri: Uri? = contentResolver.insert(mediaUri, contentValues)
-
-        uri?.let {
-            contentResolver.openOutputStream(it).use { outputStream ->
-                if (outputStream != null) {
-                    copyStreamWithProgress(inputStream, outputStream, fileSize, onProgressUpdate)
-                }
-            }
-
-            contentValues.clear()
-            contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
-            contentResolver.update(it, contentValues, null, null)
-
-            Log.d("MediaStore", "File berhasil disimpan: $uri")
-        } ?: Log.e("MediaStore", "Gagal menyimpan file ke MediaStore.")
-
-        return uri
     }
 
     private fun copyStreamWithProgress(

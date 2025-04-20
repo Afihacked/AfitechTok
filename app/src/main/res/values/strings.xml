@@ -1,9 +1,9 @@
 <resources>
-    <string name="app_name">TokTok Offline Video</string>
-    <string name="video_downloader">Offline Video TT</string>
+    <string name="app_name">TokTok TT Offline</string>
+    <string name="video_downloader">TT Offline</string>
     <string name="terang_gelap">Terang/Gelap</string>
     <string name="tempel_link_disini">Tempel link disini</string>
-    <string name="download">Offline Video</string>
+    <string name="download">Offline</string>
     <string name="dropdown_arrow">Dropdown arrow</string>
     <string name="persen">0%</string>
     <string name="preview">Preview</string>
@@ -14,18 +14,19 @@
         Aplikasi masih dalam tahap test
         apabila menemukan error bisa hubungi pembuat.
         Saran dan Masukan dari anda sangat berguna untuk perkembangan aplikasi ini.
-        terimakasih sudah klik iklan :)\n\n <b><i>Afitech.2024</i></b></string>
+        terimakasih sudah klik iklan :) Fitur untuk download video youtube akan segera hadir. \n\n <b><i>Afitech.2024</i></b></string>
     <string name="nama_file">Nama File</string>
     <string name="thumbnail">Thumbnail</string>
     <string name="video">Video</string>
     <string name="btnplay">btnPlay</string>
     <string name="btnshare">btnShare</string>
     <string name="btndel">btnDel</string>
-    <string name="notes">*Peringatan</string>
+    <string name="notes">Hi..</string>
     <string name="gambar_berhasil">Gambar yang dipilih berhasil diunduh!</string>
     <string name="gambar_gagal">Gagal mengunduh gambar!</string>
     <string name="count_text">0/35</string>
     <string name="tampilkan_iklan">Tampilkan Iklan</string>
     <string name="unduhan_kosong">  (o_o)
 \nTidak ada apapun di sini selain jangkrik</string>
+    <string name="theme">theme</string>
 </resources>

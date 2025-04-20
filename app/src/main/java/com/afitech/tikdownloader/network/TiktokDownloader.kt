@@ -44,7 +44,6 @@ object TikTokDownloader {
     fun getDownloadUrl(tiktokUrl: String, format: String): String? {
         val json = fetchApiData(tiktokUrl) ?: return null
         if (json.optInt("code", -1) != 0) {
-            Log.e("TikTokDownloader", "Gagal mendapatkan data API untuk URL: $tiktokUrl")
             return null
         }
 

@@ -17,15 +17,15 @@
         android:layout_alignParentTop="true"
         android:progressDrawable="@drawable/progress_splash"/>
 
-    <!-- Ikon Launcher -->
-    <ImageView
-        android:id="@+id/splash_icon"
-        android:layout_width="120dp"
-        android:layout_height="120dp"
-        android:contentDescription="@string/app_name"
-        android:src="@drawable/ikon_round"
-        android:layout_centerInParent="true"
-        android:transitionName="icon_transition"/>
+<!--    &lt;!&ndash; Ikon Launcher &ndash;&gt;-->
+<!--    <ImageView-->
+<!--        android:id="@+id/splash_icon"-->
+<!--        android:layout_width="120dp"-->
+<!--        android:layout_height="120dp"-->
+<!--        android:contentDescription="@string/app_name"-->
+<!--        android:src="@drawable/ikon_round"-->
+<!--        android:layout_centerInParent="true"-->
+<!--        android:transitionName="icon_transition"/>-->
 
     <!-- Nama Aplikasi -->
     <TextView
