@@ -6,9 +6,9 @@ plugins {
 
 android {
     applicationVariants.configureEach {
-        val appName = "Offline TT HD No Watermark"
+        val appName = "TT Offline HD No Watermark"
         val versionName = "1.7-beta"
-        val versionCode = 3
+        val versionCode = 4
 
         outputs.configureEach {
             (this as? com.android.build.gradle.internal.api.BaseVariantOutputImpl)?.outputFileName =
@@ -34,7 +34,7 @@ android {
         applicationId = "com.afitech.tikdownloader"
         minSdk = 29
         targetSdk = 35
-        versionCode = 3
+        versionCode = 4
         versionName = "1.7-beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

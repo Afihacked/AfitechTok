@@ -210,7 +210,7 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
         }
 
         val textCount = view.findViewById<TextView>(R.id.textCount)
-        val maxCharacters = 100
+        val maxCharacters = 50
         val tolerance = 5
         val maxWithTolerance = maxCharacters + tolerance
 
