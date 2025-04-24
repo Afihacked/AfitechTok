@@ -5,6 +5,7 @@
     <!-- Izin Internet untuk download -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+
     <!-- Izin Media untuk Android 13+ -->
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
@@ -14,6 +15,9 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
 
+    <!-- Izin untuk akses penuh penyimpanan di Android 11 dan lebih tinggi (MEMBERIKAN PERINGATAN PADA PENGGUNA) -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" android:maxSdkVersion="30"/>
+
     <!-- Izin Download Manager -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
 
@@ -21,8 +25,15 @@
     <uses-permission android:name="android.permission.READ_CLIPBOARD_IN_BACKGROUND"
         tools:ignore="ProtectedPermissions"/>
 
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+
 
     <application
+        android:requestLegacyExternalStorage="true"
         android:hardwareAccelerated="true"
         android:largeHeap="false"
         android:allowBackup="false"
@@ -41,10 +52,10 @@
         <!-- Splash Screen sebagai entry point -->
         <activity
             android:name=".ui.SplashActivity"
-            android:exported="true"            android:screenOrientation="portrait"
+            android:exported="true"
+            android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity"
-            android:theme="@style/Theme.Splash"
->
+            android:theme="@style/Theme.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
@@ -57,9 +68,17 @@
             android:exported="true"
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity" />
+
+        <!-- Meta Data for AdMob -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-2025447201837747~2709749773"/>
+
+        <service
+            android:name=".ui.services.DownloadService"
+            android:foregroundServiceType="mediaPlayback|dataSync"
+            android:exported="false" />
+
     </application>
 
 </manifest>

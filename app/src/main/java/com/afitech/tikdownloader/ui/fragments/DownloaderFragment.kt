@@ -33,7 +33,6 @@ import com.afitech.tikdownloader.data.database.AppDatabase
 import com.afitech.tikdownloader.data.database.DownloadHistoryDao
 import com.afitech.tikdownloader.network.TikTokDownloader
 import com.afitech.tikdownloader.ui.components.GuideDialogFragment
-import com.afitech.tikdownloader.ui.helpers.ThemeHelper
 import com.bumptech.glide.Glide
 import com.google.android.gms.ads.AdError
 import com.google.android.material.textfield.TextInputEditText
@@ -50,7 +49,6 @@ import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
-import com.google.android.material.button.MaterialButton
 import java.net.HttpURLConnection
 import java.net.URL
 import java.text.SimpleDateFormat
@@ -64,7 +62,6 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
     private lateinit var inputLayout: TextInputLayout
     private lateinit var editText: TextInputEditText
     private lateinit var downloadButton: LinearLayout
-    private lateinit var themeToggleButton: MaterialButton
     private lateinit var switchAd: SwitchCompat
     private lateinit var arrowIcon: ImageView
     private lateinit var clipboardManager: ClipboardManager
@@ -100,7 +97,7 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
         inputLayout = view.findViewById(R.id.inputLayout)
         editText = view.findViewById(R.id.inputLink)
         downloadButton = view.findViewById(R.id.btnDownload)
-        themeToggleButton = view.findViewById(R.id.themeToggleButton)
+//        themeToggleButton = view.findViewById(R.id.themeToggleButton)
 //        themeSwitch = view.findViewById(R.id.themeSwitch)
 
         switchAd = view.findViewById(R.id.switchAd) // Switch untuk mengaktifkan/menonaktifkan iklan
@@ -108,7 +105,7 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
         progressDownload = view.findViewById(R.id.progressDownload)
         textProgress = view.findViewById(R.id.textProgress)
         adView = view.findViewById(R.id.adView)
-        val guideText: TextView = view.findViewById(R.id.guideText)
+//        val guideText: TextView = view.findViewById(R.id.guideText)
 
         // Inisialisasi SharedPreferences
         sharedPreferences = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -168,13 +165,10 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
         editText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                guideText.visibility = if (s.isNullOrEmpty()) View.VISIBLE else View.GONE
+//                guideText.visibility = if (s.isNullOrEmpty()) View.VISIBLE else View.GONE
             }
             override fun afterTextChanged(s: Editable?) {}
         })
-
-        // Setup Theme
-        setupTheme()
 
         // Clipboard Manager
         clipboardManager = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -201,9 +195,9 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
         }
 
         // Klik Panduan
-        guideText.setOnClickListener {
-            GuideDialogFragment().show(parentFragmentManager, "GuideDialog")
-        }
+//        guideText.setOnClickListener {
+//            GuideDialogFragment().show(parentFragmentManager, "GuideDialog")
+//        }
 
         editText.addTextChangedListener {
             hasUserInput = !it.isNullOrBlank()
@@ -393,23 +387,6 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
                 if (isAdClosed) onAdComplete()
             }
         }
-    }
-
-    private fun setupTheme() {
-        val isDarkMode = sharedPreferences.getBoolean("dark_mode", false)
-        ThemeHelper.applyTheme(isDarkMode)
-        updateThemeButtonIcon(isDarkMode)
-
-        themeToggleButton.setOnClickListener {
-            val newMode = !sharedPreferences.getBoolean("dark_mode", false)
-            ThemeHelper.toggleTheme(sharedPreferences, newMode)
-            updateThemeButtonIcon(newMode)
-        }
-    }
-
-    private fun updateThemeButtonIcon(isDarkMode: Boolean) {
-        val iconRes = if (isDarkMode) R.drawable.sun else R.drawable.moon
-        themeToggleButton.setIconResource(iconRes)
     }
 
     private fun checkClipboardOnStart() {
@@ -847,6 +824,7 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
         } catch (e: Exception) {
             null
         }
+
     }
 }
 

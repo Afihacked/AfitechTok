@@ -1,9 +1,10 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
 
     <!-- Base Theme -->
     <style name="Base.Theme.TikDownloader" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorSurface">@color/colorSurface</item>
         <item name="colorOnSurface">@color/colorOnSurface</item>
+
     </style>
 
     <!-- Tema utama aplikasi -->
@@ -26,5 +27,4 @@
     <style name="Theme.Splash" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="android:windowBackground">@drawable/splash_background</item>
     </style>
-
 </resources>

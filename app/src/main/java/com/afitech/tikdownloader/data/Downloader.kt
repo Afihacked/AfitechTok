@@ -102,9 +102,9 @@ object Downloader {
     ): Pair<Uri, OutputStream>? {
         return try {
             val relativePath = when {
-                mimeType.startsWith("video") -> Environment.DIRECTORY_MOVIES + "/TikTokDownloads"
-                mimeType.startsWith("audio") -> Environment.DIRECTORY_MUSIC + "/TikTokDownloads"
-                mimeType.startsWith("image") -> Environment.DIRECTORY_PICTURES + "/TikTokImages"
+                mimeType.startsWith("video") -> Environment.DIRECTORY_MOVIES + "/Afitech-Tiktok"
+                mimeType.startsWith("audio") -> Environment.DIRECTORY_MUSIC + "/Afitech-Tiktok"
+                mimeType.startsWith("image") -> Environment.DIRECTORY_PICTURES + "/Afitech-Tiktok"
                 else -> Environment.DIRECTORY_DOWNLOADS + "/TikTokDownloads"
             }
 

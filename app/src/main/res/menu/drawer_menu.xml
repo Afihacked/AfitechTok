@@ -1,0 +1,35 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_fitur"
+            android:title="Fitur"
+            android:icon="@drawable/ic_arrow_down"
+            android:textStyle="bold"/> <!-- Tambahkan ikon panah -->
+
+        <item
+            android:id="@+id/nav_tt_offline"
+            android:title="     TikTok"
+            android:visible="false" />
+
+        <item
+            android:id="@+id/nav_yt_offline"
+            android:title="     YouTube"
+            android:visible="false" />
+
+        <item
+            android:id="@+id/nav_wa_offline"
+            android:title="     WhatsApp"
+            android:visible="false" />
+
+        <item
+            android:id="@+id/nav_history"
+            android:title="Riwayat Unduhan TT" />
+
+        <item
+            android:id="@+id/nav_about"
+            android:title="Tentang" />
+    </group>
+
+</menu>

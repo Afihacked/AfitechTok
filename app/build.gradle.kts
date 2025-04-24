@@ -6,9 +6,9 @@ plugins {
 
 android {
     applicationVariants.configureEach {
-        val appName = "TT Offline HD No Watermark"
-        val versionName = "1.7-beta"
-        val versionCode = 4
+        val appName = "Afitech SaveAll"
+        val versionName = "2-beta"
+        val versionCode = 5
 
         outputs.configureEach {
             (this as? com.android.build.gradle.internal.api.BaseVariantOutputImpl)?.outputFileName =
@@ -34,8 +34,8 @@ android {
         applicationId = "com.afitech.tikdownloader"
         minSdk = 29
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.7-beta"
+        versionCode = 5
+        versionName = "2-beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -68,6 +68,9 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.play.services.ads.api)
+    implementation(libs.androidx.gridlayout)
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -78,4 +81,5 @@ dependencies {
     kapt(libs.room.compiler) // Jika menggunakan Kotlin KAPT
     implementation(libs.glide)
     implementation(libs.okhttp)
+    implementation(libs.lifecycle.viewmodel.ktx)
 }

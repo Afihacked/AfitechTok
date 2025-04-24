@@ -22,6 +22,4 @@ interface DownloadHistoryDao {
     @Query("SELECT * FROM download_history WHERE fileType = :type ORDER BY downloadDate DESC")
     fun getDownloadsByType(type: String): Flow<List<DownloadHistory>>
 
-    @Query("SELECT * FROM download_history WHERE fileType IN (:types) ORDER BY downloadDate DESC")
-    fun getDownloadsByTypes(types: List<String>): Flow<List<DownloadHistory>>
 }
