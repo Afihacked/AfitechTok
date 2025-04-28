@@ -62,6 +62,9 @@ android {
 
 dependencies {
 
+    implementation(libs.fragmentKtx) // Menggunakan fragment-ktx versi 1.5.5
+    implementation(libs.lifecycleViewModelKtx)
+    
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

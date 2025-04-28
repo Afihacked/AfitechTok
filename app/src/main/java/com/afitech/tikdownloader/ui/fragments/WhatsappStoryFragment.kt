@@ -15,8 +15,10 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import com.afitech.tikdownloader.R
 import com.afitech.tikdownloader.databinding.FragmentWhatsappStoryBinding
 import com.afitech.tikdownloader.ui.adapters.StoryPagerAdapter
+import com.afitech.tikdownloader.utils.setStatusBarColor
 import com.google.android.material.tabs.TabLayoutMediator
 
 class WhatsappStoryFragment : Fragment() {
@@ -111,5 +113,11 @@ class WhatsappStoryFragment : Fragment() {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         requestStorageAccessLauncher.launch(intent)
+    }
+    override fun onResume() {
+        super.onResume()
+
+        setStatusBarColor(R.color.colorPrimary, isLightStatusBar = false)
+
     }
 }

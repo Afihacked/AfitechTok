@@ -16,7 +16,8 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
 
     <!-- Izin untuk akses penuh penyimpanan di Android 11 dan lebih tinggi (MEMBERIKAN PERINGATAN PADA PENGGUNA) -->
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" android:maxSdkVersion="30"/>
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" android:maxSdkVersion="30"
+        tools:ignore="ScopedStorage" />
 
     <!-- Izin Download Manager -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>

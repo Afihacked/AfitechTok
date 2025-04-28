@@ -4,8 +4,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.afitech.tikdownloader.R
+import com.afitech.tikdownloader.utils.setStatusBarColor
 
 class TentangFragment : Fragment() {
 
@@ -18,6 +20,12 @@ class TentangFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+    }
+    override fun onResume() {
+        super.onResume()
+
+        setStatusBarColor(R.color.colorPrimary, isLightStatusBar = false)
 
     }
 }

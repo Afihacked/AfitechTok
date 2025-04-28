@@ -15,9 +15,13 @@ room = "2.6.1"
 gridlayout = "1.1.0"
 lifecycle = "2.5.1"
 media3Exoplayer = "1.6.1"
-media3Ui = "1.6.1"  # Versi untuk lifecycle-viewmodel-ktx yang diperlukan untuk viewModelScope
+media3Ui = "1.6.1"
+fragmentKtx = "1.5.5"
+lifecycleViewModelKtx = "2.6.0"# Versi untuk lifecycle-viewmodel-ktx yang diperlukan untuk viewModelScope
 
 [libraries]
+fragmentKtx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragmentKtx" }
+lifecycleViewModelKtx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycleViewModelKtx" }
 
 lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }

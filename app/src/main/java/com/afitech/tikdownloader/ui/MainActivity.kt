@@ -68,23 +68,6 @@ class MainActivity : AppCompatActivity() {
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
 
-//        navView.setNavigationItemSelectedListener { menuItem ->
-//            val title = when (menuItem.itemId) {
-////                R.id.nav_home -> getString(R.string.nav_home)
-//                R.id.nav_tt_offline -> getString(R.string.nav_tt_offline)
-//                R.id.nav_yt_offline -> getString(R.string.nav_yt_offline)
-//                R.id.nav_wa_offline -> getString(R.string.nav_wa_offline)
-//                R.id.nav_history -> getString(R.string.nav_history)
-//                R.id.nav_about -> getString(R.string.nav_about)
-//                else -> ""
-//            }
-//
-//            replaceFragment(getFragmentByMenuItem(menuItem.itemId), title)
-//            drawerLayout.closeDrawers()
-//            true
-//        }
-
-
         navView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.nav_fitur -> {

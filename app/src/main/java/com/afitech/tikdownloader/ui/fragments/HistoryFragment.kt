@@ -11,8 +11,10 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import com.afitech.tikdownloader.R
 import com.afitech.tikdownloader.databinding.FragmentHistoryBinding
 import com.afitech.tikdownloader.ui.adapters.HistoryPagerAdapter
+import com.afitech.tikdownloader.utils.setStatusBarColor
 import com.google.android.material.tabs.TabLayoutMediator
 
 class HistoryFragment : Fragment() {
@@ -72,5 +74,11 @@ class HistoryFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+    override fun onResume() {
+        super.onResume()
+
+        setStatusBarColor(R.color.colorPrimary, isLightStatusBar = false)
+
     }
 }

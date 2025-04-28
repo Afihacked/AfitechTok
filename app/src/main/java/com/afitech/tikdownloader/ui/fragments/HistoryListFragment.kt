@@ -10,9 +10,11 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.afitech.tikdownloader.R
 import com.afitech.tikdownloader.data.database.AppDatabase
 import com.afitech.tikdownloader.databinding.FragmentHistoryListBinding
 import com.afitech.tikdownloader.ui.adapters.HistoryAdapter
+import com.afitech.tikdownloader.utils.setStatusBarColor
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.onStart
@@ -98,5 +100,11 @@ class HistoryListFragment : Fragment() {
                 putString("filterType", filterType)
             }
         }
+    }
+    override fun onResume() {
+        super.onResume()
+
+        setStatusBarColor(R.color.colorPrimary, isLightStatusBar = false)
+
     }
 }

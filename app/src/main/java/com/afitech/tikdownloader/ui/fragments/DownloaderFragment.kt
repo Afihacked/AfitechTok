@@ -33,6 +33,7 @@ import com.afitech.tikdownloader.data.database.AppDatabase
 import com.afitech.tikdownloader.data.database.DownloadHistoryDao
 import com.afitech.tikdownloader.network.TikTokDownloader
 import com.afitech.tikdownloader.ui.components.GuideDialogFragment
+import com.afitech.tikdownloader.utils.setStatusBarColor
 import com.bumptech.glide.Glide
 import com.google.android.gms.ads.AdError
 import com.google.android.material.textfield.TextInputEditText
@@ -82,6 +83,7 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
         fun onResume() {
+            setStatusBarColor(R.color.colorPrimary, isLightStatusBar = false)
             super.onResume()
             checkClipboardOnStart() // Fungsi ini kamu panggil saat fragment kembali tampil
         }
@@ -194,11 +196,6 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
 
         }
 
-        // Klik Panduan
-//        guideText.setOnClickListener {
-//            GuideDialogFragment().show(parentFragmentManager, "GuideDialog")
-//        }
-
         editText.addTextChangedListener {
             hasUserInput = !it.isNullOrBlank()
         }
@@ -208,23 +205,16 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
         val tolerance = 5
         val maxWithTolerance = maxCharacters + tolerance
 
-        // Regex ketat di luar listener
-        val YOUTUBE_REGEX = Regex("^https://(www\\.)?youtube\\.com/watch\\?v=[\\w-]{11}$")
-        val YOUTUBE_SHORTS_REGEX = Regex("^https://(www\\.)?youtube\\.com/shorts/[\\w-]{11}$")
-        val YOUTUBE_SHORTLINK_REGEX = Regex("^https://youtu\\.be/[\\w-]{11}$")
+// Regex ketat di luar listener
         val TIKTOK_REGEX = Regex("^https://(vt\\.|www\\.)?tiktok\\.com/[^\\s]+$")
 
         fun detectPlatformPrecise(url: String): String {
             return when {
-                YOUTUBE_REGEX.matches(url) ||
-                        YOUTUBE_SHORTS_REGEX.matches(url) ||
-                        YOUTUBE_SHORTLINK_REGEX.matches(url) -> "youtube"
-
                 TIKTOK_REGEX.matches(url) -> "tiktok"
-
                 else -> "invalid"
             }
         }
+
 
         // TextWatcher
         editText.addTextChangedListener(object : TextWatcher {
@@ -272,9 +262,10 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
     private var hasUserInput = false
 
     private fun isLinkValid(link: String): Boolean {
-        val pattern = Regex("^(https?://)?(www\\.)?(tiktok\\.com|vt\\.tiktok\\.com|youtube\\.com|youtu\\.be)/.+")
+        val pattern = Regex("^(https?://)?(www\\.)?(tiktok\\.com|vt\\.tiktok\\.com)/.+")
         return pattern.matches(link)
     }
+
 
     private fun setDownloadButtonEnabled(enabled: Boolean) {
         downloadButton.isEnabled = enabled         // Tetap dipakai biar aman walau LinearLayout
@@ -394,7 +385,7 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
         if (clipData != null && clipData.itemCount > 0) {
             val copiedText = clipData.getItemAt(0).text.toString().trim()
             when (detectPlatform(copiedText)) {
-                "youtube", "tiktok" -> {
+                "tiktok" -> {
                     editText.setText(copiedText)
                 }
                 "invalid" -> {
@@ -402,7 +393,7 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
                         toastCooldown = true
                         Toast.makeText(
                             requireContext(),
-                            "Link tidak valid. Hanya TikTok atau YouTube yang didukung.",
+                            "Link tidak valid. Hanya TikTok yang didukung.",
                             Toast.LENGTH_SHORT
                         ).show()
                         Handler(Looper.getMainLooper()).postDelayed({
@@ -410,10 +401,10 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
                         }, 2000)
                     }
                 }
-
             }
         }
     }
+
 
     private fun checkClipboardForLink() {
         clipboardManager.addPrimaryClipChangedListener {
@@ -421,7 +412,7 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
             if (clipData != null && clipData.itemCount > 0) {
                 val copiedText = clipData.getItemAt(0).text.toString().trim()
                 when (detectPlatform(copiedText)) {
-                    "youtube", "tiktok" -> {
+                    "tiktok" -> {
                         editText.setText(copiedText)
                     }
 
@@ -430,7 +421,7 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
                             toastCooldown = true
                             Toast.makeText(
                                 requireContext(),
-                                "Link yang disalin bukan dari TikTok atau YouTube.",
+                                "Link yang disalin bukan dari TikTok.",
                                 Toast.LENGTH_SHORT
                             ).show()
                             Handler(Looper.getMainLooper()).postDelayed({
@@ -443,16 +434,16 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
         }
     }
 
+
     private fun detectPlatform(url: String): String {
-        val youtubePattern = Regex("""^https:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w\-]{11}.*$""")
         val tiktokPattern = Regex("""^https:\/\/(vm|vt)\.tiktok\.com\/[A-Za-z0-9]{8,}\/?$""")
 
         return when {
-            youtubePattern.matches(url) -> "youtube"
             tiktokPattern.matches(url) -> "tiktok"
             else -> "invalid"
         }
     }
+
     // Fungsi bantu konversi dp ke px
     private fun Context.dpToPx(dp: Int): Int {
         return (dp * resources.displayMetrics.density).toInt()
@@ -545,6 +536,11 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
         if (isAdShowing) return  // Cegah duplikat download
         isAdShowing = true       // Tandai bahwa proses sedang berjalan
 
+        // Menonaktifkan tombol agar tidak bisa diklik lagi selama download (di thread utama)
+        lifecycleScope.launch(Dispatchers.Main) {
+            downloadButton.isEnabled = false
+        }
+
         showRewardedAd {
             lifecycleScope.launch(Dispatchers.IO) {
                 withContext(Dispatchers.Main) {
@@ -613,12 +609,16 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
                         progressDownload.visibility = View.GONE
                         textProgress.visibility = View.GONE
                         arrowIcon.visibility = View.VISIBLE
+                        // Mengaktifkan kembali tombol setelah download selesai
+                        downloadButton.isEnabled = true
                     }
                     isAdShowing = false  // Reset status
                 }
             }
         }
     }
+
+
 
     private fun showError(message: String) {
         lifecycleScope.launch(Dispatchers.Main) {

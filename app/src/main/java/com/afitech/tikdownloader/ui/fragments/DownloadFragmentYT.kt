@@ -24,6 +24,7 @@ import com.afitech.tikdownloader.R
 import com.afitech.tikdownloader.network.NetworkHelper
 import com.afitech.tikdownloader.ui.components.LoadingDialogYT
 import com.afitech.tikdownloader.ui.services.DownloadService
+import com.afitech.tikdownloader.utils.setStatusBarColor
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
 import com.google.android.material.button.MaterialButton
@@ -41,13 +42,11 @@ class DownloadFragmentYT : Fragment() {
     }
 
     private lateinit var editTextUrl: TextInputEditText
-
     private lateinit var btnDownload: MaterialButton
     private lateinit var radioMp4: RadioButton
     private lateinit var radioMp3: RadioButton
     private lateinit var clipboardManager: ClipboardManager
     private lateinit var adView: AdView
-
     private var dialogDismissed = false
     private lateinit var localBroadcastManager: LocalBroadcastManager
 
@@ -198,5 +197,11 @@ class DownloadFragmentYT : Fragment() {
         Handler(Looper.getMainLooper()).post {
             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
         }
+    }
+    override fun onResume() {
+        super.onResume()
+
+        setStatusBarColor(R.color.colorPrimary, isLightStatusBar = false)
+
     }
 }
