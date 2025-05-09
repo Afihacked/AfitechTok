@@ -12,6 +12,7 @@ import com.afitech.tikdownloader.ui.components.LoadingDialogYT
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.json.JSONObject
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.concurrent.TimeUnit
@@ -30,24 +31,22 @@ object YouTubeDownloader {
     fun downloadVideo(
         context: Context,
         videoUrl: String,
-        quality: String? = "highest", // <-- default jadi "highest"
+        quality: String? = "highest", // default ke "highest"
         progressCallback: ProgressCallback? = null,
         callback: (Boolean) -> Unit
     ) {
         download(context, videoUrl, isAudio = false, quality, progressCallback, callback)
     }
 
-
     fun downloadAudio(
         context: Context,
         videoUrl: String,
-        quality: String? = "best", // optional
+        quality: String? = "best", // opsional
         progressCallback: ProgressCallback? = null,
         callback: (Boolean) -> Unit
     ) {
         download(context, videoUrl, isAudio = true, quality, progressCallback, callback)
     }
-
 
     private fun download(
         context: Context,
@@ -59,7 +58,7 @@ object YouTubeDownloader {
     ) {
         Thread {
             runOnUiThread(context) {
-                LoadingDialogYT.show(context) // ⏳ Tampilkan saat mulai hubungi server
+                LoadingDialogYT.show(context) // Menampilkan saat menghubungi server
             }
 
             try {
@@ -78,7 +77,12 @@ object YouTubeDownloader {
                 }
 
                 val httpUrl = urlBuilder.build()
-                Log.d("YouTubeDownloader", "Requesting: $httpUrl")
+                Log.d("YouTubeDownloader", "Meminta: $httpUrl")
+
+                val youtubeRegex = Regex("^(https://(www\\.)?youtube\\.com/(watch\\?v=\\S+|shorts/\\S+|clip/\\S+)|https://youtu\\.be/\\S+)$")
+                if (!youtubeRegex.matches(videoUrl)) {
+                    throw IllegalArgumentException("Link YouTube tidak valid")
+                }
 
                 val request = Request.Builder().url(httpUrl).build()
                 val response = client.newCall(request).execute()
@@ -94,9 +98,15 @@ object YouTubeDownloader {
                 }
 
                 val total = response.body?.contentLength() ?: -1L
-                if (total <= 0) throw Exception("File kosong atau server error")
+                if (total <= 0 || total < 1000) { // Tambahkan ambang minimal ukuran file
+                    throw Exception("Link tidak valid atau file tidak tersedia")
+                }
 
-                val fileName = "YouTube_${System.currentTimeMillis()}.$format"
+                // Ambil informasi video untuk mendapatkan judul file
+                val videoInfo = fetchVideoInfo(videoUrl, format)
+                val sanitizedTitle = videoInfo.title.replace(Regex("[^a-zA-Z0-9\\-_ ]"), "_").take(100) // Sanitasi judul untuk nama file
+                val fileName = "Afitech-SaveAll - $sanitizedTitle.$format" // Gunakan judul video untuk nama file
+
                 val mimeType = if (isAudio) "audio/mpeg" else "video/mp4"
                 val result = getMediaStoreOutputStream(context, fileName, mimeType)
                     ?: throw Exception("Gagal membuka MediaStore output")
@@ -124,7 +134,7 @@ object YouTubeDownloader {
                     }
                 }
 
-                // 🔄 Scan file agar metadata (ukuran, tanggal, dll) langsung muncul
+                // Pindai file agar metadata muncul di perangkat
                 MediaScannerConnection.scanFile(
                     context,
                     arrayOf(outputUri.toString()),
@@ -147,6 +157,29 @@ object YouTubeDownloader {
                 callback(false)
             }
         }.start()
+    }
+
+    // Ambil informasi video (judul dan ukuran file)
+    data class VideoInfo(val title: String, val sizeInBytes: Long)
+
+    fun fetchVideoInfo(url: String, format: String): VideoInfo {
+        val request = Request.Builder()
+            .url("https://youtubedownloaderapi-afitech.up.railway.app/info?url=$url&format=$format")
+            .build()
+
+        val response = client.newCall(request).execute()
+        if (!response.isSuccessful) throw Exception("Gagal mengambil info video")
+
+        val responseBody = response.body?.string() ?: "{}"
+        Log.d("VideoInfo", "Response JSON: $responseBody")  // Log response untuk debugging
+
+        val json = JSONObject(responseBody)
+        val title = json.optString("title", "Video Tidak Diketahui")
+        val size = json.optLong("filesize", 0L)
+
+        Log.d("VideoInfo", "Judul: $title, Ukuran: $size")  // Log judul dan ukuran file
+
+        return VideoInfo(title, size)
     }
 
     private fun getMediaStoreOutputStream(context: Context, fileName: String, mimeType: String): Pair<Uri, OutputStream>? {
@@ -180,3 +213,4 @@ object YouTubeDownloader {
         (context as? Activity)?.runOnUiThread(action)
     }
 }
+

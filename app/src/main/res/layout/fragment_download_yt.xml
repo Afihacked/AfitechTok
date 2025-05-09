@@ -39,6 +39,17 @@
                 app:hintEnabled="true"
                 app:hintTextColor="@android:color/holo_red_dark">
 
+                <TextView
+                    android:id="@+id/textCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:layout_marginTop="2dp"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:text="@string/count_text"
+                    android:textColor="@android:color/darker_gray"
+                    android:textSize="14sp" />
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/editTextUrl"
                     android:layout_width="match_parent"

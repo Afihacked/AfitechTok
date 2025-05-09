@@ -1,63 +1,80 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="?android:attr/windowBackground"
     android:padding="24dp">
 
-    <LinearLayout
+    <!-- ScrollView for content -->
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center_horizontal">
+        android:layout_height="match_parent"
+        android:fillViewport="true">
 
-        <!-- Logo -->
-        <ImageView
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:src="@drawable/ic_launcher_foreground"
-            android:contentDescription="@string/logo_afitech"
-            android:layout_marginBottom="16dp" />
-
-        <!-- Judul -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/app_name"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textAlignment="center"
-            android:layout_marginBottom="8dp" />
-
-        <!-- Deskripsi -->
-        <TextView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/tentang"
-            android:textSize="14sp"
-            android:justificationMode="inter_word"
-            android:lineSpacingExtra="4dp"
-            android:textAlignment="center"
-            android:layout_marginBottom="16dp" />
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
 
-        <!-- Info Developer -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/dikembangkan_oleh_afitech"
-            android:textSize="14sp"
-            android:textStyle="italic"
-            android:textAlignment="center"
-            android:layout_marginBottom="4dp" />
+            <!-- Logo -->
+            <ImageView
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:src="@drawable/ic_launcher_foreground"
+                android:contentDescription="@string/logo_afitech"
+                android:layout_marginBottom="16dp" />
 
-        <!-- Versi -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/versi_2_0_beta"
-            android:textSize="12sp"
-            android:textAlignment="center"
-            android:alpha="0.6" />
+            <!-- Title -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/app_name"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textAlignment="center"
+                android:layout_marginBottom="8dp" />
 
-    </LinearLayout>
-</ScrollView>
+            <!-- Description -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/tentang"
+                android:textSize="14sp"
+                android:justificationMode="inter_word"
+                android:lineSpacingExtra="4dp"
+                android:textAlignment="center"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Developer Info -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/dikembangkan_oleh_afitech"
+                android:textSize="14sp"
+                android:textStyle="italic"
+                android:textAlignment="center"
+                android:layout_marginBottom="4dp" />
+
+            <!-- Version Info -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/versi_2_0_beta"
+                android:textSize="12sp"
+                android:textAlignment="center"
+                android:alpha="0.6" />
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- AdMob Banner that stays at the bottom -->
+    <com.google.android.gms.ads.AdView
+        android:id="@+id/adView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        app:adSize="BANNER"
+        app:adUnitId="ca-app-pub-2025447201837747/8904457185" />
+
+</FrameLayout>

@@ -1,20 +1,20 @@
 package com.afitech.tikdownloader.ui.services
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
-import android.app.Service
+import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.afitech.tikdownloader.R
 import com.afitech.tikdownloader.network.YouTubeDownloader
+import com.afitech.tikdownloader.network.YouTubeDownloader.VideoInfo
 import com.afitech.tikdownloader.ui.MainActivity
+import java.util.concurrent.Executors
 
 class DownloadService : Service() {
 
@@ -23,22 +23,33 @@ class DownloadService : Service() {
         const val ACTION_COMPLETE   = "com.afitech.tikdownloader.ACTION_COMPLETE"
         const val EXTRA_PROGRESS    = "com.afitech.tikdownloader.EXTRA_PROGRESS"
         const val EXTRA_SUCCESS     = "com.afitech.tikdownloader.EXTRA_SUCCESS"
-        const val EXTRA_VIDEO_URL   = "video_url"              // kunci untuk video_url
+        const val EXTRA_VIDEO_URL   = "video_url"
         const val NOTIF_CHANNEL_ID  = "download_channel"
         const val NOTIF_ID          = 1
+
+        private var doneCallback: ((Boolean) -> Unit)? = null
+
+        fun setDoneCallback(callback: (Boolean) -> Unit) {
+            doneCallback = callback
+        }
     }
 
     private lateinit var notificationManager: NotificationManager
+    private lateinit var currentVideoInfo: VideoInfo
+    private lateinit var videoUrlOriginal: String
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val videoUrl = intent?.getStringExtra(EXTRA_VIDEO_URL) ?: return START_NOT_STICKY
         val format   = intent.getStringExtra("format") ?: "mp4"
+        videoUrlOriginal = videoUrl // Menyimpan URL asli
 
         Log.d("DownloadService", "Download started: $videoUrl ($format)")
 
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannel()
-        startForeground(NOTIF_ID, buildInitialNotification(videoUrl))
+
+        // Ambil info video
+        fetchVideoInfoInBackground(videoUrl, format)
 
         val lbm = LocalBroadcastManager.getInstance(applicationContext)
 
@@ -48,7 +59,7 @@ class DownloadService : Service() {
                 lbm.sendBroadcast(Intent(ACTION_PROGRESS).apply {
                     putExtra(EXTRA_PROGRESS, progress)
                 })
-                updateProgressNotification(videoUrl, progress)
+                updateProgressNotification(currentVideoInfo, progress)
             }
         }
 
@@ -57,6 +68,15 @@ class DownloadService : Service() {
             lbm.sendBroadcast(Intent(ACTION_COMPLETE).apply {
                 putExtra(EXTRA_SUCCESS, success)
             })
+
+            // Callback untuk memberitahu UI selesai
+            doneCallback?.invoke(success)
+            doneCallback = null // Reset callback setelah dipanggil
+
+            if (success) {
+                showCompletedNotification(currentVideoInfo)
+            }
+
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
         }
@@ -80,19 +100,33 @@ class DownloadService : Service() {
         return START_STICKY
     }
 
-    private fun buildInitialNotification(videoUrl: String): Notification {
-        val intent = Intent(this, MainActivity::class.java).apply {
-            putExtra(MainActivity.EXTRA_FRAGMENT, "yt_downloader")
-            putExtra(EXTRA_VIDEO_URL, videoUrl) // sertakan URL
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+    private fun fetchVideoInfoInBackground(videoUrl: String, format: String) {
+        val executor = Executors.newSingleThreadExecutor()
+        executor.execute {
+            try {
+                val videoInfo = YouTubeDownloader.fetchVideoInfo(videoUrl, format)
+                Handler(Looper.getMainLooper()).post {
+                    val rawTitle = videoInfo.title
+                    val filteredTitle = rawTitle.replace(Regex("#.*$"), "").trim()
+                    currentVideoInfo = videoInfo.copy(title = filteredTitle)
+                    startForeground(NOTIF_ID, buildInitialNotification(filteredTitle))
+                }
+
+            } catch (e: Exception) {
+                Log.e("DownloadService", "Gagal ambil info video: ${e.message}", e)
+                Handler(Looper.getMainLooper()).post {
+                    currentVideoInfo = VideoInfo("Video Tidak Diketahui", 0L)
+                    startForeground(NOTIF_ID, buildInitialNotification("Video Tidak Diketahui"))
+                }
+            }
         }
-        val pendingIntent = PendingIntent.getActivity(
-            this, 0, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+    }
+
+    private fun buildInitialNotification(title: String): Notification {
+        val pendingIntent = buildMainActivityIntent(videoUrlOriginal) // Gunakan URL asli di sini
 
         return NotificationCompat.Builder(this, NOTIF_CHANNEL_ID)
-            .setContentTitle("YouTube Downloader")
+            .setContentTitle(title)
             .setContentText("Menghubungkan ke server…")
             .setSmallIcon(R.drawable.ic_download)
             .setOngoing(true)
@@ -101,20 +135,21 @@ class DownloadService : Service() {
             .build()
     }
 
-    private fun updateProgressNotification(videoUrl: String, progress: Int) {
-        val intent = Intent(this, MainActivity::class.java).apply {
-            putExtra(MainActivity.EXTRA_FRAGMENT, "yt_downloader")
-            putExtra(EXTRA_VIDEO_URL, videoUrl) // sertakan URL
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        val pendingIntent = PendingIntent.getActivity(
-            this, 0, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+    private fun updateProgressNotification(videoInfo: VideoInfo, progress: Int) {
+        val pendingIntent = buildMainActivityIntent(videoUrlOriginal) // Gunakan URL asli di sini
+
+        val totalBytes = videoInfo.sizeInBytes
+        val downloadedBytes = if (progress in 0..100 && totalBytes > 0)
+            (progress * totalBytes / 100) else 0
+
+        val downloadedStr = android.text.format.Formatter.formatShortFileSize(this, downloadedBytes)
+        val totalStr = android.text.format.Formatter.formatShortFileSize(this, totalBytes)
+
+        val notificationText = "Mengunduh… $downloadedStr dari $totalStr ($progress%)"
 
         val notification = NotificationCompat.Builder(this, NOTIF_CHANNEL_ID)
-            .setContentTitle("YouTube Downloader")
-            .setContentText("Mengunduh… $progress%")
+            .setContentTitle(videoInfo.title)
+            .setContentText(notificationText)
             .setSmallIcon(R.drawable.ic_download)
             .setOngoing(true)
             .setProgress(100, progress, false)
@@ -122,6 +157,35 @@ class DownloadService : Service() {
             .build()
 
         notificationManager.notify(NOTIF_ID, notification)
+    }
+
+    private fun showCompletedNotification(videoInfo: VideoInfo) {
+        val pendingIntent = buildMainActivityIntent(videoUrlOriginal) // Gunakan URL asli di sini
+
+        val notification = NotificationCompat.Builder(this, NOTIF_CHANNEL_ID)
+            .setContentTitle(videoInfo.title)
+            .setContentText("Unduhan selesai")
+            .setSmallIcon(R.drawable.ic_download)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        notificationManager.notify(NOTIF_ID + 1, notification)
+    }
+
+    private fun buildMainActivityIntent(videoUrl: String): PendingIntent {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            putExtra(MainActivity.EXTRA_FRAGMENT, "yt_downloader")
+            putExtra(EXTRA_VIDEO_URL, videoUrl) // Menggunakan URL asli di sini
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+
+        return PendingIntent.getActivity(
+            this,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
     }
 
     private fun createNotificationChannel() {

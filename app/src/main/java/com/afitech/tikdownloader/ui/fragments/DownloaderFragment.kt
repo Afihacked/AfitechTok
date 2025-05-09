@@ -33,6 +33,7 @@ import com.afitech.tikdownloader.data.database.AppDatabase
 import com.afitech.tikdownloader.data.database.DownloadHistoryDao
 import com.afitech.tikdownloader.network.TikTokDownloader
 import com.afitech.tikdownloader.ui.components.GuideDialogFragment
+import com.afitech.tikdownloader.utils.CuanManager
 import com.afitech.tikdownloader.utils.setStatusBarColor
 import com.bumptech.glide.Glide
 import com.google.android.gms.ads.AdError
@@ -59,23 +60,24 @@ import java.util.Locale
 
 class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
 
-    private lateinit var sharedPreferences: SharedPreferences
+//    private lateinit var sharedPreferences: SharedPreferences
     private lateinit var inputLayout: TextInputLayout
     private lateinit var editText: TextInputEditText
     private lateinit var downloadButton: LinearLayout
-    private lateinit var switchAd: SwitchCompat
+//    private lateinit var switchAd: SwitchCompat
     private lateinit var arrowIcon: ImageView
     private lateinit var clipboardManager: ClipboardManager
     private lateinit var progressDownload: ProgressBar
     private lateinit var textProgress: TextView
     private lateinit var adView: AdView
+    private val cuanManager = CuanManager()
     private var interstitialAd: InterstitialAd? = null
     private var rewardedAd: RewardedAd? = null
     private var isAdShowing = false
     private lateinit var downloadHistoryDao: DownloadHistoryDao
 
-    private val PREFS_NAME = "AdSettings"
-    private val KEY_AD_STATUS = "ad_status"
+//    private val PREFS_NAME = "AdSettings"
+//    private val KEY_AD_STATUS = "ad_status"
 
     @SuppressLint("SourceLockedOrientationActivity")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -92,72 +94,72 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
         val database = AppDatabase.getDatabase(requireContext())
         downloadHistoryDao = database.downloadHistoryDao()
 
-        // Inisialisasi AdMob
-        MobileAds.initialize(requireContext()) {}
-
         // Init Views
         inputLayout = view.findViewById(R.id.inputLayout)
         editText = view.findViewById(R.id.inputLink)
         downloadButton = view.findViewById(R.id.btnDownload)
-//        themeToggleButton = view.findViewById(R.id.themeToggleButton)
-//        themeSwitch = view.findViewById(R.id.themeSwitch)
 
-        switchAd = view.findViewById(R.id.switchAd) // Switch untuk mengaktifkan/menonaktifkan iklan
+//        switchAd = view.findViewById(R.id.switchAd)
         arrowIcon = view.findViewById(R.id.arrowIcon)
         progressDownload = view.findViewById(R.id.progressDownload)
         textProgress = view.findViewById(R.id.textProgress)
+
+        cuanManager.initializeAdMob(requireContext())
+        // Mendapatkan referensi untuk AdView dan memuat iklan
         adView = view.findViewById(R.id.adView)
-//        val guideText: TextView = view.findViewById(R.id.guideText)
+        cuanManager.loadAd(adView)  // Memuat iklan dengan AdMobManager
 
         // Inisialisasi SharedPreferences
-        sharedPreferences = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val isAdEnabled = sharedPreferences.getBoolean(KEY_AD_STATUS, true)
+//        sharedPreferences = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+//        val isAdEnabled = sharedPreferences.getBoolean(KEY_AD_STATUS, true)
 
 //BLOK KONFIGURASI IKLAN
 // Variabel untuk menandai proses inisialisasi agar listener tidak langsung terpanggil
         var isInitializing = true
 
 // Matikan sementara listener sebelum setChecked
-        switchAd.setOnCheckedChangeListener(null)
+//        switchAd.setOnCheckedChangeListener(null)
 
 // Atur posisi switch sesuai dengan status tersimpan
-        switchAd.isChecked = isAdEnabled
-        updateSwitchUI(isAdEnabled)
+//        switchAd.isChecked = isAdEnabled
+//        updateSwitchUI(isAdEnabled)
 
 // Kontrol visibilitas iklan saat pertama kali aplikasi dibuka
-        adView.visibility = if (isAdEnabled) View.VISIBLE else View.GONE
+//        adView.visibility = if (isAdEnabled) View.VISIBLE else View.GONE
 
 // Memuat Iklan Banner
-        val adRequest = AdRequest.Builder().build()
-        adView.loadAd(adRequest)
+//        val adRequest = AdRequest.Builder().build()
+//        adView.loadAd(adRequest)
+        loadRewardedAd()
+        loadInterstitialAd()
 
 // Load Iklan Rewarded & Interstitial jika diaktifkan
-        if (isAdEnabled) {
-            loadRewardedAd()
-            loadInterstitialAd()
-        }
+//        if (isAdEnabled) {
+//            loadRewardedAd()
+//            loadInterstitialAd()
+//        }
 
 // Pasang ulang listener setelah inisialisasi selesai
-        switchAd.setOnCheckedChangeListener { _, isChecked ->
-            if (isInitializing) return@setOnCheckedChangeListener
-
-            // Simpan status ke SharedPreferences
-            sharedPreferences.edit().putBoolean(KEY_AD_STATUS, isChecked).apply()
-
-            // Update UI dan visibilitas iklan
-            adView.visibility = if (isChecked) View.VISIBLE else View.GONE
-            updateSwitchUI(isChecked)
-
-            if (isChecked) {
-                loadInterstitialAd()
-                loadRewardedAd()
-            } else {
-                interstitialAd = null
-                rewardedAd = null
-            }
-
-            Log.d("AdsSwitch", "Status iklan diubah: $isChecked")
-        }
+//        switchAd.setOnCheckedChangeListener { _, isChecked ->
+//            if (isInitializing) return@setOnCheckedChangeListener
+//
+//            // Simpan status ke SharedPreferences
+//            sharedPreferences.edit().putBoolean(KEY_AD_STATUS, isChecked).apply()
+//
+//            // Update UI dan visibilitas iklan
+//            adView.visibility = if (isChecked) View.VISIBLE else View.GONE
+//            updateSwitchUI(isChecked)
+//
+//            if (isChecked) {
+//                loadInterstitialAd()
+//                loadRewardedAd()
+//            } else {
+//                interstitialAd = null
+//                rewardedAd = null
+//            }
+//
+//            Log.d("AdsSwitch", "Status iklan diubah: $isChecked")
+//        }
 
 // Selesai proses inisialisasi
         isInitializing = false
@@ -167,7 +169,6 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
         editText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-//                guideText.visibility = if (s.isNullOrEmpty()) View.VISIBLE else View.GONE
             }
             override fun afterTextChanged(s: Editable?) {}
         })
@@ -201,8 +202,8 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
         }
 
         val textCount = view.findViewById<TextView>(R.id.textCount)
-        val maxCharacters = 50
-        val tolerance = 5
+        val maxCharacters = 99
+        val tolerance = 1
         val maxWithTolerance = maxCharacters + tolerance
 
 // Regex ketat di luar listener
@@ -275,18 +276,18 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
     }
 
     // Fungsi untuk memperbarui warna switch agar sesuai statusnya
-    private fun updateSwitchUI(isChecked: Boolean) {
-        context?.let {
-            val thumbColor = if (isChecked) android.R.color.holo_red_dark else android.R.color.white
-            val trackColor = if (isChecked) R.color.dark_gray else R.color.light_gray
-
-            switchAd.thumbTintList = ColorStateList.valueOf(ContextCompat.getColor(it, thumbColor))
-            switchAd.trackTintList = ColorStateList.valueOf(ContextCompat.getColor(it, trackColor))
-        }
-    }
+//    private fun updateSwitchUI(isChecked: Boolean) {
+//        context?.let {
+//            val thumbColor = if (isChecked) android.R.color.holo_red_dark else android.R.color.white
+//            val trackColor = if (isChecked) R.color.dark_gray else R.color.light_gray
+//
+//            switchAd.thumbTintList = ColorStateList.valueOf(ContextCompat.getColor(it, thumbColor))
+//            switchAd.trackTintList = ColorStateList.valueOf(ContextCompat.getColor(it, trackColor))
+//        }
+//    }
 
     private fun loadInterstitialAd() {
-        if (!switchAd.isChecked || context == null) return
+        if (!isAdded) return
 
         val adRequest = AdRequest.Builder().build()
         InterstitialAd.load(requireContext(), getString(R.string.admob_interstitial_id), adRequest, object : InterstitialAdLoadCallback() {
@@ -303,8 +304,13 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
     }
 
     private fun showInterstitialAd(onAdComplete: () -> Unit) {
-        if (!switchAd.isChecked || interstitialAd == null) {
-            Log.e("AdMob", "Iklan Interstitial tidak tersedia atau switch mati, lanjutkan download.")
+        if (!isAdded) {
+            onAdComplete()
+            return
+        }
+
+        if (interstitialAd == null) {
+            Log.d("AdMob", "Iklan tidak tersedia, lanjutkan proses.")
             onAdComplete()
             return
         }
@@ -312,14 +318,14 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
         interstitialAd?.let { ad ->
             ad.fullScreenContentCallback = object : FullScreenContentCallback() {
                 override fun onAdDismissedFullScreenContent() {
-                    Log.d("AdMob", "Iklan Interstitial ditutup.")
+                    Log.d("AdMob", "Iklan ditutup.")
                     interstitialAd = null
                     loadInterstitialAd()
                     onAdComplete()
                 }
 
                 override fun onAdFailedToShowFullScreenContent(adError: AdError) {
-                    Log.e("AdMob", "Gagal menampilkan iklan: ${adError.message}")
+                    Log.e("AdMob", "Gagal tampilkan iklan: ${adError.message}")
                     onAdComplete()
                 }
             }
@@ -329,7 +335,7 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
     }
 
     private fun loadRewardedAd() {
-        if (!switchAd.isChecked || context == null) return
+        if (!isAdded) return
 
         val adRequest = AdRequest.Builder().build()
         RewardedAd.load(requireContext(), getString(R.string.admob_rewarded_id), adRequest, object : RewardedAdLoadCallback() {
@@ -346,8 +352,13 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
     }
 
     private fun showRewardedAd(onAdComplete: () -> Unit) {
-        if (!switchAd.isChecked || rewardedAd == null) {
-            Log.e("AdMob", "Iklan Rewarded tidak tersedia atau switch mati, langsung mulai download.")
+        if (!isAdded) {
+            onAdComplete()
+            return
+        }
+
+        if (rewardedAd == null) {
+            Log.d("AdMob", "Iklan tidak tersedia, lanjutkan proses.")
             onAdComplete()
             return
         }
@@ -405,7 +416,6 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
         }
     }
 
-
     private fun checkClipboardForLink() {
         clipboardManager.addPrimaryClipChangedListener {
             val clipData = clipboardManager.primaryClip
@@ -433,7 +443,6 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
             }
         }
     }
-
 
     private fun detectPlatform(url: String): String {
         val tiktokPattern = Regex("""^https:\/\/(vm|vt)\.tiktok\.com\/[A-Za-z0-9]{8,}\/?$""")
@@ -498,7 +507,6 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
                 val formats = when {
                     platform == "tiktok" && isSlide -> listOf("Gambar")
                     platform == "tiktok" -> listOf("MP4", "MP3")
-                    platform == "youtube" -> listOf("MP4", "MP3")
                     else -> emptyList()
                 }
 
@@ -617,8 +625,6 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
             }
         }
     }
-
-
 
     private fun showError(message: String) {
         lifecycleScope.launch(Dispatchers.Main) {
@@ -825,6 +831,11 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
             null
         }
 
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        cuanManager.destroyAd(adView) // Menghancurkan iklan saat view dihancurkan
     }
 }
 

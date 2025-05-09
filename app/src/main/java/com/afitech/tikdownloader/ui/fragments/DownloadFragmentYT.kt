@@ -17,13 +17,16 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.RadioButton
+import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.afitech.tikdownloader.R
 import com.afitech.tikdownloader.network.NetworkHelper
 import com.afitech.tikdownloader.ui.components.LoadingDialogYT
 import com.afitech.tikdownloader.ui.services.DownloadService
+import com.afitech.tikdownloader.utils.CuanManager
 import com.afitech.tikdownloader.utils.setStatusBarColor
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
@@ -41,6 +44,7 @@ class DownloadFragmentYT : Fragment() {
         }
     }
 
+    private val cuanManager = CuanManager()
     private lateinit var editTextUrl: TextInputEditText
     private lateinit var btnDownload: MaterialButton
     private lateinit var radioMp4: RadioButton
@@ -51,6 +55,7 @@ class DownloadFragmentYT : Fragment() {
     private lateinit var localBroadcastManager: LocalBroadcastManager
 
     private val downloadReceiver = object : BroadcastReceiver() {
+
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
                 DownloadService.ACTION_PROGRESS -> {
@@ -64,7 +69,7 @@ class DownloadFragmentYT : Fragment() {
                         }
                         dialogDismissed = true
                     }
-                    btnDownload.text = "Mengunduh... $p%"
+                    btnDownload.text = "Mengunduh...$p%"
                 }
                 DownloadService.ACTION_COMPLETE -> {
                     val success = intent.getBooleanExtra(DownloadService.EXTRA_SUCCESS, false)
@@ -104,24 +109,68 @@ class DownloadFragmentYT : Fragment() {
         adView = view.findViewById(R.id.adView)
         clipboardManager = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 
-        // AdMob
-        AdRequest.Builder().build().also(adView::loadAd)
+        // Inisialisasi dan muat iklan menggunakan AdMobManager
+        cuanManager.initializeAdMob(requireContext())
+        cuanManager.loadAd(adView)// AdMob
 
         // Clipboard
         checkClipboardOnStart()
         checkClipboardForLink()
 
-        // URL validation
-        editTextUrl.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable?) {
-                val url = s.toString().trim()
-                if (url.isNotEmpty() && !isYoutubeLink(url)) {
-                    showToast("Link tidak valid. Harus link YouTube.")
-                    editTextUrl.setText("")
-                }
+        val textCount = view.findViewById<TextView>(R.id.textCount)
+        val maxCharacters = 99
+        val tolerance = 1
+        val maxWithTolerance = maxCharacters + tolerance
+
+// URL validation
+        val youtube_regex = Regex("^(https://(www\\.)?youtube\\.com/(watch\\?v=\\S+|shorts/\\S+|clip/\\S+)|https://youtu\\.be/[^\\s]+)$")
+
+        // Fungsi untuk mendeteksi platform dengan URL yang valid
+        fun detectPlatformPrecise(url: String): String {
+            return when {
+                youtube_regex.matches(url) -> "youtube"
+                else -> "invalid"
             }
+        }
+
+        editTextUrl.addTextChangedListener(object : TextWatcher {
+
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val url = s?.toString()?.trim() ?: ""
+                val currentLength = url.length
+
+                // Update jumlah karakter yang terinput
+                textCount.text = "$currentLength/$maxCharacters"
+
+                // Warna merah jika melebihi batas normal
+                if (currentLength > maxCharacters) {
+                    textCount.setTextColor(ContextCompat.getColor(requireActivity(), android.R.color.holo_red_dark))
+                } else {
+                    textCount.setTextColor(ContextCompat.getColor(requireActivity(), android.R.color.darker_gray))
+                }
+
+                // Potong otomatis jika melebihi batas toleransi
+                if (currentLength > maxWithTolerance) {
+                    val trimmed = url.substring(0, maxWithTolerance)
+                    editTextUrl.setText(trimmed)
+                    editTextUrl.setSelection(trimmed.length)
+                }
+
+                // 🌐 Validasi URL presisi
+                val platform = detectPlatformPrecise(url)
+                if (url.isEmpty()) {
+                    editTextUrl.error = null
+                } else if (platform == "invalid") {
+                    editTextUrl.error = "Link tidak valid atau formatnya salah (pastikan lengkap)"
+                } else {
+                    editTextUrl.error = null
+                }
+                setDownloadButtonEnabled(platform != "invalid")
+            }
+
+            override fun afterTextChanged(s: Editable?) {}
         })
 
         // Register receiver
@@ -135,37 +184,84 @@ class DownloadFragmentYT : Fragment() {
         // Download button
         btnDownload.setOnClickListener {
             val videoUrl = editTextUrl.text?.toString()?.trim().orEmpty()
+
             if (videoUrl.isEmpty()) {
-                showToast("Masukkan URL terlebih dahulu!"); return@setOnClickListener
+                showToast("Masukkan URL terlebih dahulu!")
+                return@setOnClickListener
             }
+
+            // Validasi URL menggunakan regex
+            val youtubeRegex = Regex("^(https://(www\\.)?youtube\\.com/(watch\\?v=\\S+|shorts/\\S+|clip/\\S+)|https://youtu\\.be/\\S+)$")
+            if (!youtubeRegex.matches(videoUrl)) {
+                showToast("Link YouTube tidak valid atau format salah.")
+                return@setOnClickListener
+            }
+
             if (!NetworkHelper.isInternetAvailable(requireContext())) {
-                showToast("Tidak ada koneksi internet!"); return@setOnClickListener
+                showToast("Tidak ada koneksi internet!")
+                return@setOnClickListener
             }
 
             val format = when {
                 radioMp3.isChecked -> "mp3"
                 radioMp4.isChecked -> "mp4"
-                else -> { showToast("Pilih format terlebih dahulu!"); return@setOnClickListener }
+                else -> {
+                    showToast("Pilih format terlebih dahulu!")
+                    return@setOnClickListener
+                }
             }
 
-            dialogDismissed = false
-            LoadingDialogYT.show(requireContext())
+            // Mengubah status tombol menjadi tidak bisa diklik dan menunjukkan progress
             btnDownload.apply {
                 isEnabled = false
-                text = "Mengunduh... 0%"
+                text = "Menunggu..."
             }
 
+            // Menampilkan loading dialog
+            dialogDismissed = false
+            LoadingDialogYT.show(requireContext())
+
+            // Mulai proses download dengan service
             Intent(requireContext(), DownloadService::class.java).apply {
                 putExtra("video_url", videoUrl)
                 putExtra("format", format)
             }.also(requireContext()::startService)
+
+            // Ketika download selesai, aktifkan tombol kembali
+            // Pastikan DownloadService atau callback selesai menandai download selesai
+            val doneCallback: (Boolean) -> Unit = { success ->
+                // Update UI sesuai dengan status sukses atau gagal
+                Handler(Looper.getMainLooper()).post {
+                    btnDownload.apply {
+                        isEnabled = true // Aktifkan tombol kembali
+                        text = if (success) "Download Selesai" else "" +
+                                "' a Lagi"
+                    }
+
+                    // Sembunyikan loading dialog setelah selesai
+                    LoadingDialogYT.dismiss()
+                }
+            }
+
+            // Menyambungkan callback dengan logika selesai di dalam service
+            DownloadService.setDoneCallback(doneCallback)
         }
+
+
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         localBroadcastManager.unregisterReceiver(downloadReceiver)
         clipboardManager.removePrimaryClipChangedListener {}
+        cuanManager.destroyAd(adView)
+    }
+
+    private fun setDownloadButtonEnabled(enabled: Boolean) {
+        btnDownload.isEnabled = enabled         // Tetap dipakai biar aman walau LinearLayout
+        btnDownload.isClickable = enabled
+        btnDownload.isFocusable = enabled
+        btnDownload.alpha = if (enabled) 1f else 0.5f  // Visual efek: buram saat nonaktif
     }
 
     private fun checkClipboardOnStart() {
@@ -189,8 +285,8 @@ class DownloadFragmentYT : Fragment() {
     }
 
     private fun isYoutubeLink(text: String): Boolean {
-        val regex = Regex("^(https?://)?(www\\.)?(youtube\\.com|youtu\\.be)/.+")
-        return regex.containsMatchIn(text)
+        val YOUTUBE_REGEX = Regex("^(https://(www\\.)?youtube\\.com/(watch\\?v=\\S+|shorts/\\S+|clip/\\S+)|https://youtu\\.be/[^\\s]+)$")
+        return YOUTUBE_REGEX.containsMatchIn(text)
     }
 
     private fun showToast(msg: String) {

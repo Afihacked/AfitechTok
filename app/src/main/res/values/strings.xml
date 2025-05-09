@@ -24,24 +24,23 @@
     <string name="notes">Hi..</string>
     <string name="gambar_berhasil">Gambar yang dipilih berhasil diunduh!</string>
     <string name="gambar_gagal">Gagal mengunduh gambar!</string>
-    <string name="count_text">0/35</string>
+    <string name="count_text">0/99</string>
     <string name="tampilkan_iklan">Tampilkan Iklan</string>
     <string name="unduhan_kosong">  (o_o)
 \nTidak ada apapun di sini selain jangkrik</string>
     <string name="theme">theme</string>
     <string name="navigation_drawer_open">Buka Menu</string>
     <string name="navigation_drawer_close">Tutup Menu</string>
-    <string name="btn_whatsapp_story">📷 WhatsApp Saver</string>
-    <string name="btn_riwayat_unduhan">🕓 Riwayat Unduhan</string>
-    <string name="btn_versi_2_0_beta_dibuat_oleh_afitech">Versi 2.0-beta • Dibuat oleh Afitech</string>
+    <string name="btn_whatsapp_story">Whatsapp</string>
+    <string name="btn_riwayat_unduhan">Riwayat</string>
     <string name="text_home"><![CDATA[Download video lintas platform tanpa ribet. Gratis & kualitas media Terbaik!]]></string>
     <string name="logo_afitech">Logo Afitech</string>
-    <string name="btn_tiktok_downloader">📥 TikTok Saver</string>
-    <string name="btn_youtube_downloader">📥 Youtube Saver</string>
+    <string name="btn_tiktok_downloader">Tiktok</string>
+    <string name="btn_youtube_downloader">Youtube</string>
     <string name="tentang"><b>Aplikasi Download Video Terbaik untuk Semua Platform!</b>
 
 Nikmati kemudahan mengunduh video dari berbagai platform populer seperti TikTok, YouTube, WhatsApp, dan banyak lagi! Dengan aplikasi ini, kamu bisa menyimpan video kesukaan tanpa watermark dengan kualitas terbaik dan cepat. Semua fitur yang tersedia dapat diakses secara gratis, tanpa perlu biaya tersembunyi!</string>
-    <string name="dikembangkan_oleh_afitech">Dikembangkan oleh Afitech</string>
+    <string name="dikembangkan_oleh_afitech">Dikembangkan oleh Afitech X ChatGPT</string>
     <string name="versi_2_0_beta">Versi 2.0-beta</string>
 
     <string name="nav_home">Beranda</string>

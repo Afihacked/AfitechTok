@@ -8,20 +8,67 @@
 
     <com.afitech.tikdownloader.ui.views.AspectRatioVideoView
         android:id="@+id/fullscreenVideoView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:layout_gravity="center" />
 
-    <ImageButton
-        android:id="@+id/playPauseButton"
-        android:layout_width="70dp"
-        android:layout_height="70dp"
-        android:layout_gravity="center"
-        android:background="@android:color/transparent"
-        android:src="@android:drawable/ic_media_play"
-        app:tint="@android:color/white"
-        android:contentDescription="@string/play_pause_button" />
+    <!-- Overlay to detect touch -->
+    <View
+        android:id="@+id/overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/transparent" />
 
+    <!-- Bottom Control Panel -->
+    <LinearLayout
+        android:id="@+id/controlPanel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="horizontal"
+        android:background="#88000000"
+        android:padding="8dp"
+        android:visibility="gone"
+        android:gravity="center_vertical">
+
+        <ImageButton
+            android:id="@+id/playPauseButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@android:color/transparent"
+            android:src="@android:drawable/ic_media_pause"
+            android:contentDescription="@string/play_pause_button"
+            app:tint="@android:color/white" />
+
+        <TextView
+            android:id="@+id/currentTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="00:00"
+            android:textColor="@android:color/white"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp" />
+
+        <SeekBar
+            android:id="@+id/videoSeekBar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:progressTint="@color/colorPrimary"
+            android:thumbTint="@color/white"/>
+<!--        android:thumbTint="@color/your_thumb_color"-->
+<!--        android:backgroundTint="@color/your_background_track_color"-->
+        <TextView
+            android:id="@+id/totalTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="00:00"
+            android:textColor="@android:color/white"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp" />
+    </LinearLayout>
+
+    <!-- Close button -->
     <ImageButton
         android:id="@+id/closeButton"
         android:layout_width="48dp"
@@ -30,6 +77,6 @@
         android:layout_margin="16dp"
         android:background="@android:color/transparent"
         android:src="@android:drawable/ic_menu_close_clear_cancel"
-        app:tint="@android:color/white"
-        android:contentDescription="@string/close_button" />
+        android:contentDescription="@string/close_button"
+        app:tint="@android:color/white" />
 </FrameLayout>

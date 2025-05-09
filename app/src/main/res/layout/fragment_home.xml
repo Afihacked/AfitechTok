@@ -1,124 +1,162 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?android:attr/windowBackground">
 
-    <!-- ScrollView untuk konten utama -->
+    <!-- Scrollable Content -->
     <ScrollView
         android:id="@+id/scrollView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@+id/adContainer"
-        android:layout_alignParentTop="true"
-        android:padding="16dp">
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:padding="16dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/adContainer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center_horizontal"
-            android:padding="8dp">
+            android:layout_height="match_parent"
+            android:orientation="vertical">
 
-            <!-- Logo -->
-            <ImageView
-                android:layout_width="96dp"
-                android:layout_height="96dp"
-                android:src="@drawable/ic_launcher_foreground"
+            <!-- Header -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:background="@drawable/rounded_bg"
+                android:elevation="1dp"
+                android:padding="16dp">
+
+                <!-- Nama & Deskripsi -->
+                <LinearLayout
+                    android:id="@+id/headerText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/logoImage"
+                    android:layout_marginEnd="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/app_name"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/colorOnSurface"
+                        android:layout_marginBottom="4dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/text_home"
+                        android:textSize="14sp"
+                        android:textColor="@android:color/darker_gray" />
+                </LinearLayout>
+
+                <!-- Logo -->
+                <ImageView
+                    android:id="@+id/logoImage"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:src="@drawable/ic_launcher_foreground"
+                    android:scaleType="centerCrop"
+                    android:contentDescription="@string/logo_afitech"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- Menu Buttons (Grid Style with Flexibility) -->
+            <androidx.gridlayout.widget.GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:columnCount="2"
+                app:orientation="horizontal"
+                android:padding="5dp"
+                android:elevation="1dp"
+                android:background="@drawable/rounded_bg"
+                app:useDefaultMargins="true">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_tt_download"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    app:layout_columnWeight="1"
+                    android:text="@string/btn_tiktok_downloader"
+                    style="@style/Widget.Material3.Button"
+                    android:textColor="@android:color/white"
+                    app:backgroundTint="@android:color/holo_red_dark"
+                    app:cornerRadius="20dp"
+                    android:elevation="4dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_yt_download"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    app:layout_columnWeight="1"
+                    android:text="@string/btn_youtube_downloader"
+                    style="@style/Widget.Material3.Button"
+                    android:textColor="@android:color/white"
+                    app:backgroundTint="@android:color/holo_red_dark"
+                    app:cornerRadius="20dp"
+                    android:elevation="4dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_wa_story"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    app:layout_columnWeight="1"
+                    android:text="@string/btn_whatsapp_story"
+                    style="@style/Widget.Material3.Button"
+                    android:textColor="@android:color/white"
+                    app:backgroundTint="@android:color/holo_red_dark"
+                    app:cornerRadius="20dp"
+                    android:elevation="4dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_history"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    app:layout_columnWeight="1"
+                    android:text="@string/btn_riwayat_unduhan"
+                    style="@style/Widget.Material3.Button"
+                    android:textColor="@android:color/white"
+                    app:backgroundTint="@android:color/holo_red_dark"
+                    app:cornerRadius="20dp"
+                    android:elevation="4dp" />
+            </androidx.gridlayout.widget.GridLayout>
+
+            <!-- YouTube Video Player -->
+            <WebView
+                android:id="@+id/youtubeWebView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="16dp"
                 android:layout_marginBottom="16dp"
-                android:contentDescription="@string/logo_afitech" />
-
-            <!-- Judul -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/app_name"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textAlignment="center"
-                android:layout_marginBottom="8dp" />
-
-            <!-- Deskripsi -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/text_home"
-                android:textAlignment="center"
-                android:textSize="14sp"
-                android:layout_marginBottom="24dp" />
-
-            <!-- Tombol-tombol -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_tt_download"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/btn_tiktok_downloader"
-                android:layout_marginBottom="12dp"
-                style="@style/Widget.Material3.Button"
-                android:textColor="@android:color/white"
-                app:backgroundTint="@android:color/holo_red_dark"
-                app:cornerRadius="16dp"
-                android:elevation="4dp" />
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_yt_download"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/btn_youtube_downloader"
-                android:layout_marginBottom="12dp"
-                style="@style/Widget.Material3.Button"
-                android:textColor="@android:color/white"
-                app:backgroundTint="@android:color/holo_red_dark"
-                app:cornerRadius="16dp"
-                android:elevation="4dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_wa_story"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/btn_whatsapp_story"
-                android:layout_marginBottom="12dp"
-                style="@style/Widget.Material3.Button"
-                android:textColor="@android:color/white"
-                app:backgroundTint="@android:color/holo_red_dark"
-                app:cornerRadius="16dp"
-                android:elevation="4dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_history"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/btn_riwayat_unduhan"
-                style="@style/Widget.Material3.Button"
-                android:textColor="@android:color/white"
-                app:backgroundTint="@android:color/holo_red_dark"
-                app:cornerRadius="16dp"
-                android:elevation="4dp" />
-
-            <!-- Footer -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/btn_versi_2_0_beta_dibuat_oleh_afitech"
-                android:textSize="12sp"
-                android:textAlignment="center"
-                android:layout_marginTop="32dp"
-                android:alpha="0.6" />
-
+                app:layout_constraintTop_toBottomOf="@+id/btn_history"
+                android:gravity="center_horizontal" />
         </LinearLayout>
     </ScrollView>
 
-    <!-- Bagian bawah: switch dan iklan -->
+    <!-- Iklan -->
     <LinearLayout
         android:id="@+id/adContainer"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
         android:orientation="vertical"
         android:gravity="center"
-        android:padding="4dp">
+        android:padding="4dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- AdMob Banner -->
         <com.google.android.gms.ads.AdView
             android:id="@+id/adView"
             android:layout_width="match_parent"
@@ -126,4 +164,5 @@
             app:adSize="BANNER"
             app:adUnitId="ca-app-pub-2025447201837747/8904457185" />
     </LinearLayout>
-</RelativeLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
