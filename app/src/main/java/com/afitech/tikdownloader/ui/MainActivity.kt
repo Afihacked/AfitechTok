@@ -80,7 +80,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 R.id.nav_tt_offline -> {
-                    replaceFragment(DownloaderFragment(), getString(R.string.nav_tt_offline))
+                    replaceFragment(DownloadFragmentTT(), getString(R.string.nav_tt_offline))
                 }
 
                 R.id.nav_yt_offline -> {
@@ -113,7 +113,7 @@ class MainActivity : AppCompatActivity() {
                     DownloadFragmentYT.newInstance(videoUrl),
                     getString(R.string.nav_yt_offline)
                 )
-                "tt_downloader" -> replaceFragment(DownloaderFragment(), getString(R.string.nav_tt_offline))
+                "tt_downloader" -> replaceFragment(DownloadFragmentTT(), getString(R.string.nav_tt_offline))
                 "wa_downloader" -> replaceFragment(WhatsappStoryFragment(), getString(R.string.nav_wa_offline))
                 else -> replaceFragment(HomeFragment(), getString(R.string.nav_home))
             }
@@ -134,7 +134,7 @@ class MainActivity : AppCompatActivity() {
 //    private fun getFragmentByMenuItem(itemId: Int): Fragment {
 //        return when (itemId) {
 ////            R.id.nav_home -> HomeFragment()
-//            R.id.nav_tt_offline -> DownloaderFragment()
+//            R.id.nav_tt_offline -> DownloadFragmentTT()
 //            R.id.nav_yt_offline -> DownloadFragmentYT()
 //            R.id.nav_wa_offline -> WhatsappStoryFragment()
 //            R.id.nav_history -> HistoryFragment()

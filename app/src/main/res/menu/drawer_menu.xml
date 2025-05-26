@@ -10,22 +10,22 @@
 
         <item
             android:id="@+id/nav_tt_offline"
-            android:title="     TikTok"
+            android:title="   TikTok"
             android:visible="false" />
 
         <item
             android:id="@+id/nav_yt_offline"
-            android:title="     YouTube"
+            android:title="   YouTube"
             android:visible="false" />
 
         <item
             android:id="@+id/nav_wa_offline"
-            android:title="     WhatsApp"
+            android:title="   WhatsApp"
             android:visible="false" />
 
         <item
             android:id="@+id/nav_history"
-            android:title="Riwayat Unduhan TT" />
+            android:title="Riwayat Unduh" />
 
         <item
             android:id="@+id/nav_about"

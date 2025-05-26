@@ -1,42 +1,65 @@
 package com.afitech.tikdownloader.data
 
-import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
-import android.os.Environment
-import android.provider.MediaStore
-import android.webkit.MimeTypeMap
+import com.afitech.tikdownloader.data.database.DownloadHistoryDao
+import com.afitech.tikdownloader.data.model.DownloadHistory
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 object StorySaver {
 
-    fun saveToGallery(context: Context, uri: Uri) {
-        val contentResolver = context.contentResolver
-        val mimeType = contentResolver.getType(uri) ?: "image/jpeg"
-        val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType) ?: "jpg"
-        val isVideo = mimeType.startsWith("video")
+    lateinit var downloadHistoryDao: DownloadHistoryDao
 
-        val fileName = "WhatsApp_Story_${System.currentTimeMillis()}.$extension"
+    /**
+     * Simpan WhatsApp Story dari Uri yang sudah ada di perangkat ke MediaStore,
+     * dengan menggunakan Downloader untuk konsistensi dan riwayat unduhan.
+     */
+    fun saveToGallery(
+        context: Context,
+        sourceUri: Uri,
+        originalFileName: String,
+        mimeType: String,
+        onProgressUpdate: (Int) -> Unit = {}
+    ) {
+        // Karena Downloader.downloadFile butuh URL, untuk file lokal (Uri)
+        // kita bisa salin file dari Uri ke MediaStore via Downloader helper khusus,
+        // atau buat overload/fungsi baru di Downloader.
+        // Tapi untuk sederhana, kita buat coroutine untuk baca stream dan simpan ke MediaStore secara manual.
 
-        val values = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
-            put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-            put(MediaStore.MediaColumns.RELATIVE_PATH,
-                if (isVideo) Environment.DIRECTORY_MOVIES else Environment.DIRECTORY_PICTURES)
-        }
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val inputStream = context.contentResolver.openInputStream(sourceUri)
+                    ?: throw Exception("Gagal membuka input stream dari Uri")
 
-        val collection = if (isVideo) {
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-        } else {
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        }
+                // Gunakan Downloader internal helper untuk generate nama unik dan simpan ke MediaStore
+                val uniqueFileName = Downloader.generateUniqueFileName(context, originalFileName, mimeType, "whatsapp")
 
-        val contentUri = contentResolver.insert(collection, values)
+                // Panggil fungsi internal saveToMediaStore di Downloader (harus dibuat public/internal jika private)
+                val savedUri = Downloader.saveToMediaStoreFromStream(
+                    context, inputStream, uniqueFileName, mimeType, -1, onProgressUpdate, "whatsapp"
+                )
 
-        contentUri?.let {
-            contentResolver.openOutputStream(it)?.use { outputStream ->
-                contentResolver.openInputStream(uri)?.use { inputStream ->
-                    inputStream.copyTo(outputStream)
+                inputStream.close()
+
+                if (savedUri != null) {
+                    // Simpan riwayat unduhan ke DB
+                    val fileType = when {
+                        mimeType.startsWith("video") -> "Video"
+                        mimeType.startsWith("image") -> "Image"
+                        else -> "Other"
+                    }
+                    val downloadHistory = DownloadHistory(
+                        fileName = uniqueFileName,
+                        filePath = savedUri.toString(),
+                        fileType = fileType,
+                        downloadDate = System.currentTimeMillis()
+                    )
+                    downloadHistoryDao.insertDownload(downloadHistory)
                 }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }

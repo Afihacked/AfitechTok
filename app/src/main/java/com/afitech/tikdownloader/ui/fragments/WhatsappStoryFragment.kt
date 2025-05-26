@@ -16,6 +16,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.afitech.tikdownloader.R
+import com.afitech.tikdownloader.data.StorySaver
+import com.afitech.tikdownloader.data.database.AppDatabase
+import com.afitech.tikdownloader.data.database.DownloadHistoryDao
 import com.afitech.tikdownloader.databinding.FragmentWhatsappStoryBinding
 import com.afitech.tikdownloader.ui.adapters.StoryPagerAdapter
 import com.afitech.tikdownloader.utils.setStatusBarColor
@@ -25,6 +28,8 @@ class WhatsappStoryFragment : Fragment() {
 
     private lateinit var binding: FragmentWhatsappStoryBinding
     private lateinit var sharedPreferences: SharedPreferences
+
+    private lateinit var downloadHistoryDao: DownloadHistoryDao
 
     private val requestStorageAccessLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -39,7 +44,7 @@ class WhatsappStoryFragment : Fragment() {
             Log.d("WhatsappStoryFragment", "URI disimpan: $uri")
             Toast.makeText(requireContext(), "Akses folder berhasil disimpan", Toast.LENGTH_SHORT).show()
 
-            // ✅ Tambahkan ini agar media langsung muncul
+            // Reload view pager agar media muncul
             setupViewPagerWithTabs()
 
         } else {
@@ -47,6 +52,16 @@ class WhatsappStoryFragment : Fragment() {
         }
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Inisialisasi database dan DAO
+        val db = AppDatabase.getDatabase(requireContext())
+        downloadHistoryDao = db.downloadHistoryDao()
+
+        // Assign DAO ke StorySaver agar adapter bisa akses DAO ini
+        StorySaver.downloadHistoryDao = downloadHistoryDao
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -55,10 +70,10 @@ class WhatsappStoryFragment : Fragment() {
         binding = FragmentWhatsappStoryBinding.inflate(inflater, container, false)
         sharedPreferences = requireContext().getSharedPreferences("TikDownloaderPrefs", Context.MODE_PRIVATE)
 
-        setupViewPagerWithTabs()
-
         if (!hasStoragePermission() || getSavedUri().isEmpty()) {
             requestStoragePermission()
+        } else {
+            setupViewPagerWithTabs()
         }
 
         return binding.root
@@ -75,10 +90,8 @@ class WhatsappStoryFragment : Fragment() {
                 else -> "Lainnya"
             }
 
-            // Warna teks putih
             val textColor = ContextCompat.getColor(tab.view.context, android.R.color.white)
 
-            // Custom view untuk tab
             val textView = TextView(tab.view.context).apply {
                 text = tab.text
                 setTextColor(textColor)
@@ -90,10 +103,8 @@ class WhatsappStoryFragment : Fragment() {
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
             }
-
             tab.customView = textView
         }.attach()
-
     }
 
     private fun hasStoragePermission(): Boolean {
@@ -114,10 +125,10 @@ class WhatsappStoryFragment : Fragment() {
         }
         requestStorageAccessLauncher.launch(intent)
     }
+
     override fun onResume() {
         super.onResume()
-
         setStatusBarColor(R.color.colorPrimary, isLightStatusBar = false)
-
     }
 }
+

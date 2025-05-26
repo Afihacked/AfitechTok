@@ -3,7 +3,6 @@ package com.afitech.tikdownloader.ui.fragments
 import android.annotation.SuppressLint
 import android.content.ClipboardManager
 import android.content.Context
-import android.content.SharedPreferences
 import android.content.pm.ActivityInfo
 import android.content.res.ColorStateList
 import android.graphics.Outline
@@ -18,11 +17,9 @@ import android.view.Gravity.CENTER
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewOutlineProvider
-import com.google.android.gms.ads.MobileAds
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.PopupMenu
-import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
@@ -32,7 +29,6 @@ import com.afitech.tikdownloader.data.Downloader
 import com.afitech.tikdownloader.data.database.AppDatabase
 import com.afitech.tikdownloader.data.database.DownloadHistoryDao
 import com.afitech.tikdownloader.network.TikTokDownloader
-import com.afitech.tikdownloader.ui.components.GuideDialogFragment
 import com.afitech.tikdownloader.utils.CuanManager
 import com.afitech.tikdownloader.utils.setStatusBarColor
 import com.bumptech.glide.Glide
@@ -58,13 +54,12 @@ import java.util.Date
 import java.util.Locale
 
 
-class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
+class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
-//    private lateinit var sharedPreferences: SharedPreferences
+
     private lateinit var inputLayout: TextInputLayout
     private lateinit var editText: TextInputEditText
     private lateinit var downloadButton: LinearLayout
-//    private lateinit var switchAd: SwitchCompat
     private lateinit var arrowIcon: ImageView
     private lateinit var clipboardManager: ClipboardManager
     private lateinit var progressDownload: ProgressBar
@@ -76,19 +71,11 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
     private var isAdShowing = false
     private lateinit var downloadHistoryDao: DownloadHistoryDao
 
-//    private val PREFS_NAME = "AdSettings"
-//    private val KEY_AD_STATUS = "ad_status"
 
     @SuppressLint("SourceLockedOrientationActivity")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-
-        fun onResume() {
-            setStatusBarColor(R.color.colorPrimary, isLightStatusBar = false)
-            super.onResume()
-            checkClipboardOnStart() // Fungsi ini kamu panggil saat fragment kembali tampil
-        }
 
         // Inisialisasi database
         val database = AppDatabase.getDatabase(requireContext())
@@ -109,61 +96,8 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
         adView = view.findViewById(R.id.adView)
         cuanManager.loadAd(adView)  // Memuat iklan dengan AdMobManager
 
-        // Inisialisasi SharedPreferences
-//        sharedPreferences = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-//        val isAdEnabled = sharedPreferences.getBoolean(KEY_AD_STATUS, true)
-
-//BLOK KONFIGURASI IKLAN
-// Variabel untuk menandai proses inisialisasi agar listener tidak langsung terpanggil
-        var isInitializing = true
-
-// Matikan sementara listener sebelum setChecked
-//        switchAd.setOnCheckedChangeListener(null)
-
-// Atur posisi switch sesuai dengan status tersimpan
-//        switchAd.isChecked = isAdEnabled
-//        updateSwitchUI(isAdEnabled)
-
-// Kontrol visibilitas iklan saat pertama kali aplikasi dibuka
-//        adView.visibility = if (isAdEnabled) View.VISIBLE else View.GONE
-
-// Memuat Iklan Banner
-//        val adRequest = AdRequest.Builder().build()
-//        adView.loadAd(adRequest)
         loadRewardedAd()
         loadInterstitialAd()
-
-// Load Iklan Rewarded & Interstitial jika diaktifkan
-//        if (isAdEnabled) {
-//            loadRewardedAd()
-//            loadInterstitialAd()
-//        }
-
-// Pasang ulang listener setelah inisialisasi selesai
-//        switchAd.setOnCheckedChangeListener { _, isChecked ->
-//            if (isInitializing) return@setOnCheckedChangeListener
-//
-//            // Simpan status ke SharedPreferences
-//            sharedPreferences.edit().putBoolean(KEY_AD_STATUS, isChecked).apply()
-//
-//            // Update UI dan visibilitas iklan
-//            adView.visibility = if (isChecked) View.VISIBLE else View.GONE
-//            updateSwitchUI(isChecked)
-//
-//            if (isChecked) {
-//                loadInterstitialAd()
-//                loadRewardedAd()
-//            } else {
-//                interstitialAd = null
-//                rewardedAd = null
-//            }
-//
-//            Log.d("AdsSwitch", "Status iklan diubah: $isChecked")
-//        }
-
-// Selesai proses inisialisasi
-        isInitializing = false
-//END IKLAN
 
         // Event Listener untuk input teks
         editText.addTextChangedListener(object : TextWatcher {
@@ -274,17 +208,6 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
         downloadButton.isFocusable = enabled
         downloadButton.alpha = if (enabled) 1f else 0.5f  // Visual efek: buram saat nonaktif
     }
-
-    // Fungsi untuk memperbarui warna switch agar sesuai statusnya
-//    private fun updateSwitchUI(isChecked: Boolean) {
-//        context?.let {
-//            val thumbColor = if (isChecked) android.R.color.holo_red_dark else android.R.color.white
-//            val trackColor = if (isChecked) R.color.dark_gray else R.color.light_gray
-//
-//            switchAd.thumbTintList = ColorStateList.valueOf(ContextCompat.getColor(it, thumbColor))
-//            switchAd.trackTintList = ColorStateList.valueOf(ContextCompat.getColor(it, trackColor))
-//        }
-//    }
 
     private fun loadInterstitialAd() {
         if (!isAdded) return
@@ -836,6 +759,12 @@ class DownloaderFragment : Fragment(R.layout.fragment_downloader) {
     override fun onDestroyView() {
         super.onDestroyView()
         cuanManager.destroyAd(adView) // Menghancurkan iklan saat view dihancurkan
+    }
+
+    override fun onResume() {
+        super.onResume()
+        setStatusBarColor(R.color.colorPrimary, isLightStatusBar = false)
+        checkClipboardOnStart()  // ini akan berjalan tiap fragment kembali ke foreground
     }
 }
 

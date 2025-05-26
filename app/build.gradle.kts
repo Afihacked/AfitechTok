@@ -7,8 +7,8 @@ plugins {
 android {
     applicationVariants.configureEach {
         val appName = "Afitech SaveAll"
-        val versionName = "2.1-beta"
-        val versionCode = 6
+        val versionName = "3-beta"
+        val versionCode = 8
 
         outputs.configureEach {
             (this as? com.android.build.gradle.internal.api.BaseVariantOutputImpl)?.outputFileName =
@@ -34,8 +34,8 @@ android {
         applicationId = "com.afitech.tikdownloader"
         minSdk = 29
         targetSdk = 35
-        versionCode = 6
-        versionName = "2.1-beta"
+        versionCode = 8
+        versionName = "3-beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -61,7 +61,7 @@ android {
 }
 
 dependencies {
-
+    implementation ("org.jsoup:jsoup:1.14.3")
     implementation(libs.fragmentKtx) // Menggunakan fragment-ktx versi 1.5.5
     implementation(libs.lifecycleViewModelKtx)
     implementation(libs.androidx.core.ktx)

@@ -1,30 +1,23 @@
 package com.afitech.tikdownloader.ui.fragments
 
-import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowInsetsController
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
-import android.widget.FrameLayout
 import androidx.fragment.app.Fragment
 import com.afitech.tikdownloader.R
-import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
-import com.google.android.gms.ads.MobileAds
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
-import androidx.core.view.WindowCompat
 import com.afitech.tikdownloader.utils.CuanManager
 import com.afitech.tikdownloader.utils.setStatusBarColor
+import com.google.android.material.button.MaterialButton
 
 private lateinit var adView: AdView
-private lateinit var youtubeWebView: WebView
 private val cuanManager = CuanManager()
 
 class HomeFragment : Fragment() {
@@ -42,52 +35,68 @@ class HomeFragment : Fragment() {
         adView = view.findViewById(R.id.adView)
         cuanManager.loadAd(adView)  // Memuat iklan dengan AdMobManager
 
-        // Inisialisasi WebView untuk memuat video YouTube
-        youtubeWebView = view.findViewById(R.id.youtubeWebView)
+        // Di dalam onCreateView atau onViewCreated
+        val btnOpenYoutubePopup = view.findViewById<MaterialButton>(R.id.btn_open_youtube_popup)
+        val inlineWebView = view.findViewById<WebView>(R.id.inlineWebView)
 
-        // Konfigurasi WebView
-        val webSettings = youtubeWebView.settings
-        webSettings.javaScriptEnabled = true
-        webSettings.domStorageEnabled = true
-        webSettings.mediaPlaybackRequiresUserGesture = false
-        webSettings.useWideViewPort = true
-        webSettings.loadWithOverviewMode = true
-        webSettings.builtInZoomControls = false
-        webSettings.displayZoomControls = false
-        webSettings.allowFileAccess = false
-        webSettings.javaScriptCanOpenWindowsAutomatically = true
-        webSettings.setSupportMultipleWindows(false)
+// Konfigurasi WebView sekali saja
+        with(inlineWebView.settings) {
+            javaScriptEnabled = true
+            domStorageEnabled = true
+            mediaPlaybackRequiresUserGesture = false
+            useWideViewPort = true
+            loadWithOverviewMode = true
+            builtInZoomControls = false
+            displayZoomControls = false
+            allowFileAccess = false
+            javaScriptCanOpenWindowsAutomatically = true
+            setSupportMultipleWindows(false)
+        }
 
-// WebViewClient untuk handle loading internal
-        youtubeWebView.webViewClient = object : WebViewClient() {
+        inlineWebView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-                return false // tetap buka di WebView
+                return false
             }
         }
 
-// WebChromeClient tanpa dukungan fullscreen
-        youtubeWebView.webChromeClient = object : WebChromeClient() {
-            // Masih diperlukan untuk dukungan JavaScript alert, progress, dsb
-        }
+        inlineWebView.webChromeClient = object : WebChromeClient() {}
 
-        // Fungsi untuk memuat video berdasarkan URL
+        // Fungsi untuk memuat video YouTube
         fun loadVideo(url: String) {
             val isShorts = url.contains("youtube.com/shorts")
-
-            val embedUrl: String = if (isShorts) {
+            val embedUrl = if (isShorts) {
                 val videoId = url.substringAfter("shorts/").substringBefore("?")
                 "https://www.youtube.com/embed/$videoId?rel=0&autohide=1&showinfo=0"
             } else {
                 val videoId = url.substringAfter("watch?v=").substringBefore("&")
                 "https://www.youtube.com/embed/$videoId?rel=0&autohide=1&showinfo=0"
             }
-
-            youtubeWebView.loadUrl(embedUrl)
+            inlineWebView.loadUrl(embedUrl)
         }
 
-// Contoh pemanggilan fungsi
-        val videoUrl = "https://www.youtube.com/watch?v=XI2te9OJ6DY"  // atau URL Shorts
-        loadVideo(videoUrl)
+// Handler klik tombol
+        btnOpenYoutubePopup.setOnClickListener {
+            if (inlineWebView.visibility == View.GONE) {
+                // TAMPILKAN WebView dengan animasi slide-up
+                inlineWebView.translationY = inlineWebView.height.toFloat() // Mulai di bawah
+                inlineWebView.visibility = View.VISIBLE
+                inlineWebView.animate().translationY(0f).setDuration(300).start()
+
+                btnOpenYoutubePopup.text = getString(R.string.tutup_video_tutorial)
+
+                // Load YouTube video
+                val videoUrl = "https://www.youtube.com/watch?v=XI2te9OJ6DY"
+                loadVideo(videoUrl)
+
+            } else {
+                // SEMBUNYIKAN WebView dengan animasi slide-down
+                inlineWebView.animate().translationY(inlineWebView.height.toFloat()).setDuration(300).withEndAction {
+                    inlineWebView.visibility = View.GONE
+                }.start()
+
+                btnOpenYoutubePopup.text = getString(R.string.tonton_video_tutorial)
+            }
+        }
 
 
 
@@ -111,7 +120,7 @@ class HomeFragment : Fragment() {
 
         // Menambahkan listener untuk tombol-tombol yang berpindah fragment
         view.findViewById<Button>(R.id.btn_tt_download).setOnClickListener {
-            transaction(DownloaderFragment(), getString(R.string.nav_tt_offline))
+            transaction(DownloadFragmentTT(), getString(R.string.nav_tt_offline))
         }
         view.findViewById<Button>(R.id.btn_yt_download).setOnClickListener {
             transaction(DownloadFragmentYT(), getString(R.string.nav_yt_offline))
@@ -119,8 +128,8 @@ class HomeFragment : Fragment() {
         view.findViewById<Button>(R.id.btn_wa_story).setOnClickListener {
             transaction(WhatsappStoryFragment(), getString(R.string.nav_wa_offline))
         }
-        view.findViewById<Button>(R.id.btn_history).setOnClickListener {
-            transaction(HistoryFragment(), getString(R.string.nav_history))
+        view.findViewById<Button>(R.id.btn_ig).setOnClickListener {
+            transaction(DownloadFragmentIG(), getString(R.string.nav_ig))
         }
 
         return view

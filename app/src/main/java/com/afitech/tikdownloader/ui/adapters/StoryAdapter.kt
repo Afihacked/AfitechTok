@@ -11,6 +11,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.*
+import android.webkit.MimeTypeMap
 import android.widget.*
 import androidx.recyclerview.widget.RecyclerView
 import com.afitech.tikdownloader.R
@@ -290,7 +291,23 @@ class StoryAdapter(
     private fun saveStoryToGalleryAsync(uri: Uri) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                StorySaver.saveToGallery(context, uri)
+                val contentResolver = context.contentResolver
+                val mimeType = contentResolver.getType(uri) ?: "image/jpeg"
+                // Bisa ambil nama file asli dari Uri, atau buat default saja:
+                val originalFileName = "WhatsAppStory_${System.currentTimeMillis()}." +
+                MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType) ?: "jpg"
+
+                // Pastikan downloadHistoryDao sudah di-set di StorySaver sebelumnya
+                StorySaver.saveToGallery(
+                    context = context,
+                    sourceUri = uri,
+                    originalFileName = originalFileName,
+                    mimeType = mimeType,
+                    onProgressUpdate = { progress ->
+                        // Optional: update progress jika perlu
+                    }
+                )
+
                 withContext(Dispatchers.Main) {
                     Toast.makeText(context, "Story berhasil disimpan", Toast.LENGTH_SHORT).show()
                 }
@@ -302,6 +319,7 @@ class StoryAdapter(
             }
         }
     }
+
 
     class StoryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val mediaView: ImageView = itemView.findViewById(R.id.mediaView)

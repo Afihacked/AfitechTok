@@ -20,6 +20,7 @@ import android.widget.RadioButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.afitech.tikdownloader.R
@@ -83,10 +84,10 @@ class DownloadFragmentYT : Fragment() {
                         dialogDismissed = true
                     }
                     btnDownload.apply {
-                        text = "Download"
+                        text = "Unduh"
                         isEnabled = true
                     }
-                    val msg = if (success) "Download selesai!" else "Download gagal!"
+                    val msg = if (success) "Unduh selesai!" else "Unduh gagal!"
                     Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
                 }
             }
@@ -107,15 +108,15 @@ class DownloadFragmentYT : Fragment() {
         radioMp4 = view.findViewById(R.id.radioMp4)
         radioMp3 = view.findViewById(R.id.radioMp3)
         adView = view.findViewById(R.id.adView)
+
         clipboardManager = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        checkClipboardOnStart()     // Cek saat pertama kali fragment muncul
+        checkClipboardForLink()
 
         // Inisialisasi dan muat iklan menggunakan AdMobManager
         cuanManager.initializeAdMob(requireContext())
         cuanManager.loadAd(adView)// AdMob
 
-        // Clipboard
-        checkClipboardOnStart()
-        checkClipboardForLink()
 
         val textCount = view.findViewById<TextView>(R.id.textCount)
         val maxCharacters = 99
@@ -133,6 +134,10 @@ class DownloadFragmentYT : Fragment() {
             }
         }
 
+        editTextUrl.addTextChangedListener {
+            hasUserInput = !it.isNullOrBlank()
+        }
+
         editTextUrl.addTextChangedListener(object : TextWatcher {
 
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -140,8 +145,6 @@ class DownloadFragmentYT : Fragment() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val url = s?.toString()?.trim() ?: ""
                 val currentLength = url.length
-
-                // Update jumlah karakter yang terinput
                 textCount.text = "$currentLength/$maxCharacters"
 
                 // Warna merah jika melebihi batas normal
@@ -168,6 +171,7 @@ class DownloadFragmentYT : Fragment() {
                     editTextUrl.error = null
                 }
                 setDownloadButtonEnabled(platform != "invalid")
+
             }
 
             override fun afterTextChanged(s: Editable?) {}
@@ -234,8 +238,8 @@ class DownloadFragmentYT : Fragment() {
                 Handler(Looper.getMainLooper()).post {
                     btnDownload.apply {
                         isEnabled = true // Aktifkan tombol kembali
-                        text = if (success) "Download Selesai" else "" +
-                                "' a Lagi"
+                        text = if (success) "Unduh Selesai" else "" +
+                                "Coba Lagi"
                     }
 
                     // Sembunyikan loading dialog setelah selesai
@@ -263,22 +267,47 @@ class DownloadFragmentYT : Fragment() {
         btnDownload.isFocusable = enabled
         btnDownload.alpha = if (enabled) 1f else 0.5f  // Visual efek: buram saat nonaktif
     }
-
+    private var toastCooldown = false
+    private var hasUserInput = false
     private fun checkClipboardOnStart() {
-        clipboardManager.primaryClip?.let { clip ->
-            if (clip.itemCount > 0) {
-                val txt = clip.getItemAt(0).text.toString()
-                if (txt.isNotEmpty() && isYoutubeLink(txt)) editTextUrl.setText(txt)
+        val clipData = clipboardManager.primaryClip
+        if (clipData != null && clipData.itemCount > 0) {
+            val copiedText = clipData.getItemAt(0).text.toString().trim()
+            when {
+                isYoutubeLink(copiedText) -> {
+                    editTextUrl.setText(copiedText)
+                }
+                else -> {
+                    if (!toastCooldown) {
+                        toastCooldown = true
+                        Toast.makeText(requireContext(), "Link yang disalin bukan dari YouTube.", Toast.LENGTH_SHORT).show()
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            toastCooldown = false
+                        }, 2000)
+                    }
+                }
             }
         }
     }
 
     private fun checkClipboardForLink() {
         clipboardManager.addPrimaryClipChangedListener {
-            clipboardManager.primaryClip?.let { clip ->
-                if (clip.itemCount > 0) {
-                    val txt = clip.getItemAt(0).text.toString()
-                    if (txt.isNotEmpty() && isYoutubeLink(txt)) editTextUrl.setText(txt)
+            val clipData = clipboardManager.primaryClip
+            if (clipData != null && clipData.itemCount > 0) {
+                val copiedText = clipData.getItemAt(0).text.toString().trim()
+                when {
+                    isYoutubeLink(copiedText) -> {
+                        editTextUrl.setText(copiedText)
+                    }
+                    else -> {
+                        if (!toastCooldown) {
+                            toastCooldown = true
+                            Toast.makeText(requireContext(), "Link yang disalin bukan dari YouTube.", Toast.LENGTH_SHORT).show()
+                            Handler(Looper.getMainLooper()).postDelayed({
+                                toastCooldown = false
+                            }, 2000)
+                        }
+                    }
                 }
             }
         }
@@ -289,6 +318,7 @@ class DownloadFragmentYT : Fragment() {
         return YOUTUBE_REGEX.containsMatchIn(text)
     }
 
+
     private fun showToast(msg: String) {
         Handler(Looper.getMainLooper()).post {
             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
@@ -296,8 +326,7 @@ class DownloadFragmentYT : Fragment() {
     }
     override fun onResume() {
         super.onResume()
-
         setStatusBarColor(R.color.colorPrimary, isLightStatusBar = false)
-
+        checkClipboardOnStart()  // ini akan berjalan tiap fragment kembali ke foreground
     }
 }

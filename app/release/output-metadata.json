@@ -11,9 +11,9 @@
       "type": "SINGLE",
       "filters": [],
       "attributes": [],
-      "versionCode": 6,
-      "versionName": "2.1-beta",
-      "outputFile": "Afitech SaveAll_v2.1-beta_(6).apk"
+      "versionCode": 7,
+      "versionName": "2.5-beta",
+      "outputFile": "Afitech SaveAll_v2.5-beta_(7).apk"
     }
   ],
   "elementType": "File",
@@ -22,14 +22,14 @@
       "minApi": 28,
       "maxApi": 30,
       "baselineProfiles": [
-        "baselineProfiles/1/Afitech SaveAll_v2.1-beta_(6).dm"
+        "baselineProfiles/1/Afitech SaveAll_v2.5-beta_(7).dm"
       ]
     },
     {
       "minApi": 31,
       "maxApi": 2147483647,
       "baselineProfiles": [
-        "baselineProfiles/0/Afitech SaveAll_v2.1-beta_(6).dm"
+        "baselineProfiles/0/Afitech SaveAll_v2.5-beta_(7).dm"
       ]
     }
   ],

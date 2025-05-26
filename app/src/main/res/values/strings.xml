@@ -32,25 +32,29 @@
     <string name="navigation_drawer_open">Buka Menu</string>
     <string name="navigation_drawer_close">Tutup Menu</string>
     <string name="btn_whatsapp_story">Whatsapp</string>
-    <string name="btn_riwayat_unduhan">Riwayat</string>
-    <string name="text_home"><![CDATA[Download video lintas platform tanpa ribet. Gratis & kualitas media Terbaik!]]></string>
+    <string name="btn_ig">Instagram</string>
+    <string name="text_home"><![CDATA[Unduh video lintas platform tanpa ribet. Gratis & kualitas media Terbaik!]]></string>
     <string name="logo_afitech">Logo Afitech</string>
     <string name="btn_tiktok_downloader">Tiktok</string>
     <string name="btn_youtube_downloader">Youtube</string>
-    <string name="tentang"><b>Aplikasi Download Video Terbaik untuk Semua Platform!</b>
+    <string name="tentang"><b>Aplikasi Unduh Video Terbaik untuk Semua Platform!</b>
 
 Nikmati kemudahan mengunduh video dari berbagai platform populer seperti TikTok, YouTube, WhatsApp, dan banyak lagi! Dengan aplikasi ini, kamu bisa menyimpan video kesukaan tanpa watermark dengan kualitas terbaik dan cepat. Semua fitur yang tersedia dapat diakses secara gratis, tanpa perlu biaya tersembunyi!</string>
     <string name="dikembangkan_oleh_afitech">Dikembangkan oleh Afitech X ChatGPT</string>
-    <string name="versi_2_0_beta">Versi 2.0-beta</string>
+    <string name="versi_2_0_beta">Versi 3.0-beta</string>
 
     <string name="nav_home">Beranda</string>
     <string name="nav_tt_offline">Tiktok</string>
     <string name="nav_wa_offline">WhatsApp</string>
     <string name="nav_yt_offline">Youtube</string>
+    <string name="nav_ig">Instagram</string>
     <string name="nav_history">Riwayat</string>
     <string name="nav_about">Tentang Aplikasi</string>
         <string name="play_pause_button">Putar atau jeda video</string>
         <string name="close_button">Tutup pemutar video</string>
     <string name="tempel_link_tiktok_disini">Tempel link tiktok disini</string>
+    <string name="tonton_video_tutorial">TUTORIAL</string>
+    <string name="tutup_video_tutorial">Tutup</string>
+    <string name="tempel_link_instagram_disini">Tempel link instagram disini</string>
 
 </resources>

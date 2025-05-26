@@ -103,7 +103,6 @@
                 android:textColor="@android:color/white"
                 android:backgroundTint="@android:color/holo_red_dark"
                 app:cornerRadius="18dp"
-                app:icon="@drawable/ic_download"
                 app:iconGravity="textStart"
                 android:paddingVertical="12dp" />
         </LinearLayout>

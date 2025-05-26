@@ -7,6 +7,11 @@
     <color name="colorOutline">#FFFFFF</color> <!-- Warna saat tidak aktif dalam mode gelap -->
     <color name="colorAccent">#FF5722</color>
     <color name="blackTab">#FFFFFF</color>
-
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="dark_gray">#474747</color>
+    <color name="light_gray">#BCBCBC</color>
+    <color name="dark_red">#780000</color>
+    <color name="colorDisabled">#A0A0A0</color>
 </resources>
 
