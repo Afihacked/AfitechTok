@@ -18,8 +18,8 @@ object TikTokDownloader {
             val connection = URL(apiUrl).openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.doInput = true
-            connection.connectTimeout = 10000
-            connection.readTimeout = 15000
+            connection.connectTimeout = 20000
+            connection.readTimeout = 306000
             connection.connect()
 
             val response = connection.inputStream.bufferedReader().use { it.readText() }

@@ -121,11 +121,11 @@
                     android:elevation="4dp" />
 
                 <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_ig"
+                    android:id="@+id/btn_history"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     app:layout_columnWeight="1"
-                    android:text="@string/btn_ig"
+                    android:text="@string/nav_history"
                     style="@style/Widget.Material3.Button"
                     android:textColor="@android:color/white"
                     app:backgroundTint="@android:color/holo_red_dark"

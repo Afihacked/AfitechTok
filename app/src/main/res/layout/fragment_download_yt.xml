@@ -105,7 +105,22 @@
                 app:cornerRadius="18dp"
                 app:iconGravity="textStart"
                 android:paddingVertical="12dp" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnOpenYoutube"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:text="Ambil Link"
+                android:textSize="16sp"
+                android:textColor="@android:color/white"
+                android:backgroundTint="@android:color/holo_red_dark"
+                app:cornerRadius="18dp"
+                app:iconGravity="textStart"
+                android:paddingVertical="12dp" />
         </LinearLayout>
+
     </androidx.core.widget.NestedScrollView>
 
     <!-- Frame untuk Iklan -->

@@ -128,8 +128,8 @@ class HomeFragment : Fragment() {
         view.findViewById<Button>(R.id.btn_wa_story).setOnClickListener {
             transaction(WhatsappStoryFragment(), getString(R.string.nav_wa_offline))
         }
-        view.findViewById<Button>(R.id.btn_ig).setOnClickListener {
-            transaction(DownloadFragmentIG(), getString(R.string.nav_ig))
+        view.findViewById<Button>(R.id.btn_history).setOnClickListener {
+            transaction(HistoryFragment(), getString(R.string.nav_history))
         }
 
         return view
@@ -139,7 +139,7 @@ class HomeFragment : Fragment() {
     override fun onResume() {
         super.onResume()
 
-        setStatusBarColor(R.color.colorPrimary, isLightStatusBar = false)
+        setStatusBarColor(R.color.dark_red , isLightStatusBar = false)
 
         // Mengatur judul ke default "Home" menggunakan string dari resources
         val appName = getString(R.string.nav_home)

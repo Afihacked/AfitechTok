@@ -26,23 +26,22 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_FRAGMENT = "extra_fragment"
-        const val EXTRA_VIDEO_URL = "video_url"  // sama dengan di service
+        const val EXTRA_VIDEO_URL = "video_url"
     }
 
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navView: NavigationView
     private lateinit var sharedPref: SharedPreferences
-    private val REQ_NOTIF = 1001  // ID permintaan izin notifikasi
-    private var fiturExpanded = false
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    private val REQ_NOTIF = 1001
 
+    override fun onCreate(savedInstanceState: Bundle?) {
         sharedPref = getSharedPreferences("theme_pref", MODE_PRIVATE)
-        ThemeHelper.applyTheme(this)
+        ThemeHelper.applyTheme(this)  // Terapkan tema sebelum super.onCreate supaya langsung berpengaruh
+        super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_main)
 
-        // Minta izin notifikasi
+        // Izin notifikasi
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
                 != PackageManager.PERMISSION_GRANTED
@@ -70,44 +69,19 @@ class MainActivity : AppCompatActivity() {
 
         navView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
-                R.id.nav_fitur -> {
-                    fiturExpanded = !fiturExpanded
-                    val menu = navView.menu
-                    menu.findItem(R.id.nav_tt_offline).isVisible = fiturExpanded
-                    menu.findItem(R.id.nav_yt_offline).isVisible = fiturExpanded
-                    menu.findItem(R.id.nav_wa_offline).isVisible = fiturExpanded
-                    return@setNavigationItemSelectedListener true
-                }
-
-                R.id.nav_tt_offline -> {
-                    replaceFragment(DownloadFragmentTT(), getString(R.string.nav_tt_offline))
-                }
-
-                R.id.nav_yt_offline -> {
-                    replaceFragment(DownloadFragmentYT(), getString(R.string.nav_yt_offline))
-                }
-
-                R.id.nav_wa_offline -> {
-                    replaceFragment(WhatsappStoryFragment(), getString(R.string.nav_wa_offline))
-                }
-
-                R.id.nav_history -> {
-                    replaceFragment(HistoryFragment(), getString(R.string.nav_history))
-                }
-
-                R.id.nav_about -> {
-                    replaceFragment(TentangFragment(), getString(R.string.nav_about))
-                }
+                R.id.nav_tt_offline -> replaceFragment(DownloadFragmentTT(), getString(R.string.nav_tt_offline))
+                R.id.nav_yt_offline -> replaceFragment(DownloadFragmentYT(), getString(R.string.nav_yt_offline))
+                R.id.nav_wa_offline -> replaceFragment(WhatsappStoryFragment(), getString(R.string.nav_wa_offline))
+                R.id.nav_history -> replaceFragment(HistoryFragment(), getString(R.string.nav_history))
+                R.id.nav_about -> replaceFragment(TentangFragment(), getString(R.string.nav_about))
             }
-
             drawerLayout.closeDrawers()
             true
         }
 
-        // Buka fragment dari intent jika ada
         if (savedInstanceState == null) {
             val fragmentTarget = intent.getStringExtra(EXTRA_FRAGMENT)
-            val videoUrl   = intent.getStringExtra(EXTRA_VIDEO_URL)
+            val videoUrl = intent.getStringExtra(EXTRA_VIDEO_URL)
             when (fragmentTarget) {
                 "yt_downloader" -> replaceFragment(
                     DownloadFragmentYT.newInstance(videoUrl),
@@ -127,21 +101,8 @@ class MainActivity : AppCompatActivity() {
             .replace(R.id.fragment_container, fragment)
             .addToBackStack(null)
             .commit()
-
         supportActionBar?.title = title
     }
-
-//    private fun getFragmentByMenuItem(itemId: Int): Fragment {
-//        return when (itemId) {
-////            R.id.nav_home -> HomeFragment()
-//            R.id.nav_tt_offline -> DownloadFragmentTT()
-//            R.id.nav_yt_offline -> DownloadFragmentYT()
-//            R.id.nav_wa_offline -> WhatsappStoryFragment()
-//            R.id.nav_history -> HistoryFragment()
-//            R.id.nav_about -> TentangFragment()
-//            else -> HomeFragment()
-//        }
-//    }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.main_toolbar_menu, menu)
@@ -153,7 +114,9 @@ class MainActivity : AppCompatActivity() {
         return when (item.itemId) {
             R.id.action_night_mode -> {
                 val isDarkMode = ThemeHelper.getIsDarkMode(sharedPref)
-                ThemeHelper.toggleTheme(sharedPref, !isDarkMode)
+                val newMode = !isDarkMode
+                ThemeHelper.toggleTheme(sharedPref, newMode)
+                updateThemeIcon(item)  // Update icon menu langsung
                 recreate()
                 true
             }
@@ -164,6 +127,7 @@ class MainActivity : AppCompatActivity() {
     private fun updateThemeIcon(item: MenuItem) {
         val isDarkMode = ThemeHelper.getIsDarkMode(sharedPref)
         item.setIcon(if (isDarkMode) R.drawable.sun else R.drawable.moon)
+        item.title = if (isDarkMode) "Mode Terang" else "Mode Malam"
     }
 
     private fun handleBackPressed() {

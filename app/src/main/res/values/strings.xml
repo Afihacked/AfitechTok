@@ -56,5 +56,7 @@ Nikmati kemudahan mengunduh video dari berbagai platform populer seperti TikTok,
     <string name="tonton_video_tutorial">TUTORIAL</string>
     <string name="tutup_video_tutorial">Tutup</string>
     <string name="tempel_link_instagram_disini">Tempel link instagram disini</string>
+    <string name="aksi">aksi</string>
+    <string name="hapus_dipilih">Hapus Dipilih</string>
 
 </resources>

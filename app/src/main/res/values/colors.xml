@@ -15,4 +15,7 @@
     <color name="colorDisabled">#A0A0A0</color>
     <color name="blackTab">#000000</color>
 
+    <color name="selection_bg">#D3474747</color> <!-- biru semi-transparan -->
+
+
 </resources>

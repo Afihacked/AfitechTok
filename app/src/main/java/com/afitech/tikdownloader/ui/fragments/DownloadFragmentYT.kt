@@ -16,6 +16,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.TextView
 import android.widget.Toast
@@ -28,6 +29,7 @@ import com.afitech.tikdownloader.network.NetworkHelper
 import com.afitech.tikdownloader.ui.components.LoadingDialogYT
 import com.afitech.tikdownloader.ui.services.DownloadService
 import com.afitech.tikdownloader.utils.CuanManager
+import com.afitech.tikdownloader.utils.openAppWithFallback
 import com.afitech.tikdownloader.utils.setStatusBarColor
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
@@ -117,6 +119,17 @@ class DownloadFragmentYT : Fragment() {
         cuanManager.initializeAdMob(requireContext())
         cuanManager.loadAd(adView)// AdMob
 
+        val btnOpenYoutube = view.findViewById<MaterialButton>(R.id.btnOpenYoutube)
+        btnOpenYoutube.setOnClickListener {
+            openAppWithFallback(
+                context = requireContext(),
+                primaryPackage = "app.revanced.android.youtube",
+                primaryFallbackActivity = "com.google.android.youtube.app.honeycomb.Shell\$HomeActivity",
+                fallbackPackage = "com.google.android.youtube",
+                fallbackFallbackActivity = ".app.honeycomb.Shell\$HomeActivity",
+                notFoundMessage = "Aplikasi TikTok tidak ditemukan"
+            )
+        }
 
         val textCount = view.findViewById<TextView>(R.id.textCount)
         val maxCharacters = 99
@@ -326,7 +339,7 @@ class DownloadFragmentYT : Fragment() {
     }
     override fun onResume() {
         super.onResume()
-        setStatusBarColor(R.color.colorPrimary, isLightStatusBar = false)
+        setStatusBarColor(R.color. dark_red, isLightStatusBar = false)
         checkClipboardOnStart()  // ini akan berjalan tiap fragment kembali ke foreground
     }
 }

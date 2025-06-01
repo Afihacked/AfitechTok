@@ -30,6 +30,7 @@ import com.afitech.tikdownloader.data.database.AppDatabase
 import com.afitech.tikdownloader.data.database.DownloadHistoryDao
 import com.afitech.tikdownloader.network.TikTokDownloader
 import com.afitech.tikdownloader.utils.CuanManager
+import com.afitech.tikdownloader.utils.openAppWithFallback
 import com.afitech.tikdownloader.utils.setStatusBarColor
 import com.bumptech.glide.Glide
 import com.google.android.gms.ads.AdError
@@ -98,6 +99,22 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
         loadRewardedAd()
         loadInterstitialAd()
+
+        val btnOpenTikTok = view.findViewById<LinearLayout>(R.id.btnOpenTiktok)
+        btnOpenTikTok.setOnClickListener {
+            openAppWithFallback(
+                context = requireContext(),
+                primaryPackage = "com.ss.android.ugc.trill",
+                primaryFallbackActivity = "com.ss.android.ugc.aweme.splash.SplashActivity",
+                fallbackPackage = "com.zhiliaoapp.musically.go",
+                fallbackFallbackActivity = "com.ss.android.ugc.aweme.main.homepage.MainActivity",
+                notFoundMessage = "Aplikasi TikTok tidak ditemukan"
+            )
+        }
+
+
+
+
 
         // Event Listener untuk input teks
         editText.addTextChangedListener(object : TextWatcher {
@@ -763,7 +780,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
     override fun onResume() {
         super.onResume()
-        setStatusBarColor(R.color.colorPrimary, isLightStatusBar = false)
+        setStatusBarColor(R.color.dark_red, isLightStatusBar = false)
         checkClipboardOnStart()  // ini akan berjalan tiap fragment kembali ke foreground
     }
 }

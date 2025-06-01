@@ -20,6 +20,7 @@ object YouTubeDownloader {
         .callTimeout(0, TimeUnit.SECONDS)
         .connectTimeout(0, TimeUnit.SECONDS)
         .readTimeout(0, TimeUnit.SECONDS)
+        .writeTimeout(0, TimeUnit.SECONDS)
         .build()
 
     interface ProgressCallback {
@@ -60,7 +61,7 @@ object YouTubeDownloader {
 
             val urlBuilder = HttpUrl.Builder()
                 .scheme("https")
-                .host("youtubedownloaderapi-afitech.up.railway.app")
+                .host("afitechapi-railway.up.railway.app")
                 .addPathSegment("download")
                 .addQueryParameter("url", videoUrl)
                 .addQueryParameter("format", format)
@@ -132,7 +133,7 @@ object YouTubeDownloader {
 
     fun fetchVideoInfo(url: String, format: String): VideoInfo {
         val request = Request.Builder()
-            .url("https://youtubedownloaderapi-afitech.up.railway.app/info?url=$url&format=$format")
+            .url("https://afitechapi-railway.up.railway.app/info?url=$url&format=$format")
             .build()
 
         val response = client.newCall(request).execute()

@@ -326,13 +326,29 @@ object Downloader {
         val buffer = ByteArray(8 * 1024)
         var bytesRead: Int
         var totalRead = 0
+        var lastProgress = -1
+
         while (input.read(buffer).also { bytesRead = it } != -1) {
             output.write(buffer, 0, bytesRead)
             totalRead += bytesRead
-            if (fileSize > 0) {
-                val progress = (totalRead * 100 / fileSize).coerceAtMost(100)
+
+            val progress = if (fileSize > 0) {
+                ((totalRead * 100L) / fileSize).toInt().coerceAtMost(100)
+            } else {
+                // Estimasi kasar jika fileSize tidak diketahui: misalnya update setiap 512KB
+                (totalRead / (512 * 1024)).coerceAtMost(100)
+            }
+
+            if (progress != lastProgress) {
                 onProgressUpdate(progress)
+                lastProgress = progress
             }
         }
+
+        // Pastikan progress 100% di akhir
+        if (lastProgress < 100) {
+            onProgressUpdate(100)
+        }
     }
+
 }

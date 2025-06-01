@@ -22,7 +22,7 @@
             android:id="@+id/textLoading"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Menghubungi server..."
+            android:text="Menghubungkan server..."
             android:textColor="@android:color/white"
             android:textSize="16sp"
             android:layout_marginTop="12dp" />
@@ -31,7 +31,7 @@
             android:id="@+id/textSabar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Sabar ya..."
+            android:text="Hampir selesai..."
             android:textColor="@android:color/white"
             android:textSize="14sp"
             android:visibility="gone"

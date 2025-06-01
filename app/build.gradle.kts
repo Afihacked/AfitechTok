@@ -7,7 +7,7 @@ plugins {
 android {
     applicationVariants.configureEach {
         val appName = "Afitech SaveAll"
-        val versionName = "3-beta"
+        val versionName = "3.0-beta"
         val versionCode = 8
 
         outputs.configureEach {
@@ -35,7 +35,7 @@ android {
         minSdk = 29
         targetSdk = 35
         versionCode = 8
-        versionName = "3-beta"
+        versionName = "3.0-beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -76,6 +76,7 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    implementation ("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 
 
     implementation(libs.room.runtime)

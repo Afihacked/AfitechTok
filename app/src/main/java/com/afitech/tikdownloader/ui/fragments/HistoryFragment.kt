@@ -78,7 +78,7 @@ class HistoryFragment : Fragment() {
     override fun onResume() {
         super.onResume()
 
-        setStatusBarColor(R.color.colorPrimary, isLightStatusBar = false)
+        setStatusBarColor(R.color.dark_red, isLightStatusBar = false)
 
     }
 }

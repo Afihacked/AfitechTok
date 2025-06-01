@@ -308,7 +308,7 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
     private suspend fun fetchInstagramContentInfo(instagramUrl: String): InstagramContentInfo? {
         return try {
             val cleanUrl = cleanInstagramUrl(instagramUrl)
-            val backendUrl = "https://youtubedownloaderapi-afitech.up.railway.app/info?url=${Uri.encode(cleanUrl)}"
+            val backendUrl = "https://afitech.fun/info?url=${Uri.encode(cleanUrl)}"
             val urlConnection = URL(backendUrl).openConnection() as HttpURLConnection
             urlConnection.requestMethod = "GET"
             urlConnection.connectTimeout = 10000
@@ -355,7 +355,7 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
                 when (format.lowercase()) {
                     "video", "reels", "story" -> {
                         val fileName = "instagram_video_${System.currentTimeMillis()}.mp4"
-                        val backendDownloadUrl = "https://youtubedownloaderapi-afitech.up.railway.app/download/instagram" +
+                        val backendDownloadUrl = "https://afitech.fun/download/instagram" +
                                 "?url=${Uri.encode(cleanUrl)}&format=mp4"
 
                         Downloader.downloadFile(
@@ -392,7 +392,7 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
                             }
                         } else {
                             val fileName = "instagram_img_${System.currentTimeMillis()}.jpg"
-                            val backendDownloadUrl = "https://youtubedownloaderapi-afitech.up.railway.app/download/instagram-photo" +
+                            val backendDownloadUrl = "https://afitech.fun/download/instagram-photo" +
                                     "?url=${Uri.encode(cleanUrl)}"
 
                             Downloader.downloadFile(
@@ -452,7 +452,7 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
         lifecycleScope.launch(Dispatchers.IO) {
             selectedIndices.forEachIndexed { idx, slideIndex ->
                 try {
-                    val backendDownloadUrl = "https://youtubedownloaderapi-afitech.up.railway.app/download/instagram-photo" +
+                    val backendDownloadUrl = "https://afitech.fun/download/instagram-photo" +
                             "?url=${Uri.encode(cleanUrl)}&media=$slideIndex"
 
                     val fileName = "instagram_img_${System.currentTimeMillis()}_$slideIndex.jpg"

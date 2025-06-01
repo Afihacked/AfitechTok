@@ -11,6 +11,8 @@ import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.appcompat.app.AppCompatActivity
 import com.afitech.tikdownloader.R
+import com.afitech.tikdownloader.utils.setStatusBarColor
+
 
 @SuppressLint("CustomSplashScreen")
 class SplashActivity : AppCompatActivity() {

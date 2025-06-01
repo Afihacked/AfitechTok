@@ -34,6 +34,7 @@
 
 
     <application
+        android:networkSecurityConfig="@xml/network_security_config"
         android:requestLegacyExternalStorage="true"
         android:hardwareAccelerated="true"
         android:largeHeap="false"
@@ -81,5 +82,13 @@
             android:exported="false" />
 
     </application>
+    <queries>
+        <!-- Izinkan aplikasi melihat TikTok -->
+        <package android:name="com.ss.android.ugc.trill" />
+    </queries>
+    <queries>
+        <!-- Izinkan aplikasi melihat TikTok -->
+        <package android:name="com.google.android.youtube" />
+    </queries>
 
 </manifest>
