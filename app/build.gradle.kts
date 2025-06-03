@@ -1,12 +1,12 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("kotlin-kapt")
+    alias(libs.plugins.kotlin.kapt)
 }
 
 android {
     applicationVariants.configureEach {
-        val appName = "Afitech SaveAll"
+        val appName = "Sosmed Toolkit"
         val versionName = "3.0-beta"
         val versionCode = 8
 
@@ -27,11 +27,11 @@ android {
     buildFeatures {
         viewBinding = true
     }
-    namespace = "com.afitech.tikdownloader"
+    namespace = "com.afitech.sosmedtoolkit"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.afitech.tikdownloader"
+        applicationId = "com.afitech.sosmedtoolkit"
         minSdk = 29
         targetSdk = 35
         versionCode = 8

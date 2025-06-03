@@ -17,7 +17,7 @@ lifecycle = "2.5.1"
 media3Exoplayer = "1.6.1"
 media3Ui = "1.6.1"
 fragmentKtx = "1.5.5"
-lifecycleViewModelKtx = "2.6.0"# Versi untuk lifecycle-viewmodel-ktx yang diperlukan untuk viewModelScope
+lifecycleViewModelKtx = "2.6.0" # Versi untuk lifecycle-viewmodel-ktx yang diperlukan untuk viewModelScope
 
 [libraries]
 fragmentKtx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragmentKtx" }
@@ -46,4 +46,4 @@ androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.re
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-
+kotlin-kapt = { id = "org.jetbrains.kotlin.kapt" }

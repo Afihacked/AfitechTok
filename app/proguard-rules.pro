@@ -91,4 +91,4 @@
 # -----------------------------
 # ✅ Keep model untuk JSON parsing (Gson/Moshi)
 # -----------------------------
--keep class com.afitech.tikdownloader.data.model.** { *; }
+-keep class com.afitech.sosmedtoolkit.data.model.** { *; }
