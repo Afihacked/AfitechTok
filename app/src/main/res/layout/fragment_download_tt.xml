@@ -6,20 +6,20 @@
     android:background="?android:attr/windowBackground"
     android:fitsSystemWindows="true">
 
-    <!-- Konten -->
-    <!-- Scrollable Content -->
+    <!-- Konten Scroll -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:padding="16dp"
-        app:layout_constraintBottom_toTopOf="@id/adContainer"
-        app:layout_constraintTop_toTopOf="parent">
+        android:padding="10dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/adContainer">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- Input Link -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/inputLayout"
                 style="@style/EditTextTheme"
@@ -29,27 +29,15 @@
                 android:hint="@string/tempel_link_tiktok_disini"
                 android:textColor="@color/colorOnSurface"
                 android:textColorHint="@color/colorHint"
-                app:boxCornerRadiusBottomEnd="18dp"
-                app:boxCornerRadiusBottomStart="18dp"
-                app:boxCornerRadiusTopEnd="18dp"
-                app:boxCornerRadiusTopStart="18dp"
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusTopStart="12dp"
                 app:boxStrokeWidthFocused="2dp"
                 app:endIconMode="clear_text"
                 app:hintAnimationEnabled="true"
                 app:hintEnabled="true"
                 app:hintTextColor="@android:color/holo_red_dark">
-
-                <TextView
-                    android:id="@+id/textCount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="end"
-                    android:layout_marginTop="2dp"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
-                    android:text="@string/count_text"
-                    android:textColor="@android:color/darker_gray"
-                    android:textSize="14sp" />
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/inputLink"
@@ -61,128 +49,299 @@
                     android:textSize="14sp"
                     app:boxStrokeColor="@color/colorPrimary"
                     app:boxStrokeErrorColor="@color/colorOutline" />
-
+                <!-- Dikeluarkan dari TextInputLayout -->
+                <TextView
+                    android:id="@+id/textCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:layout_marginTop="2dp"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:text="@string/count_text"
+                    android:textColor="@android:color/darker_gray"
+                    android:textSize="14sp" />
             </com.google.android.material.textfield.TextInputLayout>
 
-
-            <androidx.cardview.widget.CardView
-                android:layout_width="210dp"
+            <!-- Bar Tombol -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                app:cardCornerRadius="18dp"
-                app:cardElevation="6dp">
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="16dp">
 
-                <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp">
-
-                    <!-- Progress Bar sebagai Background -->
-                    <ProgressBar
-                        android:id="@+id/progressDownload"
-                        style="?android:attr/progressBarStyleHorizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:indeterminate="false"
-                        android:max="100"
-                        android:progressDrawable="@drawable/progress_full"
-                        android:visibility="gone" />
+                <!-- Tombol Tempel -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="0dp">
 
                     <LinearLayout
-                        android:id="@+id/btnDownload"
+                        android:id="@+id/btnPaste"
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
                         android:background="@android:color/holo_red_dark"
                         android:backgroundTint="@android:color/holo_red_dark"
                         android:clickable="true"
                         android:focusable="true"
-                        android:gravity="center_vertical"
+                        android:gravity="center"
                         android:orientation="horizontal"
-                        android:paddingHorizontal="16dp">
+                        android:paddingHorizontal="12dp">
 
                         <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:gravity="center"
-
-                            android:text="@string/download"
-                            android:textColor="@android:color/white"
-                            android:textSize="18sp" />
-                        <!-- Persentase (%) -->
-                        <TextView
-                            android:id="@+id/textProgress"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:text="@string/persen"
+                            android:text="Tempel"
                             android:textColor="@android:color/white"
-                            android:textSize="16sp"
+                            android:textSize="16sp" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- Tombol Unduh -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="0dp"
+                    android:layout_weight="2"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="0dp">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp">
+
+                        <ProgressBar
+                            android:id="@+id/progressDownload"
+                            style="?android:attr/progressBarStyleHorizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:indeterminate="false"
+                            android:max="100"
+                            android:progressDrawable="@drawable/progress_full"
                             android:visibility="gone" />
 
-                        <androidx.appcompat.widget.AppCompatImageView
-                            android:id="@+id/arrowIcon"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_marginStart="8dp"
-                            android:contentDescription="@string/dropdown_arrow"
-                            android:src="@drawable/ic_arrow_down" />
-                    </LinearLayout>
-                </FrameLayout>
-            </androidx.cardview.widget.CardView>
+                        <LinearLayout
+                            android:id="@+id/btnDownload"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:background="@android:color/holo_red_dark"
+                            android:backgroundTint="@android:color/holo_red_dark"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="8dp">
 
-            <androidx.cardview.widget.CardView
-                android:id="@+id/openTiktokCard"
-                android:layout_width="210dp"
+                            <TextView
+                                android:id="@+id/unduhtext"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:text="@string/download"
+                                android:textColor="@android:color/white"
+                                android:textSize="18sp" />
+
+                            <TextView
+                                android:id="@+id/textProgress"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:text="@string/persen"
+                                android:textColor="@android:color/white"
+                                android:textSize="16sp"
+                                android:visibility="gone" />
+
+                            <androidx.appcompat.widget.AppCompatImageView
+                                android:id="@+id/arrowIcon"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_marginStart="8dp"
+                                android:contentDescription="@string/dropdown_arrow"
+                                android:src="@drawable/ic_arrow_down" />
+                        </LinearLayout>
+                    </FrameLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- Tombol TikTok -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="8dp"
+                    app:cardCornerRadius="18dp"
+                    android:background="#00780000"
+                    app:cardElevation="0dp">
+
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:id="@+id/btnOpenTiktok"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_gravity="center"
+                        android:contentDescription="TikTok"
+                        android:src="@drawable/ic_tiktok" />
+                </androidx.cardview.widget.CardView>
+            </LinearLayout>
+
+            <!-- Judul Tutorial -->
+            <TextView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="50dp"
+                android:layout_marginBottom="5dp"
                 android:layout_gravity="center"
-                android:layout_marginTop="60dp"
-                app:cardCornerRadius="18dp"
-                app:cardElevation="6dp">
+                android:gravity="center"
+                android:text="BAGAIMANA CARA UNDUH DARI TIKTOK ?"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/black" />
+            <!-- Box Tutorial yang Bisa Discroll Horizontal -->
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:overScrollMode="never"
+                android:scrollbars="none">
 
                 <LinearLayout
-                    android:id="@+id/btnOpenTiktok"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:background="@android:color/holo_red_dark"
-                    android:backgroundTint="@android:color/holo_red_dark"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:orientation="horizontal"
-                    android:paddingHorizontal="16dp">
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="50dp"
+                    android:paddingBottom="16dp">
 
-                    <TextView
+                    <!-- Gambar Tutorial 1 -->
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:text="Ambil Link"
-                        android:textColor="@android:color/white"
-                        android:textSize="18sp" />
+                        android:orientation="vertical"
+                        android:gravity="center_horizontal"
+                        android:layout_marginBottom="28dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="1. Klik Ikon Tiktok Untuk Membuka Aplikasi Tiktok"
+                            android:textStyle="bold"
+                            android:textSize="16sp"
+                            android:textColor="@android:color/black"
+                            android:layout_gravity="left"/>
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:adjustViewBounds="true"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/step1" />
+                    </LinearLayout>
+
+                    <!-- Gambar Tutorial 2 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center_horizontal"
+                        android:layout_marginBottom="28dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="2. Cari Video yang Ingin di Unduh, Kemudian Klik Ikon Bagikan"
+                            android:textStyle="bold"
+                            android:textSize="16sp"
+                            android:textColor="@android:color/black"
+                            android:layout_gravity="left"/>
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:adjustViewBounds="true"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/step3" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center_horizontal"
+                        android:layout_marginBottom="28dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="3. Kemudian Pilih Salin Tautan. Buka Kembali Aplikasi Sosmed Toolkit"
+                            android:textStyle="bold"
+                            android:textSize="16sp"
+                            android:textColor="@android:color/black"
+                            android:layout_gravity="left"/>
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:adjustViewBounds="true"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/step4" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center_horizontal"
+                        android:layout_marginBottom="28dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="4. Jika Aplikasi Tidak Menempel Tautan Otomatis Klik Tombol Tempel, Kemudian Klik Unduh. "
+                            android:textStyle="bold"
+                            android:textSize="16sp"
+                            android:textColor="@android:color/black"
+                            android:layout_gravity="left"/>
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:adjustViewBounds="true"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/step2" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center_horizontal"
+                        android:layout_marginBottom="28dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="5. Jika Tautan Berupa Video Maka Akan Muncul Dua Pilihan Videos atau Music dan Ketika Tautan Berisi Gambar Maka Akan Muncul Halaman Untuk Memilih Foto Yang Ingin Diunduh."
+                            android:textStyle="bold"
+                            android:textSize="16sp"
+                            android:textColor="@android:color/black"
+                            android:layout_gravity="left"/>
+
+                       </LinearLayout>
+                    <!-- Tambahkan lebih banyak gambar tutorial jika diperlukan -->
+
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
-            <!--        panduan-->
-<!--            <TextView-->
-<!--                android:id="@+id/guideText"-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="48dp"-->
-<!--                android:layout_marginStart="10dp"-->
-<!--                android:layout_marginTop="10dp"-->
-<!--                android:clickable="true"-->
-<!--                android:gravity="center"-->
-<!--                android:text="@string/notes"-->
-<!--                android:textColor="@android:color/darker_gray"-->
-<!--                android:textSize="16sp"-->
-<!--                android:textStyle="italic"-->
-<!--                app:layout_constraintBottom_toTopOf="@id/adView"-->
-<!--                app:layout_constraintEnd_toEndOf="parent"-->
-<!--                app:layout_constraintStart_toStartOf="parent"-->
-<!--                app:layout_constraintTop_toBottomOf="@id/inputLayout" />-->
+            </ScrollView>
+
 
         </LinearLayout>
-
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Container untuk Switch dan Iklan -->
+    <!-- Container Iklan -->
     <LinearLayout
         android:id="@+id/adContainer"
         android:layout_width="match_parent"
@@ -192,16 +351,6 @@
         android:gravity="center"
         app:layout_constraintBottom_toBottomOf="parent">
 
-        <!-- Tombol ON/OFF Iklan -->
-<!--        <androidx.appcompat.widget.SwitchCompat-->
-<!--            android:id="@+id/switchAd"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:text="@string/tampilkan_iklan"-->
-<!--            android:checked="true"-->
-<!--            android:paddingBottom="8dp"/>-->
-
-        <!-- AdMob Banner -->
         <com.google.android.gms.ads.AdView
             android:id="@+id/adView"
             android:layout_width="match_parent"
@@ -209,5 +358,4 @@
             app:adSize="BANNER"
             app:adUnitId="ca-app-pub-2025447201837747/8904457185"/>
     </LinearLayout>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

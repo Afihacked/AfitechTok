@@ -1,6 +1,8 @@
 package com.afitech.sosmedtoolkit.ui
 
 import android.Manifest
+import android.app.NotificationManager
+import android.content.Context
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
@@ -20,6 +22,7 @@ import androidx.fragment.app.Fragment
 import com.afitech.sosmedtoolkit.R
 import com.afitech.sosmedtoolkit.ui.fragments.*
 import com.afitech.sosmedtoolkit.ui.helpers.ThemeHelper
+import com.afitech.sosmedtoolkit.ui.services.DownloadServiceTT
 import com.google.android.material.navigation.NavigationView
 
 class MainActivity : AppCompatActivity() {
@@ -54,6 +57,9 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        val notifManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notifManager.cancel(DownloadServiceTT.NOTIF_ID)
+
         drawerLayout = findViewById(R.id.drawer_layout)
         navView = findViewById(R.id.nav_view)
         val toolbar: Toolbar = findViewById(R.id.toolbar)
@@ -70,7 +76,8 @@ class MainActivity : AppCompatActivity() {
         navView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.nav_tt_offline -> replaceFragment(DownloadFragmentTT(), getString(R.string.nav_tt_offline))
-                R.id.nav_yt_offline -> replaceFragment(DownloadFragmentYT(), getString(R.string.nav_yt_offline))
+//                R.id.nav_yt_offline -> replaceFragment(DownloadFragmentYT(), getString(R.string.nav_yt_offline))
+//                R.id.nav_ig_offline -> replaceFragment(DownloadFragmentIG(), getString(R.string.nav_ig))
                 R.id.nav_wa_offline -> replaceFragment(WhatsappStoryFragment(), getString(R.string.nav_wa_offline))
                 R.id.nav_history -> replaceFragment(HistoryFragment(), getString(R.string.nav_history))
                 R.id.nav_about -> replaceFragment(TentangFragment(), getString(R.string.nav_about))
@@ -88,7 +95,9 @@ class MainActivity : AppCompatActivity() {
                     getString(R.string.nav_yt_offline)
                 )
                 "tt_downloader" -> replaceFragment(DownloadFragmentTT(), getString(R.string.nav_tt_offline))
+                "ig_downloader" -> replaceFragment(DownloadFragmentIG(), getString(R.string.nav_ig))
                 "wa_downloader" -> replaceFragment(WhatsappStoryFragment(), getString(R.string.nav_wa_offline))
+                "history" -> replaceFragment(HistoryFragment(), getString(R.string.nav_history))
                 else -> replaceFragment(HomeFragment(), getString(R.string.nav_home))
             }
         }
@@ -104,25 +113,25 @@ class MainActivity : AppCompatActivity() {
         supportActionBar?.title = title
     }
 
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.main_toolbar_menu, menu)
-        menu?.findItem(R.id.action_night_mode)?.let { updateThemeIcon(it) }
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_night_mode -> {
-                val isDarkMode = ThemeHelper.getIsDarkMode(sharedPref)
-                val newMode = !isDarkMode
-                ThemeHelper.toggleTheme(sharedPref, newMode)
-                updateThemeIcon(item)  // Update icon menu langsung
-                recreate()
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
+//    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+//        menuInflater.inflate(R.menu.main_toolbar_menu, menu)
+//        menu?.findItem(R.id.action_night_mode)?.let { updateThemeIcon(it) }
+//        return true
+//    }
+//
+//    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+//        return when (item.itemId) {
+//            R.id.action_night_mode -> {
+//                val isDarkMode = ThemeHelper.getIsDarkMode(sharedPref)
+//                val newMode = !isDarkMode
+//                ThemeHelper.toggleTheme(sharedPref, newMode)
+//                updateThemeIcon(item)  // Update icon menu langsung
+//                recreate()
+//                true
+//            }
+//            else -> super.onOptionsItemSelected(item)
+//        }
+//    }
 
     private fun updateThemeIcon(item: MenuItem) {
         val isDarkMode = ThemeHelper.getIsDarkMode(sharedPref)

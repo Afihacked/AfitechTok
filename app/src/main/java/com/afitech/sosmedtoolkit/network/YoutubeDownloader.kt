@@ -13,6 +13,9 @@ import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 object YouTubeDownloader {
@@ -61,7 +64,7 @@ object YouTubeDownloader {
 
             val urlBuilder = HttpUrl.Builder()
                 .scheme("https")
-                .host("afitechapi-railway.up.railway.app")
+                .host("afitech.fun")
                 .addPathSegment("download")
                 .addQueryParameter("url", videoUrl)
                 .addQueryParameter("format", format)
@@ -98,8 +101,8 @@ object YouTubeDownloader {
                 .replace(Regex("_+"), "_")
                 .trim('_')
                 .take(100)
-
-            val fileName = "Youtube-$sanitizedTitle.$format"
+            val timeStamp = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(Date())
+            val fileName = "$sanitizedTitle${timeStamp}.$format".lowercase()
             val mimeType = if (isAudio) "audio/mpeg" else "video/mp4"
 
             // Panggil Downloader.downloadFile suspend function
@@ -133,7 +136,7 @@ object YouTubeDownloader {
 
     fun fetchVideoInfo(url: String, format: String): VideoInfo {
         val request = Request.Builder()
-            .url("https://afitechapi-railway.up.railway.app/info?url=$url&format=$format")
+            .url("https://afitech.fun/info?url=$url&format=$format")
             .build()
 
         val response = client.newCall(request).execute()

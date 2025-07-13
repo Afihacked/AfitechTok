@@ -1,13 +1,13 @@
 <resources>
     <!-- Base Theme -->
-    <style name="Base.Theme.TikDownloader" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.TikDownloader" parent="Theme.Material3.Light.NoActionBar">
         <item name="colorSurface">@color/colorSurface</item>
         <item name="colorOnSurface">@color/colorOnSurface</item>
     </style>
     <!-- Tema utama aplikasi -->
     <style name="Theme.TikDownloader" parent="Base.Theme.TikDownloader">
         <!-- Tambahkan ini agar status bar tidak transparan -->
-        <item name="android:statusBarColor">@color/dark_red</item>
+        <item name="android:statusBarColor">@color/sttsbar</item>
         <item name="android:windowTranslucentStatus">false</item>
     </style>
     <!-- Tema Popup Menu -->
@@ -22,9 +22,9 @@
         <item name="android:textColorHint">@color/colorHint</item>
         <item name="boxStrokeColor">@drawable/edit_text_border</item>
     </style>
-    <style name="Theme.Splash" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.Splash" parent="Theme.MaterialComponents.Light.NoActionBar">
         <item name="android:windowBackground">@drawable/splash_background</item>
-        <item name="android:statusBarColor">@color/dark_red</item>
+        <item name="android:statusBarColor">@color/sttsbar</item>
         <item name="android:windowTranslucentStatus">false</item>
 
     </style>

@@ -241,7 +241,7 @@ class HistoryListFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        setStatusBarColor(R.color.colorPrimary, isLightStatusBar = false)
+        setStatusBarColor(R.color.sttsbar , isLightStatusBar = false)
     }
 
     companion object {

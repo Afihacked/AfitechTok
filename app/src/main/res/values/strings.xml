@@ -38,17 +38,14 @@
     <string name="btn_tiktok_downloader">Tiktok</string>
     <string name="btn_youtube_downloader">Youtube</string>
     <string name="tentang"><b>Aplikasi Unduh Video Terbaik untuk Semua Platform!</b>
-
-Nikmati kemudahan mengunduh video dari berbagai platform populer seperti TikTok, YouTube, WhatsApp, dan banyak lagi! Dengan aplikasi ini, kamu bisa menyimpan video kesukaan tanpa watermark dengan kualitas terbaik dan cepat. Semua fitur yang tersedia dapat diakses secara gratis, tanpa perlu biaya tersembunyi!</string>
+Nikmati kemudahan mengunduh video dari berbagai platform populer seperti TikTok, WhatsApp, dan banyak lagi! Dengan aplikasi ini, kamu bisa menyimpan video kesukaan tanpa watermark dengan kualitas terbaik dan cepat. Semua fitur yang tersedia dapat diakses secara gratis, tanpa perlu biaya tersembunyi!</string>
     <string name="dikembangkan_oleh_afitech">Dikembangkan oleh Afitech X ChatGPT</string>
-    <string name="versi_2_0_beta">Versi 3.0-beta</string>
-
     <string name="nav_home">Beranda</string>
     <string name="nav_tt_offline">Tiktok</string>
     <string name="nav_wa_offline">WhatsApp</string>
     <string name="nav_yt_offline">Youtube</string>
     <string name="nav_ig">Instagram</string>
-    <string name="nav_history">Riwayat</string>
+    <string name="nav_history">Riwayat Unduh</string>
     <string name="nav_about">Tentang Aplikasi</string>
         <string name="play_pause_button">Putar atau jeda video</string>
         <string name="close_button">Tutup pemutar video</string>

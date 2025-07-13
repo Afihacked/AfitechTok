@@ -309,6 +309,7 @@ object Downloader {
 
         var newFileName = "$baseName.$extension"
         var counter = 1
+        // Loop cek apakah file sudah ada, kalau iya tambahkan (1), (2), dst
         while (File(dir, newFileName).exists()) {
             newFileName = "$baseName($counter).$extension"
             counter++
@@ -316,6 +317,7 @@ object Downloader {
 
         return newFileName
     }
+
 
     private fun copyStreamWithProgress(
         input: InputStream,

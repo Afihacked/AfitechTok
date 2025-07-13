@@ -44,6 +44,9 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 
 class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
@@ -354,7 +357,10 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
 
                 when (format.lowercase()) {
                     "video", "reels", "story" -> {
-                        val fileName = "instagram_video_${System.currentTimeMillis()}.mp4"
+                        val timeStamp = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(
+                            Date()
+                        )
+                        val fileName = "instagram_video_${System.currentTimeMillis()}${timeStamp}.mp4"
                         val backendDownloadUrl = "https://afitech.fun/download/instagram" +
                                 "?url=${Uri.encode(cleanUrl)}&format=mp4"
 
@@ -452,7 +458,7 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
         lifecycleScope.launch(Dispatchers.IO) {
             selectedIndices.forEachIndexed { idx, slideIndex ->
                 try {
-                    val backendDownloadUrl = "https://afitech.fun/download/instagram-photo" +
+                    val backendDownloadUrl = "https://afitechapi-railway.up.railway.app/download/instagram-photo" +
                             "?url=${Uri.encode(cleanUrl)}&media=$slideIndex"
 
                     val fileName = "instagram_img_${System.currentTimeMillis()}_$slideIndex.jpg"

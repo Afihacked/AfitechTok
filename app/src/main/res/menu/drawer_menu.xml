@@ -12,9 +12,9 @@
             android:id="@+id/nav_tt_offline"
             android:title="TikTok" />
 
-        <item
-            android:id="@+id/nav_yt_offline"
-            android:title="YouTube" />
+<!--        <item-->
+<!--            android:id="@+id/nav_yt_offline"-->
+<!--            android:title="YouTube" />-->
 
         <item
             android:id="@+id/nav_wa_offline"

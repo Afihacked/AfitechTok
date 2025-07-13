@@ -7,8 +7,8 @@ plugins {
 android {
     applicationVariants.configureEach {
         val appName = "Sosmed Toolkit"
-        val versionName = "3.0-beta"
-        val versionCode = 8
+        val versionName = "3.1-beta"
+        val versionCode = 10
 
         outputs.configureEach {
             (this as? com.android.build.gradle.internal.api.BaseVariantOutputImpl)?.outputFileName =
@@ -34,8 +34,8 @@ android {
         applicationId = "com.afitech.sosmedtoolkit"
         minSdk = 29
         targetSdk = 35
-        versionCode = 8
-        versionName = "3.0-beta"
+        versionCode = 10
+        versionName = "3.1-beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -61,6 +61,7 @@ android {
 }
 
 dependencies {
+    implementation (libs.lottie)
     implementation ("org.jsoup:jsoup:1.14.3")
     implementation(libs.fragmentKtx) // Menggunakan fragment-ktx versi 1.5.5
     implementation(libs.lifecycleViewModelKtx)

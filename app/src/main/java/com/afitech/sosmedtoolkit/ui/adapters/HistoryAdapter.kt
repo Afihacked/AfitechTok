@@ -181,27 +181,6 @@ class HistoryAdapter(
 
     }
 
-//    "Hapus" -> {
-//        val deleted = try {
-//            context.contentResolver.delete(uri, null, null)
-//            true
-//        } catch (e: Exception) {
-//            e.printStackTrace()
-//            false
-//        }
-//
-//        val file = File(Uri.parse(history.filePath).path ?: "")
-//        val fileStillExists = file.exists()
-//
-//        if (deleted || !fileStillExists) {
-//            onDelete(history)
-//            historyList = historyList.filter { it != history }
-//            notifyDataSetChanged()
-//        } else {
-//            Toast.makeText(context, "Gagal menghapus file", Toast.LENGTH_SHORT).show()
-//        }
-//        true
-//    }
     private fun fileExists(uri: Uri): Boolean {
         return try {
             // Cek pakai content resolver
