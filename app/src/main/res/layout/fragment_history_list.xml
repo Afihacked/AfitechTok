@@ -20,14 +20,14 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"/>
 
-        <!-- RecyclerView untuk menampilkan daftar riwayat download -->
+        <!-- RecyclerView -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerViewHistory"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:paddingBottom="8dp"
             app:layout_constraintTop_toBottomOf="@id/progressBar"
-            app:layout_constraintBottom_toTopOf="@id/btnDeleteSelected"
+            app:layout_constraintBottom_toTopOf="@id/layoutSelectionActions"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"/>
 
@@ -46,19 +46,41 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- Tombol hapus untuk banyak item -->
-        <Button
-            android:id="@+id/btnDeleteSelected"
-            android:layout_width="match_parent"
+        <!-- Layout 2 Tombol: Pilih Semua & Hapus Dipilih -->
+        <LinearLayout
+            android:id="@+id/layoutSelectionActions"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="@string/hapus_dipilih"
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:padding="8dp"
             android:visibility="gone"
-            android:backgroundTint="@color/colorPrimary"
-            android:textColor="@color/white"
-            android:layout_margin="8dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <Button
+                android:id="@+id/btnSelectAll"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Pilih Semua"
+                android:backgroundTint="@color/colorPrimary"
+                android:textColor="@color/white"/>
+
+            <Space
+                android:layout_width="8dp"
+                android:layout_height="wrap_content"/>
+
+            <Button
+                android:id="@+id/btnDeleteSelected"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="@string/hapus_dipilih"
+                android:backgroundTint="@color/colorPrimary"
+                android:textColor="@color/white"/>
+        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

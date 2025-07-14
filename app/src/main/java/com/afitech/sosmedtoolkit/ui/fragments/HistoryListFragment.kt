@@ -4,26 +4,25 @@ import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.view.animation.AnimationUtils
-import android.widget.Toast
 import androidx.activity.addCallback
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.afitech.sosmedtoolkit.R
 import com.afitech.sosmedtoolkit.data.database.AppDatabase
-import com.afitech.sosmedtoolkit.data.model.DownloadHistory
+import com.afitech.sosmedtoolkit.data.repository.DownloadHistoryRepository
 import com.afitech.sosmedtoolkit.databinding.FragmentHistoryListBinding
 import com.afitech.sosmedtoolkit.ui.adapters.HistoryAdapter
+import com.afitech.sosmedtoolkit.ui.viewmodel.HistoryListViewModel
+import com.afitech.sosmedtoolkit.ui.viewmodel.HistoryListViewModelFactory
 import com.afitech.sosmedtoolkit.utils.setStatusBarColor
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import java.io.File
 
 class HistoryListFragment : Fragment() {
@@ -32,19 +31,23 @@ class HistoryListFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var adapter: HistoryAdapter
+
     private val db by lazy { AppDatabase.getDatabase(requireContext()).downloadHistoryDao() }
+    private val viewModel by lazy {
+        val repository = DownloadHistoryRepository(db)
+        val factory = HistoryListViewModelFactory(repository)
+        ViewModelProvider(this, factory)[HistoryListViewModel::class.java]
+    }
 
     private var filterType: String = "All"
+    private var historyJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         filterType = arguments?.getString("filterType") ?: "All"
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentHistoryListBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -54,7 +57,6 @@ class HistoryListFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
-        // Set warna animasi swipe refresh
         binding.swipeRefreshLayout.setColorSchemeResources(
             R.color.colorPrimary,
             R.color.colorAccent,
@@ -62,66 +64,42 @@ class HistoryListFragment : Fragment() {
         )
 
         binding.swipeRefreshLayout.setOnRefreshListener {
-            loadHistoryData()
+            reloadHistory()
         }
-
-        binding.recyclerViewHistory.layoutAnimation =
-            AnimationUtils.loadLayoutAnimation(requireContext(), R.anim.layout_fall_down)
-
 
         adapter = HistoryAdapter(
             context = requireContext(),
             historyList = emptyList(),
             onDelete = { history ->
-                lifecycleScope.launch {
-                    if (deleteFile(history)) {
-                        db.deleteDownload(history)
-                        adapter.updateData(adapter.getCurrentList().filter { it != history })
-                    } else {
-                        Toast.makeText(requireContext(), "Gagal menghapus data", Toast.LENGTH_SHORT).show()
-                    }
-                }
+                viewModel.delete(history)
+                reloadHistory()
             },
-
-                    onMultipleDelete = { listToDelete ->
-                lifecycleScope.launch {
-                    var successCount = 0
-                    listToDelete.forEach { history ->
-                        if (deleteFile(history)) {
-                            db.deleteDownload(history)
-                            successCount++
-                        }
-                    }
-                    loadHistoryData()
-                    Toast.makeText(requireContext(), "$successCount item dihapus", Toast.LENGTH_SHORT).show()
-                }
+            onMultipleDelete = { list ->
+                viewModel.deleteMultiple(list)
+                reloadHistory()
             },
-            onSelectionChanged = {
-                updateSelectionUI()
-            }
+            onSelectionChanged = { updateSelectionUI() }
         )
 
-        binding.recyclerViewHistory.apply {
-            layoutManager = LinearLayoutManager(requireContext())
-            adapter = this@HistoryListFragment.adapter
-        }
+
+        binding.recyclerViewHistory.layoutManager = LinearLayoutManager(requireContext())
+        binding.recyclerViewHistory.adapter = adapter
+        binding.recyclerViewHistory.layoutAnimation = AnimationUtils.loadLayoutAnimation(requireContext(), R.anim.layout_fall_down)
 
         binding.btnDeleteSelected.setOnClickListener {
-            val selected = adapter.getSelectedItems()
-            if (selected.isNotEmpty()) {
-                lifecycleScope.launch {
-                    var successCount = 0
-                    selected.forEach {
-                        if (deleteFile(it)) {
-                            db.deleteDownload(it)
-                            successCount++
-                        }
-                    }
-                    adapter.clearSelection()
-                    loadHistoryData()
-                    Toast.makeText(requireContext(), "$successCount item dihapus", Toast.LENGTH_SHORT).show()
-                }
+            adapter.deleteSelectedItems()
+        }
+
+        binding.btnSelectAll.setOnClickListener {
+            val totalItems = adapter.getCurrentList()
+            val selectedItems = adapter.getSelectedItems()
+            if (selectedItems.size == totalItems.size) {
+                adapter.clearSelection()
+            } else {
+                adapter.updateData(totalItems)
+                totalItems.forEach { adapter.selectItem(it) }
             }
+            updateSelectionUI()
         }
 
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
@@ -132,15 +110,47 @@ class HistoryListFragment : Fragment() {
                 requireActivity().onBackPressed()
             }
         }
-// Start loading with spinner animation
-        binding.swipeRefreshLayout.isRefreshing = true
-        loadHistoryData()
+
+        reloadHistory()
     }
 
+    private fun reloadHistory() {
+        historyJob?.cancel()
+        binding.swipeRefreshLayout.isRefreshing = true
+        historyJob = viewModel.historyList.onEach { data ->
+            val filtered = data.filter { isFileExist(it.filePath) }
+            adapter.updateData(filtered)
+
+            binding.textEmpty.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
+            binding.recyclerViewHistory.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
+            binding.recyclerViewHistory.scheduleLayoutAnimation()
+
+            updateSelectionUI()
+            binding.swipeRefreshLayout.isRefreshing = false
+        }.launchIn(lifecycleScope)
+        viewModel.loadHistory(filterType)
+    }
+
+    private fun View.fadeIn() {
+        startAnimation(AnimationUtils.loadAnimation(context, R.anim.fade_in))
+        visibility = View.VISIBLE
+    }
+
+    private fun View.fadeOut() {
+        startAnimation(AnimationUtils.loadAnimation(context, R.anim.fade_out))
+        visibility = View.GONE
+    }
 
     private fun updateSelectionUI() {
         val selectedCount = adapter.getSelectedItems().size
-        binding.btnDeleteSelected.visibility = if (selectedCount > 0) View.VISIBLE else View.GONE
+        val totalItems = adapter.getCurrentList().size
+        if (selectedCount > 0) {
+            if (binding.layoutSelectionActions.visibility != View.VISIBLE) binding.layoutSelectionActions.fadeIn()
+            binding.btnDeleteSelected.text = "Hapus Dipilih ($selectedCount)"
+            binding.btnSelectAll.text = if (selectedCount == totalItems) "Batalkan Semua" else "Pilih Semua"
+        } else {
+            if (binding.layoutSelectionActions.visibility == View.VISIBLE) binding.layoutSelectionActions.fadeOut()
+        }
     }
 
     private fun isFileExist(filePath: String): Boolean {
@@ -153,95 +163,15 @@ class HistoryListFragment : Fragment() {
         }
     }
 
-
-    private fun loadHistoryData() {
-        lifecycleScope.launch {
-            val flow = if (filterType == "All") db.getAllDownloads() else db.getDownloadsByType(filterType)
-
-            flow.onStart {
-                binding.progressBar.visibility = View.VISIBLE
-            }.catch {
-                binding.progressBar.visibility = View.GONE
-                binding.swipeRefreshLayout.isRefreshing = false
-                Toast.makeText(requireContext(), "Gagal memuat data", Toast.LENGTH_SHORT).show()
-            }.collectLatest { data ->
-                binding.progressBar.visibility = View.GONE
-                binding.swipeRefreshLayout.isRefreshing = false
-
-                val filtered = data.filter { isFileExist(it.filePath) }
-                adapter.updateData(filtered)
-
-                binding.textEmpty.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
-                binding.recyclerViewHistory.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
-                binding.recyclerViewHistory.scheduleLayoutAnimation()
-                updateSelectionUI()
-            }
-        }
-    }
-
-    private fun deleteFile(history: DownloadHistory): Boolean {
-        return try {
-            val path = history.filePath
-            if (path.startsWith("content://")) {
-                // Jika ini URI content provider, gunakan contentResolver
-                val uri = Uri.parse(path)
-                val rowsDeleted = requireContext().contentResolver.delete(uri, null, null)
-                if (rowsDeleted > 0) {
-                    true
-                } else {
-                    // Jika gagal hapus lewat contentResolver, coba hapus manual file jika bisa
-                    val file = File(uri.path ?: "")
-                    if (!file.exists()) true else file.delete()
-                }
-            } else {
-                // Jika ini file path biasa, hapus langsung file
-                val file = File(path)
-                if (!file.exists()) {
-                    true // Sudah tidak ada file, berarti berhasil
-                } else {
-                    file.delete()
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
-        }
-    }
-
-
-
-//    private fun deleteFile(history: DownloadHistory): Boolean {
-//        return try {
-//            val uri = Uri.parse(history.filePath)
-//            val rowsDeleted = requireContext().contentResolver.delete(uri, null, null)
-//
-//            if (rowsDeleted == 0) {
-//                val file = File(history.filePath)
-//                if (file.exists()) {
-//                    file.delete()
-//                } else {
-//                    false
-//                }
-//            } else {
-//                true
-//            }
-//        } catch (e: Exception) {
-//            e.printStackTrace()
-//            false
-//        }
-//    }
-
-
-
     override fun onDestroyView() {
+        historyJob?.cancel()
         super.onDestroyView()
         _binding = null
-        lifecycleScope.coroutineContext.cancelChildren()
     }
 
     override fun onResume() {
         super.onResume()
-        setStatusBarColor(R.color.sttsbar , isLightStatusBar = false)
+        setStatusBarColor(R.color.sttsbar, isLightStatusBar = false)
     }
 
     companion object {

@@ -205,7 +205,7 @@ class DownloadServiceTT : Service() {
     }
 
     private fun buildInitialNotification(title: String): Notification {
-        val pendingIntent = buildMainActivityIntent(videoUrlOriginal)
+        val pendingIntent = buildMainActivityIntent()
         return NotificationCompat.Builder(this, NOTIF_CHANNEL_ID)
             .setContentTitle(title)
             .setContentText("Menghubungkan ke server TikTok…")
@@ -213,22 +213,25 @@ class DownloadServiceTT : Service() {
             .setOngoing(true)
             .setProgress(100, 0, true)
             .setContentIntent(pendingIntent)
+            .setAutoCancel(true) // ✅ Tambahkan ini
             .build()
     }
 
-    private fun updateProgressNotification(title: String, progress: Int) {
-        val pendingIntent = buildMainActivityIntent(videoUrlOriginal)
+    private fun updateProgressNotification(title: String, progress: Int, contentText: String = "Mengunduh… $progress%") {
+        val pendingIntent = buildMainActivityIntent()
         val notification = NotificationCompat.Builder(this, NOTIF_CHANNEL_ID)
             .setContentTitle(title)
-            .setContentText("Mengunduh… $progress%")
+            .setContentText(contentText)
             .setSmallIcon(R.drawable.ic_download)
             .setOngoing(true)
             .setProgress(100, progress, false)
             .setContentIntent(pendingIntent)
+            .setAutoCancel(true) // ✅ Tambahkan ini juga
             .build()
 
         notificationManager.notify(NOTIF_ID, notification)
     }
+
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -243,17 +246,17 @@ class DownloadServiceTT : Service() {
         }
     }
 
-    private fun buildMainActivityIntent(videoUrl: String): PendingIntent {
+    private fun buildMainActivityIntent(): PendingIntent {
         val intent = Intent(this, MainActivity::class.java).apply {
-            putExtra(MainActivity.EXTRA_FRAGMENT, "tiktok_downloader")
-            putExtra(EXTRA_VIDEO_URL, videoUrl)
+            putExtra(MainActivity.EXTRA_FRAGMENT, "history") // 👉 buka HistoryFragment
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         return PendingIntent.getActivity(
             this, 0, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE // ✅ penting agar .setAutoCancel(true) bekerja
         )
     }
+
 
     override fun onBind(intent: Intent?): IBinder? = null
 

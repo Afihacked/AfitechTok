@@ -61,6 +61,15 @@
                 android:text="@string/video"
                 android:textSize="14sp"
                 android:textColor="?attr/colorOnSurface" />
+
+            <TextView
+                android:id="@+id/textFileSize"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0 B"
+                android:textColor="@color/colorOnSurface"
+                android:textSize="12sp"/>
+
         </LinearLayout>
 
         <!-- Tombol titik tiga -->
