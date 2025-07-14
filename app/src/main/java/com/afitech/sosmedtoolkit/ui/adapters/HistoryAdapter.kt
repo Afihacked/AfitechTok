@@ -202,7 +202,6 @@ class HistoryAdapter(
             )
         }
     }
-
     private fun showDetailDialog(history: DownloadHistory) {
         val uri = Uri.parse(history.filePath)
         val fileSizeReadable = getFileSizeReadable(uri)

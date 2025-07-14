@@ -3,17 +3,21 @@ package com.afitech.sosmedtoolkit.ui.fragments
 import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
+import android.util.Log
 import android.view.*
 import android.view.animation.AnimationUtils
+import android.widget.Toast
 import androidx.activity.addCallback
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.afitech.sosmedtoolkit.R
 import com.afitech.sosmedtoolkit.data.database.AppDatabase
+import com.afitech.sosmedtoolkit.data.model.DownloadHistory
 import com.afitech.sosmedtoolkit.data.repository.DownloadHistoryRepository
 import com.afitech.sosmedtoolkit.databinding.FragmentHistoryListBinding
 import com.afitech.sosmedtoolkit.ui.adapters.HistoryAdapter
@@ -23,6 +27,7 @@ import com.afitech.sosmedtoolkit.utils.setStatusBarColor
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import java.io.File
 
 class HistoryListFragment : Fragment() {
@@ -71,16 +76,28 @@ class HistoryListFragment : Fragment() {
             context = requireContext(),
             historyList = emptyList(),
             onDelete = { history ->
-                viewModel.delete(history)
-                reloadHistory()
+                val deleted = deleteFilePhysical(history)
+                Log.d("DeleteFile", "Hapus filePath: ${history.filePath}, success: $deleted")
+                viewLifecycleOwner.lifecycleScope.launch {
+                    viewModel.deleteMultiple(listOf(history)) {
+                        Toast.makeText(requireContext(), "Berhasil menghapus 1 item", Toast.LENGTH_SHORT).show()
+                        reloadHistory(suppressToast = true)
+                    }
+                }
             },
             onMultipleDelete = { list ->
-                viewModel.deleteMultiple(list)
-                reloadHistory()
+                list.forEach {
+                    val deleted = deleteFilePhysical(it)
+                    Log.d("DeleteFile", "Hapus filePath: ${it.filePath}, success: $deleted")
+                }
+                viewLifecycleOwner.lifecycleScope.launch {
+                    viewModel.deleteMultiple(list)
+                    Toast.makeText(requireContext(), "Berhasil menghapus ${list.size} item", Toast.LENGTH_SHORT).show()
+                    reloadHistory(suppressToast = true)
+                }
             },
             onSelectionChanged = { updateSelectionUI() }
         )
-
 
         binding.recyclerViewHistory.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewHistory.adapter = adapter
@@ -114,22 +131,116 @@ class HistoryListFragment : Fragment() {
         reloadHistory()
     }
 
-    private fun reloadHistory() {
+    private fun deleteFilePhysical(history: DownloadHistory): Boolean {
+        return try {
+            val uri = Uri.parse(history.filePath)
+            val path = uri.path
+            val file = path?.let { File(it) }
+
+            Log.d("DeleteFile", "Coba hapus file: $path")
+
+            val deleted = file?.delete() ?: false
+
+            if (!deleted) {
+                val contentDeleted = requireContext().contentResolver.delete(uri, null, null) > 0
+                Log.d("DeleteFile", "Hapus via ContentResolver: $contentDeleted")
+                contentDeleted
+            } else {
+                Log.d("DeleteFile", "Hapus via File API: true")
+                true
+            }
+        } catch (e: Exception) {
+            Log.e("DeleteFile", "Gagal hapus file: ${history.filePath}", e)
+            false
+        }
+    }
+
+    private fun reloadHistory(suppressToast: Boolean = false) {
         historyJob?.cancel()
         binding.swipeRefreshLayout.isRefreshing = true
-        historyJob = viewModel.historyList.onEach { data ->
-            val filtered = data.filter { isFileExist(it.filePath) }
-            adapter.updateData(filtered)
 
-            binding.textEmpty.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
-            binding.recyclerViewHistory.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
+        viewModel.loadHistory(filterType)
+
+        historyJob = viewModel.historyList.onEach { data ->
+            val validData = mutableListOf<DownloadHistory>()
+            val deletedData = mutableListOf<DownloadHistory>()
+
+            data.forEach {
+                val exists = isFileExist(it.filePath)
+                Log.d("FileCheck", "filePath: ${it.filePath}, exists: $exists")
+                if (exists) {
+                    validData.add(it)
+                } else {
+                    deletedData.add(it)
+                }
+            }
+
+            if (deletedData.isNotEmpty()) {
+                if (!suppressToast) {
+                    Toast.makeText(requireContext(), "${deletedData.size} Beberapa file tidak ditemukan (dihapus dari galeri)", Toast.LENGTH_SHORT).show()
+                }
+                Log.w("FileCheck", "${deletedData.size} item dihapus otomatis karena file hilang")
+                viewLifecycleOwner.lifecycleScope.launch {
+                    viewModel.deleteMultiple(deletedData)
+                }
+            }
+
+            adapter.updateData(validData)
+            binding.textEmpty.visibility = if (validData.isEmpty()) View.VISIBLE else View.GONE
+            binding.recyclerViewHistory.visibility = if (validData.isEmpty()) View.GONE else View.VISIBLE
             binding.recyclerViewHistory.scheduleLayoutAnimation()
 
             updateSelectionUI()
             binding.swipeRefreshLayout.isRefreshing = false
         }.launchIn(lifecycleScope)
-        viewModel.loadHistory(filterType)
     }
+
+
+
+    private fun isFileExist(filePath: String): Boolean {
+        return try {
+            val uri = Uri.parse(filePath)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && uri.scheme == "content") {
+                // Cek apakah file di-trash-kan (Android 11+)
+                val projection = arrayOf(MediaStore.MediaColumns.IS_TRASHED)
+                requireContext().contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val isTrashedIndex = cursor.getColumnIndex(MediaStore.MediaColumns.IS_TRASHED)
+                        val isTrashed = cursor.getInt(isTrashedIndex) == 1
+                        if (isTrashed) {
+                            Log.d("FileCheck", "filePath: $filePath, STATUS: TRASHED")
+                            return false
+                        }
+                    }
+                }
+            }
+
+            when (uri.scheme) {
+                "content" -> {
+                    requireContext().contentResolver.openAssetFileDescriptor(uri, "r")?.use {
+                        Log.d("FileCheck", "filePath: $filePath, STATUS: SUCCESS open stream")
+                        return true
+                    } ?: false
+                }
+                "file" -> {
+                    val file = File(uri.path ?: "")
+                    file.exists()
+                }
+                null -> {
+                    val file = File(filePath)
+                    file.exists()
+                }
+                else -> false
+            }
+        } catch (e: Exception) {
+            Log.e("FileCheck", "Error cek filePath: $filePath", e)
+            false
+        }
+    }
+
+
+
 
     private fun View.fadeIn() {
         startAnimation(AnimationUtils.loadAnimation(context, R.anim.fade_in))
@@ -153,16 +264,6 @@ class HistoryListFragment : Fragment() {
         }
     }
 
-    private fun isFileExist(filePath: String): Boolean {
-        return try {
-            val uri = Uri.parse(filePath)
-            requireContext().contentResolver.openFileDescriptor(uri, "r")?.use { true } ?: false
-        } catch (e: Exception) {
-            val file = File(filePath)
-            file.exists()
-        }
-    }
-
     override fun onDestroyView() {
         historyJob?.cancel()
         super.onDestroyView()
@@ -171,6 +272,7 @@ class HistoryListFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        reloadHistory()
         setStatusBarColor(R.color.sttsbar, isLightStatusBar = false)
     }
 

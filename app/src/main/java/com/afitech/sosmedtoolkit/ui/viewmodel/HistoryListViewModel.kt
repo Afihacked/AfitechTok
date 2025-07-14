@@ -25,23 +25,20 @@ class HistoryListViewModel(private val repository: DownloadHistoryRepository) : 
             } else {
                 repository.getDownloadsByType(filterType)
             }
-            flow.collectLatest { data ->
-                _historyList.value = data
-            }
+            flow.collectLatest { _historyList.value = it }
         }
     }
 
-    fun delete(history: DownloadHistory) {
+
+    fun deleteMultiple(histories: List<DownloadHistory>, onFinish: (() -> Unit)? = null) {
         viewModelScope.launch {
-            repository.deleteDownload(history)
+            val ids = histories.map { it.id }.filter { it != 0 }
+            repository.deleteMultipleById(ids)
+            onFinish?.invoke()
         }
     }
 
-    fun deleteMultiple(histories: List<DownloadHistory>) {
-        viewModelScope.launch {
-            histories.forEach {
-                repository.deleteDownload(it)
-            }
-        }
-    }
+
 }
+
+

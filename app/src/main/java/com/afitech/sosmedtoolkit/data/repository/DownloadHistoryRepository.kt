@@ -14,4 +14,8 @@ class DownloadHistoryRepository(private val dao: DownloadHistoryDao) {
         dao.deleteDownload(item)
     }
 
+    suspend fun deleteMultipleById(ids: List<Int>) {
+        dao.deleteMultipleById(ids)
+    }
 }
+
