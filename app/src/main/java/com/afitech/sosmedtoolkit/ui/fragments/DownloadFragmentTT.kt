@@ -63,6 +63,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     private lateinit var downloadButton: LinearLayout
     private lateinit var arrowIcon: ImageView
     private lateinit var clipboardManager: ClipboardManager
+    private var lastClipboard: String? = null
     private lateinit var progressDownload: ProgressBar
     private lateinit var textProgress: TextView
     private lateinit var unduhtext: TextView
@@ -165,7 +166,12 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         // Clipboard Manager
         clipboardManager = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         checkClipboardOnStart()     // Cek saat pertama kali fragment muncul
-        checkClipboardForLink()     // Listener kalau ada copy setelahnya
+        checkClipboardForLink()
+        clipboardManager.addPrimaryClipChangedListener {
+            checkClipboardRealTime()
+        }
+
+        setupPasteButton()// Listener kalau ada copy setelahnya
 
         // Tombol Download dengan Dropdown
         downloadButton.setOnClickListener {
@@ -279,6 +285,38 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     //inisialisasi
     private var toastCooldown = false
     private var hasUserInput = false
+
+    private fun checkClipboardRealTime() {
+        val clipData = clipboardManager.primaryClip
+        if (clipData != null && clipData.itemCount > 0) {
+            val clipText = clipData.getItemAt(0).coerceToText(requireContext()).toString()
+            if (clipText.isNotBlank() && isLinkValid(clipText) && clipText != lastClipboard) {
+                editText.setText(clipText)
+                editText.setSelection(clipText.length)
+                lastClipboard = clipText
+                Toast.makeText(requireContext(), "Link otomatis ditempel dari clipboard", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun setupPasteButton() {
+        val btnPaste = view?.findViewById<LinearLayout>(R.id.btnPaste)
+        btnPaste?.setOnClickListener {
+            val clipData = clipboardManager.primaryClip
+            if (clipData != null && clipData.itemCount > 0) {
+                val clipText = clipData.getItemAt(0).coerceToText(requireContext()).toString()
+                if (clipText != lastClipboard) {
+                    editText.setText(clipText)
+                    editText.setSelection(clipText.length)
+                    lastClipboard = clipText
+                } else {
+                    Toast.makeText(requireContext(), "Link sudah ditempel", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(requireContext(), "Clipboard kosong", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     private fun isLinkValid(link: String): Boolean {
         val pattern = Regex("^(https?://)?(www\\.)?(tiktok\\.com|vt\\.tiktok\\.com)/.+")
@@ -400,10 +438,14 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     private fun checkClipboardOnStart() {
         val clipData = clipboardManager.primaryClip
         if (clipData != null && clipData.itemCount > 0) {
-            val copiedText = clipData.getItemAt(0).text.toString().trim()
+            val copiedText = clipData.getItemAt(0).coerceToText(requireContext()).toString().trim()
+            if (copiedText == lastClipboard) return // Hindari duplikat tempel
+
             when (detectPlatform(copiedText)) {
                 "tiktok" -> {
                     editText.setText(copiedText)
+                    editText.setSelection(copiedText.length)
+                    lastClipboard = copiedText
                 }
                 "invalid" -> {
                     if (!toastCooldown) {
@@ -421,6 +463,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             }
         }
     }
+
 
     private fun checkClipboardForLink() {
         clipboardManager.addPrimaryClipChangedListener {
