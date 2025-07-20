@@ -6,6 +6,10 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?attr/colorSurface"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+
     android:padding="8dp">
 
     <!-- Thumbnail -->
@@ -28,6 +32,9 @@
         android:layout_marginStart="8dp"
         android:gravity="center_vertical"
         android:weightSum="1"
+        android:clickable="false"
+        android:focusable="false"
+        android:duplicateParentState="true"
         app:layout_constraintStart_toEndOf="@id/imageThumbnail"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -41,6 +48,9 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="4dp"
+            android:clickable="false"
+            android:focusable="false"
+            android:duplicateParentState="true"
             android:background="?attr/selectableItemBackground">
 
             <TextView

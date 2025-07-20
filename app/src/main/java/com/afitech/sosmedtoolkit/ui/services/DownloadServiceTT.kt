@@ -32,45 +32,53 @@ class DownloadServiceTT : Service() {
         const val NOTIF_ID          = 2
 
         private var doneCallback: ((Boolean) -> Unit)? = null
-        fun setDoneCallback(callback: (Boolean) -> Unit) { doneCallback = callback }
+        fun setDoneCallback(callback: ((Boolean) -> Unit)?) { doneCallback = callback }
     }
 
+    private var isForegroundStarted = false
     private lateinit var notificationManager: NotificationManager
     private lateinit var videoUrlOriginal: String
     private val serviceJob = SupervisorJob()
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+
+        Log.d("DownloadServiceTT", "✅ onStartCommand() dipanggil")
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannel()
 
         val videoUrl = intent?.getStringExtra(EXTRA_VIDEO_URL) ?: return START_NOT_STICKY
         val format = intent.getStringExtra(EXTRA_FORMAT) ?: "Videos"
+        val isSlide = intent.getBooleanExtra(EXTRA_IS_SLIDE, false)
+        val selectedImageUrls = intent.getStringArrayListExtra(EXTRA_IMAGE_URLS)
         videoUrlOriginal = videoUrl
 
         val lbm = LocalBroadcastManager.getInstance(applicationContext)
+        Log.d("DownloadServiceTT", "▶ Memanggil ensureForegroundStarted...")
+        ensureForegroundStarted("Menyiapkan unduhan TikTok")
 
         serviceScope.launch {
             try {
-                val notifTitle = when (format) {
-                    "Gambar" -> {
-                        val imageUrls = TikTokDownloader.getImageUrlsIfSlide(videoUrl)
+                val notifTitle = when {
+                    format == "Gambar" && isSlide -> {
+                        val imageUrls = selectedImageUrls
                         if (imageUrls.isNullOrEmpty()) {
                             Log.e("DownloadServiceTT", "Gambar kosong atau bukan slide")
                             broadcastResult(false)
                             return@launch
                         }
                         val title = "Slide TikTok (${imageUrls.size})"
-                        startForeground(NOTIF_ID, buildInitialNotification(title))
                         updateProgressNotification(title, 0)
                         downloadSlideImages(imageUrls, title)
                         return@launch
                     }
 
-                    "Videos" -> extractUsernameFromUrl(videoUrlOriginal)?.plus(" - Video TikTok") ?: "Unduhan Video TikTok"
-                    "Music" -> extractUsernameFromUrl(videoUrlOriginal)?.plus(" - Musik TikTok") ?: "Unduhan Musik TikTok"
+                    format == "Videos" -> extractUsernameFromUrl(videoUrlOriginal)?.plus(" - Video TikTok") ?: "Unduhan Video TikTok"
+                    format == "Music" -> extractUsernameFromUrl(videoUrlOriginal)?.plus(" - Musik TikTok") ?: "Unduhan Musik TikTok"
                     else -> "Unduhan TikTok"
                 }
+
+                updateProgressNotification(notifTitle, 0, "Menghubungkan ke server TikTok…")
 
                 val downloadUrl = TikTokDownloader.getDownloadUrl(videoUrl, format)
                 if (downloadUrl.isNullOrEmpty()) {
@@ -87,10 +95,6 @@ class DownloadServiceTT : Service() {
                 }
 
                 val fileName = generateFileName(videoUrl, format)
-
-                startForeground(NOTIF_ID, buildInitialNotification(notifTitle))
-                updateProgressNotification(notifTitle, 0)
-
                 val dao = AppDatabase.getDatabase(applicationContext).downloadHistoryDao()
 
                 val success = Downloader.downloadFile(
@@ -98,12 +102,19 @@ class DownloadServiceTT : Service() {
                     fileUrl = downloadUrl,
                     fileName = fileName,
                     mimeType = mimeType,
-                    onProgressUpdate = { progress ->
-                        Log.d("DownloadServiceTT", "Progress: $progress%")
+                    onProgressUpdate = { progress: Int, downloadedBytes: Long, totalBytes: Long ->
+                        val percent = progress.coerceIn(0, 100)
+                        val contentText = if (percent >= 100) {
+                            "Unduhan selesai"
+                        } else {
+                            val downloaded = formatBytes(downloadedBytes)
+                            val total = formatBytes(totalBytes)
+                            "Mengunduh… $percent% ($downloaded / $total)"
+                        }
                         lbm.sendBroadcast(Intent(ACTION_PROGRESS).apply {
-                            putExtra(EXTRA_PROGRESS, progress)
+                            putExtra(EXTRA_PROGRESS, percent)
                         })
-                        updateProgressNotification(notifTitle, progress)
+                        updateProgressNotification(notifTitle, percent, contentText)
                     },
                     downloadHistoryDao = dao,
                     source = "tiktok"
@@ -117,6 +128,20 @@ class DownloadServiceTT : Service() {
         }
 
         return START_STICKY
+    }
+
+    private fun ensureForegroundStarted(title: String) {
+        if (!isForegroundStarted) {
+            Log.d("DownloadServiceTT", "📌 Memulai startForeground()...")
+            val notif = buildInitialNotification(title)
+            CoroutineScope(Dispatchers.Main).launch {
+                startForeground(NOTIF_ID, notif)
+                isForegroundStarted = true
+                Log.d("DownloadServiceTT", "✔️ startForeground() berhasil")
+            }
+        } else {
+            Log.d("DownloadServiceTT", "ℹ️ Service sudah dalam mode foreground")
+        }
     }
 
 
@@ -137,7 +162,7 @@ class DownloadServiceTT : Service() {
                         fileUrl = imageUrl,
                         fileName = fileName,
                         mimeType = "image/jpeg",
-                        onProgressUpdate = { progress ->
+                        onProgressUpdate = { progress, _, _ ->
                             val overallProgress = ((index * 100) + progress) / images.size
                             lbm.sendBroadcast(Intent(ACTION_PROGRESS).apply {
                                 putExtra(EXTRA_PROGRESS, overallProgress)
@@ -159,6 +184,7 @@ class DownloadServiceTT : Service() {
     }
 
     private fun broadcastResult(success: Boolean) {
+        Log.d("DownloadServiceTT", "📤 broadcastResult() - success: $success")
         val lbm = LocalBroadcastManager.getInstance(applicationContext)
         lbm.sendBroadcast(Intent(ACTION_COMPLETE).apply {
             putExtra(EXTRA_SUCCESS, success)
@@ -166,6 +192,7 @@ class DownloadServiceTT : Service() {
         doneCallback?.invoke(success)
         doneCallback = null
         stopForeground(STOP_FOREGROUND_DETACH)
+        isForegroundStarted = false
         stopSelf()
     }
 
@@ -205,6 +232,7 @@ class DownloadServiceTT : Service() {
     }
 
     private fun buildInitialNotification(title: String): Notification {
+        Log.d("DownloadServiceTT", "🔔 buildInitialNotification() dipanggil")
         val pendingIntent = buildMainActivityIntent()
         return NotificationCompat.Builder(this, NOTIF_CHANNEL_ID)
             .setContentTitle(title)
@@ -213,25 +241,33 @@ class DownloadServiceTT : Service() {
             .setOngoing(true)
             .setProgress(100, 0, true)
             .setContentIntent(pendingIntent)
-            .setAutoCancel(true) // ✅ Tambahkan ini
+            .setAutoCancel(true)
             .build()
     }
 
     private fun updateProgressNotification(title: String, progress: Int, contentText: String = "Mengunduh… $progress%") {
+        Log.d("DownloadServiceTT", "📶 updateProgressNotification() - $progress%")
         val pendingIntent = buildMainActivityIntent()
         val notification = NotificationCompat.Builder(this, NOTIF_CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(contentText)
             .setSmallIcon(R.drawable.ic_download)
-            .setOngoing(true)
             .setProgress(100, progress, false)
             .setContentIntent(pendingIntent)
-            .setAutoCancel(true) // ✅ Tambahkan ini juga
+            .setOngoing(progress < 100)
+            .setAutoCancel(progress >= 100)
             .build()
 
         notificationManager.notify(NOTIF_ID, notification)
     }
 
+    private fun formatBytes(bytes: Long): String {
+        val unit = 1024
+        if (bytes < unit) return "$bytes B"
+        val exp = (Math.log(bytes.toDouble()) / Math.log(unit.toDouble())).toInt()
+        val pre = "KMGTPE"[exp - 1]
+        return String.format("%.1f %sB", bytes / Math.pow(unit.toDouble(), exp.toDouble()), pre)
+    }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -248,20 +284,26 @@ class DownloadServiceTT : Service() {
 
     private fun buildMainActivityIntent(): PendingIntent {
         val intent = Intent(this, MainActivity::class.java).apply {
-            putExtra(MainActivity.EXTRA_FRAGMENT, "history") // 👉 buka HistoryFragment
+            putExtra(MainActivity.EXTRA_FRAGMENT, "history")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         return PendingIntent.getActivity(
             this, 0, intent,
-            PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE // ✅ penting agar .setAutoCancel(true) bekerja
+            PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
     }
-
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
         serviceJob.cancel()
+        isForegroundStarted = false
         super.onDestroy()
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        isForegroundStarted = false
+        stopSelf()
+        super.onTaskRemoved(rootIntent)
     }
 }

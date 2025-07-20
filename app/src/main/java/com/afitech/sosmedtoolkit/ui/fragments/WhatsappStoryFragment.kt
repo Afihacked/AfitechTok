@@ -1,15 +1,16 @@
 package com.afitech.sosmedtoolkit.ui.fragments
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Typeface
 import android.os.Bundle
-import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.WebViewClient
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,23 +35,32 @@ class WhatsappStoryFragment : Fragment() {
     private val requestStorageAccessLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        if (result.resultCode == -1) {
-            val uri = result.data?.data ?: return@registerForActivityResult
-            val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-            requireContext().contentResolver.takePersistableUriPermission(uri, takeFlags)
+        if (result.resultCode == Activity.RESULT_OK) {
+            val uri = result.data?.data
+            if (uri != null) {
+                val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                requireContext().contentResolver.takePersistableUriPermission(uri, takeFlags)
 
-            saveUri(uri.toString())
+                saveUri(uri.toString())
+                Toast.makeText(requireContext(), "Akses folder berhasil disimpan", Toast.LENGTH_SHORT).show()
 
-            Log.d("WhatsappStoryFragment", "URI disimpan: $uri")
-            Toast.makeText(requireContext(), "Akses folder berhasil disimpan", Toast.LENGTH_SHORT).show()
-
-            // Reload view pager agar media muncul
-            setupViewPagerWithTabs()
-
+                // ✅ Sembunyikan tutorial, tampilkan ViewPager
+                binding.tutorialBlock.visibility = View.GONE
+                binding.viewPager.visibility = View.VISIBLE
+                binding.tabLayout.visibility = View.VISIBLE
+                setupViewPagerWithTabs()
+            } else {
+                Toast.makeText(requireContext(), "URI tidak valid", Toast.LENGTH_SHORT).show()
+                // ❌ Tampilkan tutorial ulang
+                binding.tutorialBlock.visibility = View.VISIBLE
+            }
         } else {
-            Toast.makeText(requireContext(), "Permission denied", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Permission dibatalkan", Toast.LENGTH_SHORT).show()
+            // ❌ Tampilkan tutorial ulang
+            binding.tutorialBlock.visibility = View.VISIBLE
         }
     }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,14 +80,76 @@ class WhatsappStoryFragment : Fragment() {
         binding = FragmentWhatsappStoryBinding.inflate(inflater, container, false)
         sharedPreferences = requireContext().getSharedPreferences("TikDownloaderPrefs", Context.MODE_PRIVATE)
 
-        if (!hasStoragePermission() || getSavedUri().isEmpty()) {
-            requestStoragePermission()
+        val uriSaved = getSavedUri()
+
+        if (!hasStoragePermission() || uriSaved.isEmpty()) {
+            // ❌ Belum punya akses folder: tampilkan video + tombol
+            binding.tutorialBlock.visibility = View.VISIBLE
+            binding.viewPager.visibility = View.GONE
+            binding.tabLayout.visibility = View.GONE
+
+            // ✅ Tombol "Saya Paham"
+            binding.btnSayaPaham.setOnClickListener {
+                requestStoragePermission()
+            }
+
+            setupTutorialVideo()
         } else {
-            setupViewPagerWithTabs()
+            // ✅ Sudah punya akses: langsung tampilkan ViewPager
+            showStoryUI()
         }
 
         return binding.root
     }
+
+    private fun setupTutorialVideo() {
+        val webView = binding.tutorialVideo
+        val webSettings = webView.settings
+
+        webSettings.javaScriptEnabled = true
+        webSettings.loadWithOverviewMode = true
+        webSettings.useWideViewPort = true
+        webSettings.domStorageEnabled = true
+        webSettings.mediaPlaybackRequiresUserGesture = false
+
+        webView.setBackgroundColor(0)
+
+        val videoId = "bLWR7XqRhTU" // ← Ganti sesuai kebutuhan
+        val isPortrait = when (videoId) {
+            "bLWR7XqRhTU" -> true  // ← Kamu tandai sendiri bahwa video ini portrait
+            else -> false          // default landscape
+        }
+
+        // Ubah tinggi WebView berdasarkan orientasi
+        val params = webView.layoutParams as ViewGroup.MarginLayoutParams
+        params.height = if (isPortrait) ViewGroup.LayoutParams.MATCH_PARENT else dpToPx(200)
+        params.bottomMargin = dpToPx(16) // ← beri jarak 16dp dari tombol
+        webView.layoutParams = params
+
+        val html = """
+        <html><body style="margin:0;padding:0;">
+        <iframe width="100%" height="100%" src="https://www.youtube.com/embed/$videoId?rel=0" 
+        frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+        allowfullscreen></iframe>
+        </body></html>
+    """.trimIndent()
+
+        webView.loadDataWithBaseURL(null, html, "text/html", "utf-8", null)
+    }
+
+    private fun dpToPx(dp: Int): Int {
+        return (dp * resources.displayMetrics.density).toInt()
+    }
+
+
+
+    private fun showStoryUI() {
+        binding.tutorialBlock.visibility = View.GONE
+        binding.viewPager.visibility = View.VISIBLE
+        binding.tabLayout.visibility = View.VISIBLE
+        setupViewPagerWithTabs()
+    }
+
 
     private fun setupViewPagerWithTabs() {
         val pagerAdapter = StoryPagerAdapter(this)

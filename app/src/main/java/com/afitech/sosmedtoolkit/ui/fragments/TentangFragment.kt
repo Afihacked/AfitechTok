@@ -1,43 +1,70 @@
 package com.afitech.sosmedtoolkit.ui.fragments
 
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
+import android.widget.FrameLayout
 import androidx.fragment.app.Fragment
 import com.afitech.sosmedtoolkit.R
-import com.afitech.sosmedtoolkit.utils.CuanManager
 import com.afitech.sosmedtoolkit.utils.setStatusBarColor
-import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.*
 
 class TentangFragment : Fragment() {
+
     private lateinit var adView: AdView
-    private val cuanManager = CuanManager()
+    private lateinit var adContainer: FrameLayout
+
+    // Ganti dengan Ad Unit ID milikmu
+    private val adUnitId = "ca-app-pub-2025447201837747/8904457185"
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        return inflater.inflate(R.layout.fragment_tentang, container, false)
-
-    }
+    ): View? = inflater.inflate(R.layout.fragment_tentang, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        // Menginisialisasi AdMob
-        cuanManager.initializeAdMob(requireContext())
-        // Mendapatkan referensi untuk AdView dan memuat iklan
-        adView = view.findViewById(R.id.adView)
-        cuanManager.loadAd(adView)  // Memuat iklan dengan AdMobManager
+
+        adContainer = view.findViewById(R.id.adContainer)
+
+        // Inisialisasi SDK AdMob
+        MobileAds.initialize(requireContext())
+
+        // Inisialisasi dan pasang ke properti class
+        adView = AdView(requireContext())
+        adView.setAdSize(getAdaptiveAdSize())
+        adView.adUnitId = adUnitId
+
+        val layoutParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = Gravity.CENTER_HORIZONTAL
+        }
+
+        adContainer.removeAllViews()
+        adContainer.addView(adView, layoutParams)
+
+        adView.loadAd(AdRequest.Builder().build())
     }
+
+    private fun getAdaptiveAdSize(): AdSize {
+        val displayMetrics = resources.displayMetrics
+        val density = displayMetrics.density
+        val adWidthPixels = displayMetrics.widthPixels
+        val adWidth = (adWidthPixels / density).toInt()
+
+        return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(requireContext(), adWidth)
+    }
+
+    override fun onDestroyView() {
+        if (::adView.isInitialized) {
+            adView.destroy()
+        }
+        super.onDestroyView()
+    }
+
     override fun onResume() {
         super.onResume()
-
-        setStatusBarColor(R.color.sttsbar , isLightStatusBar = false)
-
-    }
-    override fun onDestroyView() {
-        super.onDestroyView()
-        cuanManager.destroyAd(adView) // Menghancurkan iklan saat view dihancurkan
+        setStatusBarColor(R.color.sttsbar, isLightStatusBar = false)
     }
 }

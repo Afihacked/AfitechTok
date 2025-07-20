@@ -4,10 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.webkit.WebChromeClient
-import android.webkit.WebResourceRequest
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import android.widget.Button
 import androidx.fragment.app.Fragment
 import com.afitech.sosmedtoolkit.R
@@ -15,7 +11,6 @@ import com.google.android.gms.ads.AdView
 import androidx.appcompat.app.AppCompatActivity
 import com.afitech.sosmedtoolkit.utils.CuanManager
 import com.afitech.sosmedtoolkit.utils.setStatusBarColor
-import com.google.android.material.button.MaterialButton
 
 private lateinit var adView: AdView
 private val cuanManager = CuanManager()

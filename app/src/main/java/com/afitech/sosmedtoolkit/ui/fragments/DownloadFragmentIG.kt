@@ -369,7 +369,7 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
                             fileUrl = backendDownloadUrl,
                             fileName = fileName,
                             mimeType = "video/mp4",
-                            onProgressUpdate = { progress ->
+                            onProgressUpdate = { progress, _, _ ->
                                 lifecycleScope.launch(Dispatchers.Main) {
                                     progressDownload.progress = progress
                                     textProgress.text = "$progress%"
@@ -378,6 +378,7 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
                             downloadHistoryDao = downloadHistoryDao,
                             source = "instagram"
                         )
+
 
                         withContext(Dispatchers.Main) {
                             Toast.makeText(requireContext(), "Video berhasil diunduh", Toast.LENGTH_SHORT).show()
@@ -405,8 +406,8 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
                                 context = requireContext(),
                                 fileUrl = backendDownloadUrl,
                                 fileName = fileName,
-                                mimeType = "image/jpeg",
-                                onProgressUpdate = { progress ->
+                                mimeType = "video/mp4",
+                                onProgressUpdate = { progress, _, _ ->
                                     lifecycleScope.launch(Dispatchers.Main) {
                                         progressDownload.progress = progress
                                         textProgress.text = "$progress%"
@@ -415,6 +416,7 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
                                 downloadHistoryDao = downloadHistoryDao,
                                 source = "instagram"
                             )
+
 
                             withContext(Dispatchers.Main) {
                                 Toast.makeText(requireContext(), "Gambar berhasil diunduh", Toast.LENGTH_SHORT).show()
@@ -467,17 +469,17 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
                         context = requireContext(),
                         fileUrl = backendDownloadUrl,
                         fileName = fileName,
-                        mimeType = "image/jpeg",
-                        onProgressUpdate = { progress ->
+                        mimeType = "video/mp4",
+                        onProgressUpdate = { progress, _, _ ->
                             lifecycleScope.launch(Dispatchers.Main) {
-                                val overallProgress = ((idx * 100) / total) + (progress / total)
-                                progressDownload.progress = overallProgress
-                                textProgress.text = "$overallProgress%"
+                                progressDownload.progress = progress
+                                textProgress.text = "$progress%"
                             }
                         },
                         downloadHistoryDao = downloadHistoryDao,
                         source = "instagram"
                     )
+
 
                     if (idx == total - 1) {
                         withContext(Dispatchers.Main) {

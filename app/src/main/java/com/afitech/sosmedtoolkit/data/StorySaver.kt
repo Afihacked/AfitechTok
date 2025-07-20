@@ -26,20 +26,16 @@ object StorySaver {
                 val inputStream = context.contentResolver.openInputStream(sourceUri)
                     ?: throw Exception("Gagal membuka input stream dari Uri")
 
-                // Format tanggal, contoh: 2025-06-03
                 val timeStamp = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(Date())
 
-                // Ambil nama file tanpa ekstensi
                 val baseNameWithoutExt = originalFileName.substringBeforeLast(".")
 
-                // Sanitasi nama file asli supaya aman dipakai di filename
                 val sanitizedBaseName = baseNameWithoutExt
                     .replace(Regex("[^a-zA-Z0-9\\-_ ]"), "_")
                     .replace(Regex("_+"), "_")
                     .trim('_')
                     .take(100)
 
-                // Ambil ekstensi file asli (jika ada), kalau tidak pakai default sesuai mimeType
                 val extFromFileName = originalFileName.substringAfterLast(".", "")
                 val extension = if (extFromFileName.isNotEmpty()) extFromFileName else when {
                     mimeType.startsWith("video") -> "mp4"
@@ -48,14 +44,23 @@ object StorySaver {
                     else -> "dat"
                 }
 
-                // Gabungkan nama file dengan tanggal dan ekstensi
                 val fileNameWithDate = "$sanitizedBaseName$timeStamp.$extension".lowercase()
 
-                // Generate nama file unik (jika file sama, tambahkan (1), (2), dst)
-                val uniqueFileName = Downloader.generateUniqueFileName(context, fileNameWithDate, mimeType, "whatsapp")
+                val uniqueFileName = Downloader.generateUniqueFileName(
+                    context = context,
+                    fileName = fileNameWithDate,
+                    mimeType = mimeType,
+                    source = "whatsapp"
+                )
 
                 val savedUri = Downloader.saveToMediaStoreFromStream(
-                    context, inputStream, uniqueFileName, mimeType, -1, onProgressUpdate, "whatsapp"
+                    context = context,
+                    inputStream = inputStream,
+                    fileName = uniqueFileName,
+                    mimeType = mimeType,
+                    fileSize = -1,
+                    onProgressUpdate = { progress, _, _ -> onProgressUpdate(progress) }, // ✅ Wrap ke versi lama
+                    source = "whatsapp"
                 )
 
                 inputStream.close()
@@ -66,6 +71,7 @@ object StorySaver {
                         mimeType.startsWith("image") -> "Image"
                         else -> "Other"
                     }
+
                     val downloadHistory = DownloadHistory(
                         fileName = uniqueFileName,
                         filePath = savedUri.toString(),
@@ -74,6 +80,7 @@ object StorySaver {
                     )
                     downloadHistoryDao.insertDownload(downloadHistory)
                 }
+
             } catch (e: Exception) {
                 e.printStackTrace()
             }

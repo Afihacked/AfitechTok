@@ -24,7 +24,7 @@ object Downloader {
         fileUrl: String,
         fileName: String,
         mimeType: String,
-        onProgressUpdate: (Int) -> Unit,
+        onProgressUpdate: (progress: Int, downloadedBytes: Long, totalBytes: Long) -> Unit,
         downloadHistoryDao: DownloadHistoryDao,
         source: String = "tiktok"
     ): Boolean = withContext(Dispatchers.IO) {
@@ -35,25 +35,27 @@ object Downloader {
             connection.doInput = true
             connection.connect()
 
-            val fileSize = connection.contentLength.takeIf { it > 0 } ?: -1
+            val fileSize = connection.contentLengthLong.takeIf { it > 0 } ?: -1L
             val inputStream = connection.inputStream
 
             val uniqueFileName = generateUniqueFileName(context, fileName, mimeType, source)
+
             val uri = saveToMediaStore(
-                context,
-                inputStream,
-                uniqueFileName,
-                mimeType,
-                fileSize,
-                onProgressUpdate,
-                source
+                context = context,
+                inputStream = inputStream,
+                fileName = uniqueFileName,
+                mimeType = mimeType,
+                fileSize = fileSize,
+                onProgressUpdate = { progress, downloadedBytes, totalBytes ->
+                    onProgressUpdate(progress, downloadedBytes, totalBytes)
+                },
+                source = source
             )
 
             inputStream.close()
             connection.disconnect()
 
             if (uri != null) {
-                // Simpan riwayat unduhan ke DB
                 val downloadHistory = DownloadHistory(
                     fileName = uniqueFileName,
                     filePath = uri.toString(),
@@ -78,21 +80,22 @@ object Downloader {
         }
     }
 
+
     // Fungsi umum untuk menyimpan dari InputStream ke MediaStore sesuai source
     suspend fun saveToMediaStoreFromStream(
         context: Context,
         inputStream: InputStream,
         fileName: String,
         mimeType: String,
-        fileSize: Int = -1,
-        onProgressUpdate: (Int) -> Unit = {},
+        fileSize: Long = -1,
+        onProgressUpdate: (progress: Int, downloadedBytes: Long, totalBytes: Long) -> Unit = { _, _, _ -> },
         source: String = "tiktok"
     ): Uri? = withContext(Dispatchers.IO) {
         val mediaStoreResult = when (source.lowercase()) {
             "youtube" -> getMediaStoreOutputStreamForYouTube(context, fileName, mimeType)
             "instagram" -> getMediaStoreOutputStreamForInstagram(context, fileName, mimeType)
             "whatsapp" -> getMediaStoreOutputStreamForWhatsapp(context, fileName, mimeType)
-            else -> getMediaStoreOutputStream(context, fileName, mimeType) // default TikTok
+            else -> getMediaStoreOutputStream(context, fileName, mimeType)
         }
 
         mediaStoreResult?.let { (uri, outputStream) ->
@@ -103,16 +106,16 @@ object Downloader {
         }
     }
 
+
     private suspend fun saveToMediaStore(
         context: Context,
         inputStream: InputStream,
         fileName: String,
         mimeType: String,
-        fileSize: Int,
-        onProgressUpdate: (Int) -> Unit,
+        fileSize: Long,
+        onProgressUpdate: (progress: Int, downloadedBytes: Long, totalBytes: Long) -> Unit,
         source: String
     ): Uri? {
-        // Bisa juga langsung panggil suspend saveToMediaStoreFromStream tapi ini versi blocking biasa
         return runCatching {
             saveToMediaStoreFromStream(
                 context, inputStream, fileName, mimeType, fileSize, onProgressUpdate, source
@@ -322,12 +325,12 @@ object Downloader {
     private fun copyStreamWithProgress(
         input: InputStream,
         output: OutputStream,
-        fileSize: Int,
-        onProgressUpdate: (Int) -> Unit
+        fileSize: Long,
+        onProgressUpdate: (progress: Int, downloadedBytes: Long, totalBytes: Long) -> Unit
     ) {
         val buffer = ByteArray(8 * 1024)
         var bytesRead: Int
-        var totalRead = 0
+        var totalRead = 0L
         var lastProgress = -1
 
         while (input.read(buffer).also { bytesRead = it } != -1) {
@@ -337,19 +340,17 @@ object Downloader {
             val progress = if (fileSize > 0) {
                 ((totalRead * 100L) / fileSize).toInt().coerceAtMost(100)
             } else {
-                // Estimasi kasar jika fileSize tidak diketahui: misalnya update setiap 512KB
-                (totalRead / (512 * 1024)).coerceAtMost(100)
+                (totalRead / (512 * 1024)).toInt().coerceAtMost(100)
             }
 
             if (progress != lastProgress) {
-                onProgressUpdate(progress)
+                onProgressUpdate(progress, totalRead, fileSize)
                 lastProgress = progress
             }
         }
 
-        // Pastikan progress 100% di akhir
         if (lastProgress < 100) {
-            onProgressUpdate(100)
+            onProgressUpdate(100, totalRead, fileSize)
         }
     }
 

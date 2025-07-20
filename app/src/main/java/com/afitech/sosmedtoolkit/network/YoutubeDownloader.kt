@@ -111,10 +111,13 @@ object YouTubeDownloader {
                 fileUrl = httpUrl.toString(),
                 fileName = fileName,
                 mimeType = mimeType,
-                onProgressUpdate = { progressCallback?.onProgressUpdate(it) ?: Unit },
+                onProgressUpdate = { progress, _, _ ->
+                    progressCallback?.onProgressUpdate(progress)
+                },
                 downloadHistoryDao = AppDatabase.getDatabase(context).downloadHistoryDao(),
                 source = "youtube"
             )
+
 
             runOnUiThread(context) {
                 LoadingDialogYT.dismiss()

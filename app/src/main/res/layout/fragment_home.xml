@@ -120,42 +120,6 @@
                     app:cornerRadius="12dp"
                     android:elevation="0dp" />
             </androidx.gridlayout.widget.GridLayout>
-
-            <!--                <com.google.android.material.button.MaterialButton-->
-            <!--                    android:id="@+id/btn_yt_download"-->
-            <!--                    android:layout_width="0dp"-->
-            <!--                    android:layout_height="wrap_content"-->
-            <!--                    app:layout_columnWeight="1"-->
-            <!--                    android:text="@string/btn_youtube_downloader"-->
-            <!--                    style="@style/Widget.Material3.Button"-->
-            <!--                    android:textColor="@android:color/white"-->
-            <!--                    app:backgroundTint="@android:color/holo_red_dark"-->
-            <!--                    app:cornerRadius="20dp"-->
-            <!--                    android:elevation="4dp" />-->
-            <!-- YouTube Video Player -->
-
-
-<!--            <com.google.android.material.button.MaterialButton-->
-<!--                android:id="@+id/btn_open_youtube_popup"-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="55dp"-->
-<!--                android:layout_marginTop="16dp"-->
-<!--                android:text="@string/tonton_video_tutorial"-->
-<!--                style="@style/Widget.Material3.Button"-->
-<!--                android:textColor="@android:color/white"-->
-<!--                app:backgroundTint="#E64611"-->
-<!--                app:cornerRadius="20dp"-->
-<!--                android:elevation="4dp" />-->
-
-<!--            <WebView-->
-<!--                android:id="@+id/inlineWebView"-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="250dp"-->
-<!--                android:layout_marginTop="16dp"-->
-<!--                android:layout_marginBottom="16dp"-->
-<!--                android:visibility="gone"-->
-<!--                app:layout_constraintTop_toBottomOf="@+id/btn_history"-->
-<!--                android:gravity="center_horizontal" />-->
         </LinearLayout>
     </ScrollView>
 

@@ -6,6 +6,62 @@
     android:orientation="vertical"
     android:fitsSystemWindows="true">
 
+    <LinearLayout
+        android:id="@+id/tutorialBlock"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:padding="20dp"
+        android:visibility="gone">
+
+        <!-- Judul -->
+        <TextView
+            android:id="@+id/tutorialTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Panduan Mengaktifkan Fitur Unduhan Status WhatsApp"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginBottom="16dp"
+            android:textColor="@android:color/black" />
+
+        <View
+            android:layout_width="60dp"
+            android:layout_height="2dp"
+            android:layout_marginBottom="16dp"
+            android:background="@android:color/darker_gray" />
+
+        <!-- Video Tutorial -->
+        <WebView
+            android:id="@+id/tutorialVideo"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Tombol -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSayaPaham"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Saya Paham"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
+            android:backgroundTint="@color/colorPrimary"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
+            android:elevation="4dp"
+            android:layout_gravity="center" />
+
+    </LinearLayout>
+
+
     <!-- TabLayout -->
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayout"

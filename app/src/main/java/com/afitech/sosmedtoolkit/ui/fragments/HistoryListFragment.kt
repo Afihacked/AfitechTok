@@ -177,7 +177,7 @@ class HistoryListFragment : Fragment() {
 
             if (deletedData.isNotEmpty()) {
                 if (!suppressToast) {
-                    Toast.makeText(requireContext(), "${deletedData.size} Beberapa file tidak ditemukan (dihapus dari galeri)", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "${deletedData.size} Item tidak ditemukan (dihapus dari galeri)", Toast.LENGTH_SHORT).show()
                 }
                 Log.w("FileCheck", "${deletedData.size} item dihapus otomatis karena file hilang")
                 viewLifecycleOwner.lifecycleScope.launch {

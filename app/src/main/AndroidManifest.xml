@@ -81,7 +81,7 @@
 
         <service
             android:name=".ui.services.DownloadServiceTT"
-            android:foregroundServiceType="mediaProcessing"
+            android:foregroundServiceType="mediaProcessing|dataSync|mediaPlayback"
             android:exported="false"/>
 
         <service

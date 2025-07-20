@@ -7,8 +7,8 @@ plugins {
 android {
     applicationVariants.configureEach {
         val appName = "Sosmed Toolkit"
-        val versionName = "3.1-beta"
-        val versionCode = 10
+        val versionName = "3.5-beta"
+        val versionCode = 11
 
         outputs.configureEach {
             (this as? com.android.build.gradle.internal.api.BaseVariantOutputImpl)?.outputFileName =
@@ -34,8 +34,8 @@ android {
         applicationId = "com.afitech.sosmedtoolkit"
         minSdk = 29
         targetSdk = 35
-        versionCode = 10
-        versionName = "3.1-beta"
+        versionCode = 11
+        versionName = "3.5-beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

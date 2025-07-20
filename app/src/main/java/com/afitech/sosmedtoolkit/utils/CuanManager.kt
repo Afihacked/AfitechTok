@@ -1,27 +1,25 @@
 package com.afitech.sosmedtoolkit.utils
 
 import android.content.Context
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.AdView
-import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.*
 
 class CuanManager {
 
-    // Fungsi untuk menginisialisasi AdMob
+    // Inisialisasi SDK AdMob
     fun initializeAdMob(context: Context) {
         MobileAds.initialize(context) {
-            // Callback setelah inisialisasi selesai
+            // Callback opsional
         }
     }
 
-    // Fungsi untuk memuat iklan pada AdView
+    // Memuat iklan banner biasa (adUnitId dan adSize diset di XML)
     fun loadAd(adView: AdView) {
         val adRequest = AdRequest.Builder().build()
         adView.loadAd(adRequest)
     }
 
-    // Fungsi untuk menghancurkan iklan ketika tidak digunakan lagi
+    // Membersihkan AdView
     fun destroyAd(adView: AdView) {
-        adView.destroy() // Membersihkan sumber daya yang digunakan oleh AdView
+        adView.destroy()
     }
 }

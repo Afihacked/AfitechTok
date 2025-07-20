@@ -104,7 +104,7 @@ class HistoryAdapter(
             )
         )
 
-        holder.infoContainer.setOnClickListener {
+        holder.rootLayout.setOnClickListener {
             if (isSelectionMode) {
                 toggleSelection(history)
             } else if (fileExists) {
@@ -123,7 +123,7 @@ class HistoryAdapter(
             }
         }
 
-        holder.infoContainer.setOnLongClickListener {
+        holder.rootLayout.setOnLongClickListener {
             toggleSelection(history)
             true
         }
@@ -225,7 +225,7 @@ class HistoryAdapter(
             .setTitle("Rincian File")
             .setView(view)
             .setNegativeButton("Tutup", null)
-            .setPositiveButton("Salin Lokasi") { _, _ -> }
+            .setPositiveButton("Salin Lokasi", null)
             .create()
 
         dialog.setOnShowListener {
@@ -238,6 +238,7 @@ class HistoryAdapter(
                 val clip = ClipData.newPlainText("filePath", displayPath)
                 clipboard.setPrimaryClip(clip)
                 Toast.makeText(context, "Lokasi berhasil disalin", Toast.LENGTH_SHORT).show()
+
             }
         }
 
