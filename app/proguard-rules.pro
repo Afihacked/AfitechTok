@@ -15,7 +15,6 @@
 # ✅ Glide
 # =============================
 -keep public class * implements com.bumptech.glide.module.GlideModule
--keep class com.bumptech.glide.GeneratedAppGlideModuleImpl
 -keep class com.bumptech.glide.Glide
 -keep class com.bumptech.glide.RequestManager
 -dontwarn com.bumptech.glide.**
