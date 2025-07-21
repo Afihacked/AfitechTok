@@ -23,7 +23,7 @@ object StoryUtils {
             docFile?.let { rootFile ->
                 // Iterasi melalui file dalam folder .Statuses
                 val files = rootFile.listFiles()
-                files?.forEach { file ->
+                files.forEach { file ->
                     Log.d(TAG, "Found file: ${file.name}")
 
                     // Memeriksa ekstensi file (gambar atau video)

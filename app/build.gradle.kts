@@ -5,15 +5,16 @@ plugins {
 }
 
 android {
-    applicationVariants.configureEach {
-        val appName = "Sosmed Toolkit"
-        val versionName = "3.5-beta"
-        val versionCode = 11
+    namespace = "com.afitech.sosmedtoolkit"
+    compileSdk = 35
 
-        outputs.configureEach {
-            (this as? com.android.build.gradle.internal.api.BaseVariantOutputImpl)?.outputFileName =
-                "${appName}_v${versionName}_(${versionCode}).apk"
-        }
+    defaultConfig {
+        applicationId = "com.afitech.sosmedtoolkit"
+        minSdk = 29
+        targetSdk = 35
+        versionCode = 11
+        versionName = "3.5-beta"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
@@ -24,66 +25,82 @@ android {
             keyPassword = project.properties["qwerty"]?.toString() ?: ""
         }
     }
-    buildFeatures {
-        viewBinding = true
-    }
-    namespace = "com.afitech.sosmedtoolkit"
-    compileSdk = 35
-
-    defaultConfig {
-        applicationId = "com.afitech.sosmedtoolkit"
-        minSdk = 29
-        targetSdk = 35
-        versionCode = 11
-        versionName = "3.5-beta"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
 
     buildTypes {
         release {
             isMinifyEnabled = true
-            signingConfig = signingConfigs.getByName("release")
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
     }
+
+    buildFeatures {
+        viewBinding = true
+    }
+
+    applicationVariants.configureEach {
+        outputs.configureEach {
+            val appName = "Sosmed Toolkit"
+            val versionName = "3.5-beta"
+            val versionCode = 11
+            val outputImpl = this as? com.android.build.gradle.api.ApkVariantOutput
+            outputImpl?.outputFileName = "${appName}_v${versionName}_(${versionCode}).apk"
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
     kotlinOptions {
         jvmTarget = "17"
     }
 }
 
+
 dependencies {
-    implementation (libs.lottie)
-    implementation ("org.jsoup:jsoup:1.14.3")
-    implementation(libs.fragmentKtx) // Menggunakan fragment-ktx versi 1.5.5
-    implementation(libs.lifecycleViewModelKtx)
+    // Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
-    implementation(libs.play.services.ads.api)
     implementation(libs.androidx.gridlayout)
+
+    // ViewModel & Lifecycle
+    implementation(libs.lifecycle.viewmodel.ktx)
+    implementation(libs.fragmentKtx)
+
+    // AdMob
+    implementation(libs.play.services.ads.api)
+
+    // Media Playback
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)
+
+    // UI & Animasi
+    implementation(libs.lottie)
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+
+    // Parsing HTML
+    implementation(libs.jsoup)
+
+    // Glide & HTTP
+    implementation(libs.glide)
+    implementation(libs.okhttp)
+
+    // Room
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    kapt(libs.room.compiler)
+
+    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    implementation ("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
-
-
-    implementation(libs.room.runtime)
-    implementation(libs.room.ktx) // Untuk support coroutine
-    kapt(libs.room.compiler) // Jika menggunakan Kotlin KAPT
-    implementation(libs.glide)
-    implementation(libs.okhttp)
-    implementation(libs.lifecycle.viewmodel.ktx)
 }

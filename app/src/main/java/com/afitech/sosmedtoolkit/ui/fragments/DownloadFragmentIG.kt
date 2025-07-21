@@ -622,7 +622,4 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
             arrowIcon.visibility = View.VISIBLE
         }
     }
-    override fun onDestroyView() {
-        super.onDestroyView()
-    }
 }

@@ -295,7 +295,7 @@ class StoryAdapter(
                 val mimeType = contentResolver.getType(uri) ?: "image/jpeg"
                 // Bisa ambil nama file asli dari Uri, atau buat default saja:
                 val originalFileName = "WhatsAppStory_${System.currentTimeMillis()}." +
-                MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType) ?: "jpg"
+                MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
 
                 // Pastikan downloadHistoryDao sudah di-set di StorySaver sebelumnya
                 StorySaver.saveToGallery(

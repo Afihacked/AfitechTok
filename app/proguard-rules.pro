@@ -1,71 +1,92 @@
-# -----------------------------
-# ✅ Umum: Keep anotasi penting & metadata debug
-# -----------------------------
+# =============================
+# ✅ Anotasi, Debug Info
+# =============================
 -keepattributes *Annotation*
 -keepattributes SourceFile,LineNumberTable
 
-# -----------------------------
+# =============================
 # ✅ Room Database
-# -----------------------------
+# =============================
 -keep class androidx.room.** { *; }
 -keep interface androidx.room.** { *; }
 -dontwarn androidx.room.**
 
-# -----------------------------
-# ✅ Material Components & AndroidX
-# -----------------------------
--keep class com.google.android.material.** { *; }
--keep class androidx.core.** { *; }
--keep class androidx.appcompat.** { *; }
--keep class androidx.constraintlayout.** { *; }
--dontwarn com.google.android.material.**
--dontwarn androidx.core.**
--dontwarn androidx.appcompat.**
--dontwarn androidx.constraintlayout.**
-
-# -----------------------------
+# =============================
 # ✅ Glide
-# -----------------------------
--keep class com.bumptech.glide.** { *; }
+# =============================
+-keep public class * implements com.bumptech.glide.module.GlideModule
+-keep class com.bumptech.glide.Glide
+-keep class com.bumptech.glide.RequestManager
 -dontwarn com.bumptech.glide.**
--keep class * extends com.bumptech.glide.module.AppGlideModule { *; }
--keep class * extends com.bumptech.glide.module.LibraryGlideModule { *; }
 
-# -----------------------------
-# ✅ OkHttp / Retrofit (kalau pakai)
-# -----------------------------
+# =============================
+# ✅ Lottie (animasi)
+# =============================
+-keep class com.airbnb.lottie.** { *; }
+-dontwarn com.airbnb.lottie.**
+
+# =============================
+# ✅ OkHttp (untuk jaringan)
+# =============================
 -keep class okhttp3.** { *; }
 -keep interface okhttp3.** { *; }
 -dontwarn okhttp3.**
 
--keep class retrofit2.** { *; }
--dontwarn retrofit2.**
-
-# -----------------------------
-# ✅ AdMob / Google Play Services
-# -----------------------------
+# =============================
+# ✅ AdMob / Google Ads
+# =============================
 -keep class com.google.android.gms.ads.** { *; }
 -dontwarn com.google.android.gms.ads.**
 
-# -----------------------------
-# ✅ Testing (JUnit, Espresso)
-# -----------------------------
+# =============================
+# ✅ Media3 / ExoPlayer
+# =============================
+-keep class androidx.media3.** { *; }
+-dontwarn androidx.media3.**
+
+# =============================
+# ✅ AndroidX Core / AppCompat / Material
+# =============================
+-keep class androidx.core.** { *; }
+-keep class androidx.appcompat.** { *; }
+-keep class com.google.android.material.** { *; }
+-dontwarn androidx.core.**
+-dontwarn androidx.appcompat.**
+-dontwarn com.google.android.material.**
+
+# =============================
+# ✅ JSON Model (Gson/Moshi/Manual parsing)
+# =============================
+-keep class com.afitech.sosmedtoolkit.data.model.** { *; }
+
+# =============================
+# ✅ Parcelable / Serializable
+# =============================
+-keepclassmembers class * implements android.os.Parcelable {
+    public static final android.os.Parcelable$Creator *;
+}
+-keep class * implements java.io.Serializable { *; }
+-keepnames class * implements java.io.Serializable
+
+# =============================
+# ✅ Unit Testing
+# =============================
 -dontwarn junit.**
 -dontwarn org.junit.**
 -dontwarn androidx.test.**
 -dontwarn androidx.test.espresso.**
 -dontwarn androidx.test.ext.**
 
-# -----------------------------
+# =============================
 # ✅ Ignore warning umum
-# -----------------------------
+# =============================
 -dontwarn javax.annotation.**
 -dontwarn org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement
 -dontwarn kotlin.Unit
 
-# -----------------------------
-# ✅ Hapus Log di Rilis
-# -----------------------------
+# =============================
+# ✅ Hapus Log Release
+# =============================
 -assumenosideeffects class android.util.Log {
     public static *** d(...);
     public static *** v(...);
@@ -74,21 +95,7 @@
     public static *** e(...);
 }
 
-# -----------------------------
-# ✅ Optimasi tambahan
-# -----------------------------
-# Hapus metode/metode tak terpakai (kecuali beberapa yang sensitif)
+# =============================
+# ✅ Optimasi ProGuard
+# =============================
 -optimizations !code/simplification/arithmetic,!field/*,!class/merging/*
-
-# Jaga class turunan jika pakai reflection / Parcelable / Serializable
--keep class * implements java.io.Serializable { *; }
--keepnames class * implements java.io.Serializable
-
--keepclassmembers class * implements android.os.Parcelable {
-    public static final android.os.Parcelable$Creator *;
-}
-
-# -----------------------------
-# ✅ Keep model untuk JSON parsing (Gson/Moshi)
-# -----------------------------
--keep class com.afitech.sosmedtoolkit.data.model.** { *; }

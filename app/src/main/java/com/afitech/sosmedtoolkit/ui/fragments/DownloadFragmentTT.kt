@@ -10,8 +10,6 @@ import android.content.pm.ActivityInfo
 import android.content.res.ColorStateList
 import android.graphics.Outline
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
@@ -54,9 +52,7 @@ import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 import kotlinx.coroutines.delay
 
-
 class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
-
 
     private lateinit var inputLayout: TextInputLayout
     private lateinit var editText: TextInputEditText
@@ -125,8 +121,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             }
         }
     }
-
-
 
     @SuppressLint("SourceLockedOrientationActivity")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -216,9 +210,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             }
         })
 
-        // Tombol Paste
-
-
         // Tombol Download
         downloadButton.setOnClickListener {
             val link = editText.text.toString().trim()
@@ -275,7 +266,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             setOnClickListener {
                 val clipData = clipboardManager.primaryClip
                 if (clipData == null || clipData.itemCount == 0) {
-                    Toast.makeText(requireContext(), "Clipboard kosong", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Anda belum salin link TikTok", Toast.LENGTH_SHORT).show()
                     return@setOnClickListener
                 }
 
@@ -284,31 +275,32 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
                 when {
                     clipText.isEmpty() -> {
-                        Toast.makeText(requireContext(), "Clipboard kosong", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Anda belum salin link TikTok", Toast.LENGTH_SHORT).show()
                     }
 
                     clipText == currentText -> {
                         Toast.makeText(requireContext(), "Link sudah ditempel", Toast.LENGTH_SHORT).show()
                     }
 
-                    else -> {
+                    isLinkValid(clipText) -> {
                         editText.setText(clipText)
                         editText.setSelection(clipText.length)
                         lastClipboard = clipText
                         Toast.makeText(requireContext(), "Link berhasil ditempel", Toast.LENGTH_SHORT).show()
+                    }
+
+                    else -> {
+                        Toast.makeText(requireContext(), "Link tidak valid. Harus link TikTok.", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
         }
     }
 
-
     private fun isLinkValid(link: String): Boolean {
         val pattern = Regex("""^https?://(www\.|m\.)?(tiktok\.com|vt\.tiktok\.com)/.+""", RegexOption.IGNORE_CASE)
         return pattern.matches(link.trim())
     }
-
-
 
     private fun setDownloadButtonEnabled(enabled: Boolean) {
         downloadButton.isEnabled = enabled
@@ -377,9 +369,16 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
     private fun showRewardedAd(onResult: (Boolean) -> Unit) {
         val ad = rewardedAd
-        if (!isAdded || ad == null) {
-            Toast.makeText(context, "Iklan belum siap. Silakan coba lagi.", Toast.LENGTH_SHORT).show()
-            onResult(false)
+        if (!isAdded) {
+            // Fragment belum ter-attach → hindari crash
+            onResult(true) // anggap berhasil, jangan blokir
+            return
+        }
+
+        if (ad == null) {
+            // Iklan belum siap, tapi unduhan tetap boleh jalan
+            Log.w("AdMob", "Iklan belum siap, lanjutkan unduhan tanpa iklan.")
+            onResult(true)
             return
         }
 
@@ -392,13 +391,11 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                 loadRewardedAd()
 
                 if (!isRewardEarned) {
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        Toast.makeText(
-                            context,
-                            "❗ Tonton iklan sampai selesai untuk melanjutkan unduhan.",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }, 500)
+                    Toast.makeText(
+                        requireContext(),
+                        "❗ Tonton iklan sampai selesai untuk melanjutkan unduhan.",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
 
                 onResult(isRewardEarned)
@@ -406,7 +403,8 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
             override fun onAdFailedToShowFullScreenContent(adError: AdError) {
                 Log.e("AdMob", "Gagal menampilkan iklan: ${adError.message}")
-                onResult(false)
+                // Jika gagal tampilkan, tetap lanjutkan unduhan
+                onResult(true)
             }
         }
 
@@ -415,7 +413,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             isRewardEarned = true
         }
     }
-
 
     private fun checkClipboardOnStart() {
         val clipData = clipboardManager.primaryClip ?: return
@@ -443,7 +440,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         }
     }
 
-
     private val clipboardListener = ClipboardManager.OnPrimaryClipChangedListener {
         val clipData = clipboardManager.primaryClip ?: return@OnPrimaryClipChangedListener
         if (clipData.itemCount <= 0) return@OnPrimaryClipChangedListener
@@ -467,7 +463,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     private fun checkClipboardForLink() {
         clipboardManager.addPrimaryClipChangedListener(clipboardListener)
     }
-
 
     private fun detectPlatform(url: String): String {
         val tiktokPattern = Regex("""^https://(vm|vt)\.tiktok\.com/[A-Za-z0-9]{8,}/?$""")
@@ -541,7 +536,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         layout.isEnabled = isEnabled
         textView.text = text
     }
-
 
     private fun showDownloadMenu(view: View) {
         val url = editText.text.toString().trim()
@@ -747,12 +741,10 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         }
     }
 
-
     private fun showToastSafe(message: String) {
         if (!isAdded) return
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
-
 
     private fun showSpinnerLoading(show: Boolean) {
         if (!isAdded || view == null) return
@@ -763,7 +755,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             if (!show) it.progress = 0
         }
     }
-
 
     private fun downloadSelectedImagesWithService(
         images: List<String>,
@@ -796,8 +787,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         }
     }
 
-
-
     private fun showError(message: String) {
         if (!isAdded || view == null) return
 
@@ -812,7 +801,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         }
     }
 
-
     override fun onDestroyView() {
         super.onDestroyView()
         cuanManager.destroyAd(adView)
@@ -824,7 +812,8 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     override fun onResume() {
         super.onResume()
         setStatusBarColor(R.color.sttsbar , isLightStatusBar = false)
-        checkClipboardOnStart()  // ini akan berjalan tiap fragment kembali ke foreground
+        checkClipboardOnStart()
+        loadRewardedAd()// ini akan berjalan tiap fragment kembali ke foreground
     }
 }
 

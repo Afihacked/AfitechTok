@@ -20,5 +20,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Tik Downloader"
+rootProject.name = "Sosmed Toolkit"
 include(":app")
