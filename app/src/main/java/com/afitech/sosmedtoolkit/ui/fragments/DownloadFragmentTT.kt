@@ -268,39 +268,43 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     }
 
     private fun setupPasteButton() {
-        val btnPaste = view?.findViewById<LinearLayout>(R.id.btnPaste)
-        btnPaste?.apply {
-            isClickable = true
-            isFocusable = true
-            setOnClickListener {
-                val clipData = clipboardManager.primaryClip
-                if (clipData == null || clipData.itemCount == 0) {
-                    Toast.makeText(requireContext(), "Clipboard kosong", Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
+    val btnPaste = view?.findViewById<LinearLayout>(R.id.btnPaste)
+    btnPaste?.apply {
+        isClickable = true
+        isFocusable = true
+        setOnClickListener {
+            val clipData = clipboardManager.primaryClip
+            if (clipData == null || clipData.itemCount == 0) {
+                Toast.makeText(requireContext(), "Anda belum salin link TikTok", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val clipText = clipData.getItemAt(0).coerceToText(requireContext()).toString().trim()
+            val currentText = editText.text.toString().trim()
+
+            when {
+                clipText.isEmpty() -> {
+                    Toast.makeText(requireContext(), "Anda belum salin link TikTok", Toast.LENGTH_SHORT).show()
                 }
 
-                val clipText = clipData.getItemAt(0).coerceToText(requireContext()).toString().trim()
-                val currentText = editText.text.toString().trim()
+                clipText == currentText -> {
+                    Toast.makeText(requireContext(), "Link sudah ditempel", Toast.LENGTH_SHORT).show()
+                }
 
-                when {
-                    clipText.isEmpty() -> {
-                        Toast.makeText(requireContext(), "Clipboard kosong", Toast.LENGTH_SHORT).show()
-                    }
+                isValidTiktokUrl(clipText) -> {
+                    editText.setText(clipText)
+                    editText.setSelection(clipText.length)
+                    lastClipboard = clipText
+                    Toast.makeText(requireContext(), "Link berhasil ditempel", Toast.LENGTH_SHORT).show()
+                }
 
-                    clipText == currentText -> {
-                        Toast.makeText(requireContext(), "Link sudah ditempel", Toast.LENGTH_SHORT).show()
-                    }
-
-                    else -> {
-                        editText.setText(clipText)
-                        editText.setSelection(clipText.length)
-                        lastClipboard = clipText
-                        Toast.makeText(requireContext(), "Link berhasil ditempel", Toast.LENGTH_SHORT).show()
-                    }
+                else -> {
+                    Toast.makeText(requireContext(), "Link tidak valid. Harus link TikTok.", Toast.LENGTH_SHORT).show()
                 }
             }
         }
     }
+}
 
 
     private fun isLinkValid(link: String): Boolean {
@@ -376,46 +380,51 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     }
 
     private fun showRewardedAd(onResult: (Boolean) -> Unit) {
-        val ad = rewardedAd
-        if (!isAdded || ad == null) {
-            Toast.makeText(context, "Iklan belum siap. Silakan coba lagi.", Toast.LENGTH_SHORT).show()
-            onResult(false)
-            return
-        }
+    val ad = rewardedAd
+    if (!isAdded) {
+        // Fragment belum ter-attach → hindari crash
+        onResult(true) // anggap berhasil, jangan blokir
+        return
+    }
 
-        var isRewardEarned = false
+    if (ad == null) {
+        // Iklan belum siap, tapi unduhan tetap boleh jalan
+        Log.w("AdMob", "Iklan belum siap, lanjutkan unduhan tanpa iklan.")
+        onResult(true)
+        return
+    }
 
-        ad.fullScreenContentCallback = object : FullScreenContentCallback() {
-            override fun onAdDismissedFullScreenContent() {
-                Log.d("AdMob", "Iklan Rewarded ditutup.")
-                rewardedAd = null
-                loadRewardedAd()
+    var isRewardEarned = false
 
-                if (!isRewardEarned) {
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        Toast.makeText(
-                            context,
-                            "❗ Tonton iklan sampai selesai untuk melanjutkan unduhan.",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }, 500)
-                }
+    ad.fullScreenContentCallback = object : FullScreenContentCallback() {
+        override fun onAdDismissedFullScreenContent() {
+            Log.d("AdMob", "Iklan Rewarded ditutup.")
+            rewardedAd = null
+            loadRewardedAd()
 
-                onResult(isRewardEarned)
+            if (!isRewardEarned) {
+                Toast.makeText(
+                    requireContext(),
+                    "❗ Tonton iklan sampai selesai untuk melanjutkan unduhan.",
+                    Toast.LENGTH_LONG
+                ).show()
             }
 
-            override fun onAdFailedToShowFullScreenContent(adError: AdError) {
-                Log.e("AdMob", "Gagal menampilkan iklan: ${adError.message}")
-                onResult(false)
-            }
+            onResult(isRewardEarned)
         }
 
-        ad.show(requireActivity()) { rewardItem ->
-            Log.d("AdMob", "User mendapat reward: ${rewardItem.amount} ${rewardItem.type}")
-            isRewardEarned = true
+        override fun onAdFailedToShowFullScreenContent(adError: AdError) {
+            Log.e("AdMob", "Gagal menampilkan iklan: ${adError.message}")
+            // Jika gagal tampilkan, tetap lanjutkan unduhan
+            onResult(true)
         }
     }
 
+    ad.show(requireActivity()) { rewardItem ->
+        Log.d("AdMob", "User mendapat reward: ${rewardItem.amount} ${rewardItem.type}")
+        isRewardEarned = true
+    }
+}
 
     private fun checkClipboardOnStart() {
         val clipData = clipboardManager.primaryClip ?: return
