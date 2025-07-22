@@ -8,7 +8,6 @@
     <style name="Theme.TikDownloader" parent="Base.Theme.TikDownloader">
         <!-- Tambahkan ini agar status bar tidak transparan -->
         <item name="android:statusBarColor">@color/sttsbar</item>
-        <item name="android:windowTranslucentStatus">false</item>
     </style>
     <!-- Tema Popup Menu -->
     <style name="PopupMenuStyle" parent="Widget.Material3.PopupMenu">

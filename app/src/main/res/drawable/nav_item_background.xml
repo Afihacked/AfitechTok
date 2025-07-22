@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Saat item aktif -->
+    <item android:state_checked="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#BFE70000" />
+            <corners android:radius="20dp" /> <!-- Atur radius sesuai selera -->
+        </shape>
+    </item>
+
+    <!-- Saat default / tidak aktif -->
+    <item>
+        <color android:color="@android:color/transparent" />
+    </item>
+</selector>

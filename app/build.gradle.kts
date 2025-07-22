@@ -12,8 +12,8 @@ android {
         applicationId = "com.afitech.sosmedtoolkit"
         minSdk = 29
         targetSdk = 35
-        versionCode = 11
-        versionName = "3.5-beta"
+        versionCode = 13
+        versionName = "4.0-beta"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -45,8 +45,8 @@ android {
     applicationVariants.configureEach {
         outputs.configureEach {
             val appName = "Sosmed Toolkit"
-            val versionName = "3.5-beta"
-            val versionCode = 11
+            val versionName = "4.0-beta"
+            val versionCode = 13
             val outputImpl = this as? com.android.build.gradle.api.ApkVariantOutput
             outputImpl?.outputFileName = "${appName}_v${versionName}_(${versionCode}).apk"
         }
@@ -103,4 +103,10 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    implementation ("com.facebook.shimmer:shimmer:0.5.0")
+    annotationProcessor ("com.github.bumptech.glide:compiler:4.16.0")
+    implementation ("com.github.bumptech.glide:glide:4.16.0")
+    kapt ("com.github.bumptech.glide:compiler:4.16.0")
+
 }

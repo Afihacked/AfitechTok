@@ -80,6 +80,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.nav_wa_offline -> replaceFragment(WhatsappStoryFragment(), getString(R.string.nav_wa_offline))
                 R.id.nav_history -> replaceFragment(HistoryFragment(), getString(R.string.nav_history))
                 R.id.nav_about -> replaceFragment(TentangFragment(), getString(R.string.nav_about))
+                R.id.nav_settings -> replaceFragment(SettingsFragment(), getString(R.string.nav_settings))
             }
             drawerLayout.closeDrawers()
             true
@@ -97,6 +98,7 @@ class MainActivity : AppCompatActivity() {
                 "ig_downloader" -> replaceFragment(DownloadFragmentIG(), getString(R.string.nav_ig))
                 "wa_downloader" -> replaceFragment(WhatsappStoryFragment(), getString(R.string.nav_wa_offline))
                 "history" -> replaceFragment(HistoryFragment(), getString(R.string.nav_history))
+                "settings" -> replaceFragment(SettingsFragment(), getString(R.string.nav_settings))
                 else -> replaceFragment(HomeFragment(), getString(R.string.nav_home))
             }
         }
@@ -109,8 +111,30 @@ class MainActivity : AppCompatActivity() {
             .replace(R.id.fragment_container, fragment)
             .addToBackStack(null)
             .commit()
+
         supportActionBar?.title = title
+
+        // Hapus highlight jika kembali ke HomeFragment
+        if (fragment is HomeFragment) {
+            // Hilangkan semua highlight menu (tanpa group ID)
+            for (i in 0 until navView.menu.size()) {
+                val item = navView.menu.getItem(i)
+                item.isChecked = false
+
+                // Jika ada submenu, hilangkan juga
+                if (item.hasSubMenu()) {
+                    val subMenu = item.subMenu
+                    for (j in 0 until (subMenu?.size() ?: 0)) {
+                        subMenu?.getItem(j)?.isChecked = false
+                    }
+                }
+
+            }
+        }
+
     }
+
+
 
 //    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
 //        menuInflater.inflate(R.menu.main_toolbar_menu, menu)

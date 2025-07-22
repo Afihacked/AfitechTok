@@ -9,6 +9,7 @@ import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.content.res.ColorStateList
 import android.graphics.Outline
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -21,6 +22,7 @@ import android.view.Gravity.CENTER
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewOutlineProvider
+import android.view.ViewTreeObserver
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.AppCompatImageView
@@ -29,12 +31,15 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.afitech.sosmedtoolkit.R
 import com.afitech.sosmedtoolkit.data.database.AppDatabase
 import com.afitech.sosmedtoolkit.data.database.DownloadHistoryDao
 import com.afitech.sosmedtoolkit.network.TikTokDownloader
 import com.afitech.sosmedtoolkit.ui.services.DownloadServiceTT
 import com.afitech.sosmedtoolkit.utils.CuanManager
+import com.afitech.sosmedtoolkit.utils.areAdsEnabled
 import com.afitech.sosmedtoolkit.utils.openAppWithFallback
 import com.afitech.sosmedtoolkit.utils.setStatusBarColor
 import com.bumptech.glide.Glide
@@ -53,6 +58,12 @@ import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 import kotlinx.coroutines.delay
+
+import com.bumptech.glide.request.target.Target
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.request.RequestListener
+import com.facebook.shimmer.ShimmerFrameLayout
 
 
 class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
@@ -150,9 +161,15 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
         // Inisialisasi iklan
         cuanManager.initializeAdMob(requireContext())
-        cuanManager.loadAd(adView)
         loadRewardedAd()
         loadInterstitialAd()
+
+        if (requireContext().areAdsEnabled()) {
+            cuanManager.loadAd(adView)
+            adView.visibility = View.VISIBLE
+        } else {
+            adView.visibility = View.GONE
+        }
 
         // Buka aplikasi TikTok
         btnOpenTikTok.setOnClickListener {
@@ -275,7 +292,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             setOnClickListener {
                 val clipData = clipboardManager.primaryClip
                 if (clipData == null || clipData.itemCount == 0) {
-                    Toast.makeText(requireContext(), "Clipboard kosong", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Anda belum salin link TikTok", Toast.LENGTH_SHORT).show()
                     return@setOnClickListener
                 }
 
@@ -284,31 +301,32 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
                 when {
                     clipText.isEmpty() -> {
-                        Toast.makeText(requireContext(), "Clipboard kosong", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Anda belum salin link TikTok", Toast.LENGTH_SHORT).show()
                     }
 
                     clipText == currentText -> {
                         Toast.makeText(requireContext(), "Link sudah ditempel", Toast.LENGTH_SHORT).show()
                     }
 
-                    else -> {
+                    isLinkValid(clipText) -> {
                         editText.setText(clipText)
                         editText.setSelection(clipText.length)
                         lastClipboard = clipText
                         Toast.makeText(requireContext(), "Link berhasil ditempel", Toast.LENGTH_SHORT).show()
+                    }
+
+                    else -> {
+                        Toast.makeText(requireContext(), "Link tidak valid. Harus link TikTok.", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
         }
     }
 
-
     private fun isLinkValid(link: String): Boolean {
         val pattern = Regex("""^https?://(www\.|m\.)?(tiktok\.com|vt\.tiktok\.com)/.+""", RegexOption.IGNORE_CASE)
         return pattern.matches(link.trim())
     }
-
-
 
     private fun setDownloadButtonEnabled(enabled: Boolean) {
         downloadButton.isEnabled = enabled
@@ -318,6 +336,8 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     }
 
     private fun loadInterstitialAd() {
+        if (!isAdded || !requireContext().areAdsEnabled()) return
+
         if (!isAdded) return
 
         val adRequest = AdRequest.Builder().build()
@@ -335,6 +355,12 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     }
 
     private fun showInterstitialAd(onAdComplete: () -> Unit) {
+        // 🔧 [DITAMBAHKAN] Langsung lanjut jika iklan tidak aktif atau belum dimuat
+        if (!isAdded || !requireContext().areAdsEnabled() || interstitialAd == null) {
+            onAdComplete()
+            return
+        }
+
         val ad = interstitialAd
         if (!isAdded || ad == null) {
             onAdComplete()
@@ -359,6 +385,8 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     }
 
     private fun loadRewardedAd() {
+        if (!isAdded || !requireContext().areAdsEnabled()) return
+
         if (!isAdded) return
 
         val adRequest = AdRequest.Builder().build()
@@ -375,11 +403,20 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         })
     }
 
-    private fun showRewardedAd(onResult: (Boolean) -> Unit) {
+    private fun showRewardedAd(unduhText: TextView, onResult: (Boolean) -> Unit) {
+        // 🔧 [DITAMBAHKAN] Jika iklan dimatikan, langsung lanjut
+        if (!requireContext().areAdsEnabled()) {
+            onResult(true)
+            return
+        }
+
+        requireActivity().runOnUiThread {
+            updateDownloadButtonState(downloadButton, unduhText, isEnabled = false, text = "Menunggu iklan...")
+        }
         val ad = rewardedAd
         if (!isAdded || ad == null) {
-            Toast.makeText(context, "Iklan belum siap. Silakan coba lagi.", Toast.LENGTH_SHORT).show()
-            onResult(false)
+//            Toast.makeText(context, "Iklan belum siap. Silakan coba lagi.", Toast.LENGTH_SHORT).show()
+            onResult(true)
             return
         }
 
@@ -406,7 +443,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
             override fun onAdFailedToShowFullScreenContent(adError: AdError) {
                 Log.e("AdMob", "Gagal menampilkan iklan: ${adError.message}")
-                onResult(false)
+                onResult(true)
             }
         }
 
@@ -415,7 +452,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             isRewardEarned = true
         }
     }
-
 
     private fun checkClipboardOnStart() {
         val clipData = clipboardManager.primaryClip ?: return
@@ -426,6 +462,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
         when (detectPlatform(copiedText)) {
             "tiktok" -> {
+                if (editText.text.toString().isNotBlank()) return  // tambahkan ini
                 editText.setText(copiedText)
                 editText.setSelection(copiedText.length)
                 lastClipboard = copiedText
@@ -442,7 +479,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             }
         }
     }
-
 
     private val clipboardListener = ClipboardManager.OnPrimaryClipChangedListener {
         val clipData = clipboardManager.primaryClip ?: return@OnPrimaryClipChangedListener
@@ -468,7 +504,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         clipboardManager.addPrimaryClipChangedListener(clipboardListener)
     }
 
-
     private fun detectPlatform(url: String): String {
         val tiktokPattern = Regex("""^https://(vm|vt)\.tiktok\.com/[A-Za-z0-9]{8,}/?$""")
         return when {
@@ -488,7 +523,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         val downloadButton = requireActivity().findViewById<LinearLayout>(R.id.btnDownload)
         val unduhText = downloadButton.findViewById<TextView>(R.id.unduhtext)
 
-        showRewardedAd { rewardGranted ->
+        showRewardedAd(unduhText) { rewardGranted ->
             if (!isAdded) {
                 isAdShowing = false
                 return@showRewardedAd
@@ -502,7 +537,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                 }
                 return@showRewardedAd
             }
-
             // Jika reward berhasil, lanjut unduh
             requireActivity().runOnUiThread {
                 updateDownloadButtonState(downloadButton, unduhText, isEnabled = false, text = "Menunggu...")
@@ -541,7 +575,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         layout.isEnabled = isEnabled
         textView.text = text
     }
-
 
     private fun showDownloadMenu(view: View) {
         val url = editText.text.toString().trim()
@@ -649,17 +682,97 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     ): AlertDialog {
         val selectedImages = mutableSetOf<String>()
 
-        val gridView = GridView(requireContext()).apply {
-            numColumns = 3
-            verticalSpacing = 8
-            horizontalSpacing = 8
+        lateinit var updateButtonLabels: () -> Unit
+        var isSelectAllActive = false
+        val totalCount = imageUrls.size
+
+        val recyclerView = RecyclerView(requireContext()).apply {
+            layoutManager = GridLayoutManager(requireContext(), 3)
             setPadding(16, 16, 16, 16)
-            adapter = createImageAdapter(imageUrls, selectedImages)
+            clipToPadding = false
+            adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+                override fun getItemCount() = imageUrls.size
+
+                override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+                    val view = layoutInflater.inflate(R.layout.item_image_selection_shimmer, parent, false)
+                    return object : RecyclerView.ViewHolder(view) {}
+                }
+
+                override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+                    val view = holder.itemView
+                    val imageView = view.findViewById<ImageView>(R.id.imageView)
+                    val shimmerLayout = view.findViewById<ShimmerFrameLayout>(R.id.shimmerLayout)
+                    val checkOverlay = view.findViewById<ImageView>(R.id.checkOverlay)
+                    val imageUrl = imageUrls[position]
+
+                    shimmerLayout.startShimmer()
+                    shimmerLayout.visibility = View.VISIBLE
+                    imageView.visibility = View.INVISIBLE
+
+                    imageView.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
+                        override fun onPreDraw(): Boolean {
+                            imageView.viewTreeObserver.removeOnPreDrawListener(this)
+                            imageView.outlineProvider = object : ViewOutlineProvider() {
+                                override fun getOutline(v: View, outline: Outline) {
+                                    outline.setRoundRect(0, 0, v.width, v.height, 16f)
+                                }
+                            }
+                            imageView.clipToOutline = true
+                            return true
+                        }
+                    })
+
+                    Glide.with(view.context.applicationContext)
+                        .load(imageUrl)
+                        .centerCrop()
+                        .listener(object : RequestListener<Drawable> {
+                            override fun onLoadFailed(
+                                e: GlideException?, model: Any?, target: Target<Drawable>, isFirstResource: Boolean
+                            ): Boolean {
+                                shimmerLayout.stopShimmer()
+                                shimmerLayout.visibility = View.GONE
+                                imageView.setImageResource(R.drawable.ic_error)
+                                imageView.visibility = View.VISIBLE
+                                return true
+                            }
+
+                            override fun onResourceReady(
+                                resource: Drawable, model: Any, target: Target<Drawable>,
+                                dataSource: DataSource, isFirstResource: Boolean
+                            ): Boolean {
+                                shimmerLayout.stopShimmer()
+                                shimmerLayout.visibility = View.GONE
+                                imageView.setImageDrawable(resource)
+                                imageView.alpha = 0f
+                                imageView.visibility = View.VISIBLE
+                                imageView.animate().alpha(1f).setDuration(300).start()
+                                return true
+                            }
+                        })
+                        .into(imageView)
+
+                    checkOverlay.visibility = if (selectedImages.contains(imageUrl)) View.VISIBLE else View.GONE
+
+                    view.setOnClickListener {
+                        if (selectedImages.contains(imageUrl)) {
+                            selectedImages.remove(imageUrl)
+                            checkOverlay.visibility = View.GONE
+                        } else {
+                            selectedImages.add(imageUrl)
+                            checkOverlay.visibility = View.VISIBLE
+                        }
+
+                        // ⬅️ Update tombol setelah pilih manual
+                        isSelectAllActive = selectedImages.size == imageUrls.size
+                        updateButtonLabels()
+                    }
+                }
+            }
         }
 
         return AlertDialog.Builder(requireContext())
             .setTitle("Pilih Gambar yang Akan Diunduh")
-            .setView(gridView)
+            .setView(recyclerView)
             .setPositiveButton("Unduh yang Dipilih", null)
             .setNeutralButton("Pilih Semua", null)
             .setNegativeButton("Batal", null)
@@ -667,6 +780,27 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                 setOnShowListener {
                     val btnUnduh = getButton(AlertDialog.BUTTON_POSITIVE)
                     val btnPilihSemua = getButton(AlertDialog.BUTTON_NEUTRAL)
+                    val btnBatal = getButton(AlertDialog.BUTTON_NEGATIVE)
+
+                    val primaryColor = ContextCompat.getColor(requireContext(), R.color.colorPrimary)
+                    btnUnduh.setTextColor(primaryColor)
+                    btnPilihSemua.setTextColor(primaryColor)
+                    btnBatal.setTextColor(primaryColor)
+
+                    // ⬅️ Definisikan fungsi update teks tombol
+                    updateButtonLabels = {
+                        val selectedCount = selectedImages.size
+                        btnUnduh.text = "Unduh yang Dipilih ($selectedCount)"
+                        btnPilihSemua.text = if (isSelectAllActive) {
+                            "Batal Pilih Semua ($totalCount)"
+                        } else {
+                            "Pilih Semua ($totalCount)"
+                        }
+                    }
+
+                    // ⬅️ Atur label awal
+                    isSelectAllActive = selectedImages.size == totalCount
+                    updateButtonLabels()
 
                     btnUnduh.setOnClickListener {
                         if (selectedImages.isEmpty()) {
@@ -674,77 +808,42 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                             return@setOnClickListener
                         }
 
-                        // ✅ Feedback ke tombol utama
                         buttonLayout.findViewById<TextView>(R.id.unduhtext).text = "Menunggu..."
                         buttonLayout.isEnabled = false
-
                         dismiss()
 
                         if (!isAdShowing) {
                             isAdShowing = true
                             showInterstitialAd {
                                 isAdShowing = false
-                                downloadSelectedImagesWithService(selectedImages.toList(), originalUrl, buttonLayout)
+                                downloadSelectedImagesWithService(
+                                    selectedImages.toList(), originalUrl, buttonLayout
+                                )
                             }
+                        } else {
+                            showToastSafe("Mohon tunggu, iklan sedang ditampilkan.")
                         }
                     }
 
                     btnPilihSemua.setOnClickListener {
-                        if (selectedImages.size == imageUrls.size) {
+                        isSelectAllActive = if (isSelectAllActive) {
                             selectedImages.clear()
+                            false
                         } else {
                             selectedImages.clear()
                             selectedImages.addAll(imageUrls)
+                            true
                         }
-                        (gridView.adapter as BaseAdapter).notifyDataSetChanged()
+
+                        recyclerView.adapter?.notifyDataSetChanged()
+                        updateButtonLabels()
                     }
 
-                    getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener {
+                    btnBatal.setOnClickListener {
                         dismiss()
                     }
                 }
             }
-    }
-
-    private fun createImageAdapter(imageUrls: List<String>, selected: MutableSet<String>): BaseAdapter {
-        return object : BaseAdapter() {
-            override fun getCount() = imageUrls.size
-            override fun getItem(position: Int) = imageUrls[position]
-            override fun getItemId(position: Int) = position.toLong()
-
-            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                val view = convertView ?: layoutInflater.inflate(R.layout.item_image_selection, parent, false)
-                val imageView = view.findViewById<ImageView>(R.id.imageView)
-                val checkOverlay = view.findViewById<ImageView>(R.id.checkOverlay)
-                val imageUrl = getItem(position)
-
-                imageView.outlineProvider = object : ViewOutlineProvider() {
-                    override fun getOutline(v: View, outline: Outline) {
-                        outline.setRoundRect(0, 0, v.width, v.height, 16f)
-                    }
-                }
-                imageView.clipToOutline = true
-
-                Glide.with(requireContext())
-                    .load(imageUrl)
-                    .placeholder(R.drawable.ic_placeholder)
-                    .into(imageView)
-
-                checkOverlay.visibility = if (selected.contains(imageUrl)) View.VISIBLE else View.GONE
-
-                view.setOnClickListener {
-                    if (selected.contains(imageUrl)) {
-                        selected.remove(imageUrl)
-                        checkOverlay.visibility = View.GONE
-                    } else {
-                        selected.add(imageUrl)
-                        checkOverlay.visibility = View.VISIBLE
-                    }
-                }
-
-                return view
-            }
-        }
     }
 
 
@@ -752,7 +851,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         if (!isAdded) return
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
-
 
     private fun showSpinnerLoading(show: Boolean) {
         if (!isAdded || view == null) return
@@ -763,7 +861,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             if (!show) it.progress = 0
         }
     }
-
 
     private fun downloadSelectedImagesWithService(
         images: List<String>,
@@ -796,8 +893,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         }
     }
 
-
-
     private fun showError(message: String) {
         if (!isAdded || view == null) return
 
@@ -812,13 +907,11 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         }
     }
 
-
     override fun onDestroyView() {
         super.onDestroyView()
         cuanManager.destroyAd(adView)
         DownloadServiceTT.setDoneCallback(null)
         clipboardManager.removePrimaryClipChangedListener(clipboardListener)
-// Menghancurkan iklan saat view dihancurkan
     }
 
     override fun onResume() {

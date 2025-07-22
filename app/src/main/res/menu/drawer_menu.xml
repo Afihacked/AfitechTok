@@ -1,32 +1,32 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <group android:checkableBehavior="single">
-
-<!--        <item-->
-<!--            android:id="@+id/nav_fitur"-->
-<!--            android:title="Fitur"-->
-<!--            android:textStyle="bold" />-->
-
+    <group
+        android:id="@+id/group_main"
+        android:checkableBehavior="single">
         <item
             android:id="@+id/nav_tt_offline"
-            android:title="TikTok" />
-
-<!--        <item-->
-<!--            android:id="@+id/nav_yt_offline"-->
-<!--            android:title="YouTube" />-->
+            android:title="TikTok"
+            android:icon="@drawable/ic_tiktok2"/>
 
         <item
             android:id="@+id/nav_wa_offline"
-            android:title="WhatsApp" />
+            android:title="WhatsApp"
+            android:icon="@drawable/ic_wa"/>
 
         <item
             android:id="@+id/nav_history"
-            android:title="Riwayat Unduh" />
+            android:title="Riwayat Unduh"
+            android:icon="@drawable/ic_download"/>
 
         <item
             android:id="@+id/nav_about"
-            android:title="Tentang" />
-    </group>
+            android:title="Tentang"
+            android:icon="@drawable/ic_info"/>
 
+        <item
+            android:id="@+id/nav_settings"
+            android:title="Pengaturan"
+            android:icon="@drawable/ic_settings"/>
+    </group>
 </menu>

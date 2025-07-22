@@ -5,6 +5,7 @@ import android.view.*
 import android.widget.FrameLayout
 import androidx.fragment.app.Fragment
 import com.afitech.sosmedtoolkit.R
+import com.afitech.sosmedtoolkit.utils.areAdsEnabled
 import com.afitech.sosmedtoolkit.utils.setStatusBarColor
 import com.google.android.gms.ads.*
 
@@ -29,22 +30,27 @@ class TentangFragment : Fragment() {
         // Inisialisasi SDK AdMob
         MobileAds.initialize(requireContext())
 
-        // Inisialisasi dan pasang ke properti class
-        adView = AdView(requireContext())
-        adView.setAdSize(getAdaptiveAdSize())
-        adView.adUnitId = adUnitId
+        // ✅ Tambahan logika aktif/tidaknya iklan
+        if (requireContext().areAdsEnabled()) {
+            adView = AdView(requireContext())
+            adView.setAdSize(getAdaptiveAdSize())
+            adView.adUnitId = adUnitId
 
-        val layoutParams = FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.WRAP_CONTENT,
-            FrameLayout.LayoutParams.WRAP_CONTENT
-        ).apply {
-            gravity = Gravity.CENTER_HORIZONTAL
+            val layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                gravity = Gravity.CENTER_HORIZONTAL
+            }
+
+            adContainer.removeAllViews()
+            adContainer.addView(adView, layoutParams)
+            adView.loadAd(AdRequest.Builder().build())
+            adContainer.visibility = View.VISIBLE
+        } else {
+            adContainer.removeAllViews()
+            adContainer.visibility = View.GONE
         }
-
-        adContainer.removeAllViews()
-        adContainer.addView(adView, layoutParams)
-
-        adView.loadAd(AdRequest.Builder().build())
     }
 
     private fun getAdaptiveAdSize(): AdSize {

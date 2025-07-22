@@ -10,6 +10,7 @@ import com.afitech.sosmedtoolkit.R
 import com.google.android.gms.ads.AdView
 import androidx.appcompat.app.AppCompatActivity
 import com.afitech.sosmedtoolkit.utils.CuanManager
+import com.afitech.sosmedtoolkit.utils.areAdsEnabled
 import com.afitech.sosmedtoolkit.utils.setStatusBarColor
 
 private lateinit var adView: AdView
@@ -22,14 +23,18 @@ class HomeFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-
         val view = inflater.inflate(R.layout.fragment_home, container, false)
+
         // Menginisialisasi AdMob
+        adView = view.findViewById(R.id.adView)
         cuanManager.initializeAdMob(requireContext())
         // Mendapatkan referensi untuk AdView dan memuat iklan
-        adView = view.findViewById(R.id.adView)
-        cuanManager.loadAd(adView)  // Memuat iklan dengan AdMobManager
-
+        if (requireContext().areAdsEnabled()) {
+            cuanManager.loadAd(adView)
+            adView.visibility = View.VISIBLE
+        } else {
+            adView.visibility = View.GONE
+        }
 
         // Fungsi untuk berpindah antar fragment dengan animasi dan perubahan judul toolbar
         val transaction = { fragment: Fragment, title: String ->
