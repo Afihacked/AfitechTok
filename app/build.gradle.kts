@@ -2,6 +2,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.kapt)
+    id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
+    id("com.google.firebase.firebase-perf")
 }
 
 android {
@@ -12,8 +15,8 @@ android {
         applicationId = "com.afitech.sosmedtoolkit"
         minSdk = 29
         targetSdk = 35
-        versionCode = 13
-        versionName = "4.0-beta"
+        versionCode = 14
+        versionName = "4.1-beta"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -45,8 +48,8 @@ android {
     applicationVariants.configureEach {
         outputs.configureEach {
             val appName = "Sosmed Toolkit"
-            val versionName = "4.0-beta"
-            val versionCode = 13
+            val versionName = "4.1-beta"
+            val versionCode = 14
             val outputImpl = this as? com.android.build.gradle.api.ApkVariantOutput
             outputImpl?.outputFileName = "${appName}_v${versionName}_(${versionCode}).apk"
         }
@@ -109,4 +112,10 @@ dependencies {
     implementation ("com.github.bumptech.glide:glide:4.16.0")
     kapt ("com.github.bumptech.glide:compiler:4.16.0")
 
+//    firebase
+    implementation(platform("com.google.firebase:firebase-bom:32.7.1"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-crashlytics")
+    implementation("com.google.firebase:firebase-perf")
+    implementation("com.google.firebase:firebase-config")
 }

@@ -4,6 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white"
+    android:id="@+id/root_splash"
     android:fitsSystemWindows="true">
 
     <!-- Lottie animation di tengah -->
@@ -12,7 +13,7 @@
         android:layout_width="250dp"
         android:layout_height="250dp"
         android:layout_centerInParent="true"
-        app:lottie_rawRes="@raw/chatbot_header"
+        app:lottie_rawRes="@raw/lottie1"
         app:lottie_autoPlay="true"
         app:lottie_loop="true"
         app:lottie_repeatMode="restart" />

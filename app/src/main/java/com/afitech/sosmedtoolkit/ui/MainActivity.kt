@@ -20,9 +20,15 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import com.afitech.sosmedtoolkit.R
 import com.afitech.sosmedtoolkit.ui.fragments.*
+import com.afitech.sosmedtoolkit.ui.helpers.RemoteConfigHelper
 import com.afitech.sosmedtoolkit.ui.helpers.ThemeHelper
 import com.afitech.sosmedtoolkit.ui.services.DownloadServiceTT
 import com.google.android.material.navigation.NavigationView
+import com.google.firebase.Firebase
+import com.google.firebase.FirebaseApp
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.analytics
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 
 class MainActivity : AppCompatActivity() {
 
@@ -36,12 +42,31 @@ class MainActivity : AppCompatActivity() {
     private lateinit var sharedPref: SharedPreferences
     private val REQ_NOTIF = 1001
 
+    private lateinit var firebaseAnalytics: FirebaseAnalytics
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        FirebaseApp.initializeApp(this)
+
+        // ✅ Analytics
+        firebaseAnalytics = Firebase.analytics
+
+        // ✅ Crashlytics
+        FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(true)
+
+        // (Optional) Kirim log manual ke Crashlytics
+        FirebaseCrashlytics.getInstance().log("MainActivity onCreate() called")
+
+        // 🔧 Remote Config init
+        RemoteConfigHelper.init(this)
+
         sharedPref = getSharedPreferences("theme_pref", MODE_PRIVATE)
         ThemeHelper.applyTheme(this)  // Terapkan tema sebelum super.onCreate supaya langsung berpengaruh
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_main)
+
+        firebaseAnalytics = FirebaseAnalytics.getInstance(this)
+        firebaseAnalytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, null)
 
         // Izin notifikasi
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

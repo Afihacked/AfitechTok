@@ -13,6 +13,8 @@ import com.afitech.sosmedtoolkit.data.Downloader
 import com.afitech.sosmedtoolkit.data.database.AppDatabase
 import com.afitech.sosmedtoolkit.network.TikTokDownloader
 import com.afitech.sosmedtoolkit.ui.MainActivity
+import com.afitech.sosmedtoolkit.ui.helpers.AnalyticsLogger
+import com.google.firebase.analytics.FirebaseAnalytics
 import kotlinx.coroutines.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -53,6 +55,14 @@ class DownloadServiceTT : Service() {
         val selectedImageUrls = intent.getStringArrayListExtra(EXTRA_IMAGE_URLS)
         videoUrlOriginal = videoUrl
 
+        val analytics = FirebaseAnalytics.getInstance(applicationContext)
+        AnalyticsLogger.logDownloadStarted(
+            analytics = analytics,
+            source = "tiktok",
+            downloadType = format,
+            from = "rewarded_ad"
+        )
+
         val lbm = LocalBroadcastManager.getInstance(applicationContext)
         Log.d("DownloadServiceTT", "▶ Memanggil ensureForegroundStarted...")
         ensureForegroundStarted("Menyiapkan unduhan TikTok")
@@ -64,6 +74,7 @@ class DownloadServiceTT : Service() {
                         val imageUrls = selectedImageUrls
                         if (imageUrls.isNullOrEmpty()) {
                             Log.e("DownloadServiceTT", "Gambar kosong atau bukan slide")
+                            AnalyticsLogger.logDownloadFailed(analytics, "tiktok", "image", "Gambar kosong atau bukan slide")
                             broadcastResult(false)
                             return@launch
                         }
@@ -83,6 +94,7 @@ class DownloadServiceTT : Service() {
                 val downloadUrl = TikTokDownloader.getDownloadUrl(videoUrl, format)
                 if (downloadUrl.isNullOrEmpty()) {
                     Log.e("DownloadServiceTT", "URL unduhan kosong")
+                    AnalyticsLogger.logDownloadFailed(analytics, "tiktok", format, "URL unduhan kosong")
                     broadcastResult(false)
                     return@launch
                 }
@@ -120,9 +132,16 @@ class DownloadServiceTT : Service() {
                     source = "tiktok"
                 )
 
+                if (success) {
+                    AnalyticsLogger.logDownloadCompleted(analytics, "tiktok", format)
+                } else {
+                    AnalyticsLogger.logDownloadFailed(analytics, "tiktok", format, "Download gagal, status success false")
+                }
+
                 broadcastResult(success)
             } catch (e: Exception) {
                 Log.e("DownloadServiceTT", "Gagal mengunduh: ${e.message}", e)
+                AnalyticsLogger.logDownloadFailed(analytics, "tiktok", format, e.message ?: "Unknown error")
                 broadcastResult(false)
             }
         }
@@ -144,10 +163,10 @@ class DownloadServiceTT : Service() {
         }
     }
 
-
     private fun downloadSlideImages(images: List<String>, notifTitle: String) {
         val lbm = LocalBroadcastManager.getInstance(applicationContext)
         val dao = AppDatabase.getDatabase(applicationContext).downloadHistoryDao()
+        val analytics = FirebaseAnalytics.getInstance(applicationContext)
 
         serviceScope.launch {
             val timeStamp = SimpleDateFormat("dd-MM-yyyy_HH-mm-ss", Locale.getDefault()).format(Date())
@@ -175,10 +194,14 @@ class DownloadServiceTT : Service() {
                     successCount++
                 } catch (e: Exception) {
                     Log.e("DownloadServiceTT", "Gagal unduh gambar ke-$index: ${e.message}", e)
+                    AnalyticsLogger.logDownloadFailed(analytics, "tiktok", "image", "Gagal unduh gambar ke-$index: ${e.message}")
                 }
             }
 
             val allSuccess = successCount == images.size
+            if (allSuccess) {
+                AnalyticsLogger.logDownloadCompleted(analytics, "tiktok", "image", images.size)
+            }
             broadcastResult(allSuccess)
         }
     }
@@ -213,7 +236,7 @@ class DownloadServiceTT : Service() {
             val resolvedUrl = resolveShortLink(url)
             return resolvedUrl?.let { extractUsernameFromUrl(it) }
         }
-        val regex = Regex("https?://(?:www\\.|m\\.)?tiktok\\.com/@([^/?]+)")
+        val regex = Regex("""^https://(vm|vt)\\.tiktok\\.com/[A-Za-z0-9\\-_]+/?$""")
         return regex.find(url)?.groupValues?.get(1)
     }
 

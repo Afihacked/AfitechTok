@@ -64,6 +64,10 @@ import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.request.RequestListener
 import com.facebook.shimmer.ShimmerFrameLayout
+import com.google.firebase.Firebase
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.analytics
+import com.afitech.sosmedtoolkit.ui.helpers.AnalyticsLogger
 
 
 class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
@@ -86,6 +90,8 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     private var toastCooldown = false
     private var hasUserInput = false
     private lateinit var downloadHistoryDao: DownloadHistoryDao
+
+    private lateinit var firebaseAnalytics: FirebaseAnalytics
 
     private val downloadReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -143,6 +149,8 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+
+        firebaseAnalytics = Firebase.analytics
 
         // Inisialisasi database & DAO
         downloadHistoryDao = AppDatabase.getDatabase(requireContext()).downloadHistoryDao()
@@ -252,6 +260,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                 Toast.makeText(requireContext(), "Link tidak valid", Toast.LENGTH_SHORT).show()
             }
         }
+
     }
     //end oncreated
 
@@ -354,8 +363,26 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         })
     }
 
+    private fun loadRewardedAd() {
+        if (!isAdded || !requireContext().areAdsEnabled()) return
+
+        if (!isAdded) return
+
+        val adRequest = AdRequest.Builder().build()
+        RewardedAd.load(requireContext(), getString(R.string.admob_rewarded_id), adRequest, object : RewardedAdLoadCallback() {
+            override fun onAdLoaded(ad: RewardedAd) {
+                rewardedAd = ad
+                Log.d("AdMob", "Iklan Rewarded berhasil dimuat.")
+            }
+
+            override fun onAdFailedToLoad(adError: LoadAdError) {
+                rewardedAd = null
+                Log.e("AdMob", "Gagal memuat iklan Rewarded: ${adError.message}")
+            }
+        })
+    }
+
     private fun showInterstitialAd(onAdComplete: () -> Unit) {
-        // 🔧 [DITAMBAHKAN] Langsung lanjut jika iklan tidak aktif atau belum dimuat
         if (!isAdded || !requireContext().areAdsEnabled() || interstitialAd == null) {
             onAdComplete()
             return
@@ -379,32 +406,20 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                 Log.e("AdMob", "Gagal tampilkan iklan: ${adError.message}")
                 onAdComplete()
             }
+
+            override fun onAdShowedFullScreenContent() {
+                // ✅ Logging ke Firebase
+                AnalyticsLogger.logAdDisplayed(
+                    FirebaseAnalytics.getInstance(requireContext()),
+                    "interstitial"
+                )
+            }
         }
 
         ad.show(requireActivity())
     }
 
-    private fun loadRewardedAd() {
-        if (!isAdded || !requireContext().areAdsEnabled()) return
-
-        if (!isAdded) return
-
-        val adRequest = AdRequest.Builder().build()
-        RewardedAd.load(requireContext(), getString(R.string.admob_rewarded_id), adRequest, object : RewardedAdLoadCallback() {
-            override fun onAdLoaded(ad: RewardedAd) {
-                rewardedAd = ad
-                Log.d("AdMob", "Iklan Rewarded berhasil dimuat.")
-            }
-
-            override fun onAdFailedToLoad(adError: LoadAdError) {
-                rewardedAd = null
-                Log.e("AdMob", "Gagal memuat iklan Rewarded: ${adError.message}")
-            }
-        })
-    }
-
     private fun showRewardedAd(unduhText: TextView, onResult: (Boolean) -> Unit) {
-        // 🔧 [DITAMBAHKAN] Jika iklan dimatikan, langsung lanjut
         if (!requireContext().areAdsEnabled()) {
             onResult(true)
             return
@@ -413,9 +428,9 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         requireActivity().runOnUiThread {
             updateDownloadButtonState(downloadButton, unduhText, isEnabled = false, text = "Menunggu iklan...")
         }
+
         val ad = rewardedAd
         if (!isAdded || ad == null) {
-//            Toast.makeText(context, "Iklan belum siap. Silakan coba lagi.", Toast.LENGTH_SHORT).show()
             onResult(true)
             return
         }
@@ -445,13 +460,30 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                 Log.e("AdMob", "Gagal menampilkan iklan: ${adError.message}")
                 onResult(true)
             }
+
+            override fun onAdShowedFullScreenContent() {
+                // ✅ Logging ke Firebase
+                AnalyticsLogger.logAdDisplayed(
+                    FirebaseAnalytics.getInstance(requireContext()),
+                    "rewarded"
+                )
+            }
         }
 
         ad.show(requireActivity()) { rewardItem ->
             Log.d("AdMob", "User mendapat reward: ${rewardItem.amount} ${rewardItem.type}")
             isRewardEarned = true
+
+            // (Opsional) Log reward ke Firebase
+            AnalyticsLogger.logRewardEarned(
+                FirebaseAnalytics.getInstance(requireContext()),
+                rewardItem.type,
+                rewardItem.amount
+            )
         }
     }
+
+
 
     private fun checkClipboardOnStart() {
         val clipData = clipboardManager.primaryClip ?: return
@@ -505,9 +537,9 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     }
 
     private fun detectPlatform(url: String): String {
-        val tiktokPattern = Regex("""^https://(vm|vt)\.tiktok\.com/[A-Za-z0-9]{8,}/?$""")
+        val tiktokShortPattern = Regex("""^https://(vm|vt)\.tiktok\.com/[A-Za-z0-9\-_]+/?$""")
         return when {
-            tiktokPattern.matches(url) -> "tiktok"
+            tiktokShortPattern.matches(url.trim()) -> "tiktok"
             else -> "invalid"
         }
     }
@@ -516,7 +548,10 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         return (dp * resources.displayMetrics.density).toInt()
     }
 
-    private fun startDownloadWithNotification(videoUrl: String, format: String) {
+    private fun startDownloadWithNotification(
+        videoUrl: String,
+        format: String,
+    ) {
         if (isAdShowing || !isAdded) return
         isAdShowing = true
 
@@ -530,14 +565,14 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             }
 
             if (!rewardGranted) {
-                // Gagal mendapat reward, aktifkan tombol lagi
                 requireActivity().runOnUiThread {
                     updateDownloadButtonState(downloadButton, unduhText, isEnabled = true, text = "Coba Lagi")
                     isAdShowing = false
                 }
                 return@showRewardedAd
             }
-            // Jika reward berhasil, lanjut unduh
+
+
             requireActivity().runOnUiThread {
                 updateDownloadButtonState(downloadButton, unduhText, isEnabled = false, text = "Menunggu...")
             }
@@ -565,6 +600,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             }
         }
     }
+
 
     private fun updateDownloadButtonState(
         layout: LinearLayout,
@@ -635,7 +671,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         formats: List<String>,
         url: String,
         isSlide: Boolean,
-        buttonLayout: LinearLayout
+        buttonLayout: LinearLayout,
     ) {
         val popupMenu = PopupMenu(ContextThemeWrapper(requireContext(), R.style.PopupMenuStyle), anchor, Gravity.END)
         formats.forEachIndexed { index, format -> popupMenu.menu.add(0, index, index, format) }
@@ -678,7 +714,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     private fun buildImageSelectionDialog(
         imageUrls: List<String>,
         originalUrl: String,
-        buttonLayout: LinearLayout
+        buttonLayout: LinearLayout,
     ): AlertDialog {
         val selectedImages = mutableSetOf<String>()
 
@@ -762,7 +798,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                             checkOverlay.visibility = View.VISIBLE
                         }
 
-                        // ⬅️ Update tombol setelah pilih manual
                         isSelectAllActive = selectedImages.size == imageUrls.size
                         updateButtonLabels()
                     }
@@ -771,11 +806,11 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         }
 
         return AlertDialog.Builder(requireContext())
-            .setTitle("Pilih Gambar yang Akan Diunduh")
+            .setTitle("Pilih Gambar")
             .setView(recyclerView)
-            .setPositiveButton("Unduh yang Dipilih", null)
-            .setNeutralButton("Pilih Semua", null)
-            .setNegativeButton("Batal", null)
+            .setPositiveButton("Unduh", null)
+            .setNeutralButton("Pilih", null)
+            .setNegativeButton("Tutup", null)
             .create().apply {
                 setOnShowListener {
                     val btnUnduh = getButton(AlertDialog.BUTTON_POSITIVE)
@@ -787,18 +822,16 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                     btnPilihSemua.setTextColor(primaryColor)
                     btnBatal.setTextColor(primaryColor)
 
-                    // ⬅️ Definisikan fungsi update teks tombol
                     updateButtonLabels = {
                         val selectedCount = selectedImages.size
-                        btnUnduh.text = "Unduh yang Dipilih ($selectedCount)"
+                        btnUnduh.text = "Unduh ($selectedCount)"
                         btnPilihSemua.text = if (isSelectAllActive) {
-                            "Batal Pilih Semua ($totalCount)"
+                            "Batal Pilih ($totalCount)"
                         } else {
-                            "Pilih Semua ($totalCount)"
+                            "Pilih ($totalCount)"
                         }
                     }
 
-                    // ⬅️ Atur label awal
                     isSelectAllActive = selectedImages.size == totalCount
                     updateButtonLabels()
 
@@ -847,6 +880,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     }
 
 
+
     private fun showToastSafe(message: String) {
         if (!isAdded) return
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
@@ -865,8 +899,9 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     private fun downloadSelectedImagesWithService(
         images: List<String>,
         originalUrl: String,
-        buttonLayout: LinearLayout
+        buttonLayout: LinearLayout,
     ) {
+
         val intent = Intent(requireContext(), DownloadServiceTT::class.java).apply {
             putExtra(DownloadServiceTT.EXTRA_VIDEO_URL, originalUrl)
             putExtra(DownloadServiceTT.EXTRA_FORMAT, "Gambar")
@@ -892,6 +927,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             }
         }
     }
+
 
     private fun showError(message: String) {
         if (!isAdded || view == null) return

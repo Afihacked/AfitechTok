@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "511322930097",
+    "project_id": "sosmed-toolkit",
+    "storage_bucket": "sosmed-toolkit.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:511322930097:android:cd32a91f02393433ab9b90",
+        "android_client_info": {
+          "package_name": "com.afitech.sosmedtoolkit"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCteL0eZV8jwX1gFrjFrCyqpLZPykiPA4w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

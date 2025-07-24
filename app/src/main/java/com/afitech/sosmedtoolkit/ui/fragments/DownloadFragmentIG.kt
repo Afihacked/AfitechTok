@@ -531,7 +531,7 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
                     override fun getItemId(position: Int): Long = position.toLong()
 
                     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                        val view = convertView ?: layoutInflater.inflate(R.layout.item_image_selection, parent, false)
+                        val view = convertView ?: layoutInflater.inflate(R.layout.item_image_selection_shimmer, parent, false)
                         val imageView = view.findViewById<ImageView>(R.id.imageView)
                         val checkOverlay = view.findViewById<ImageView>(R.id.checkOverlay)
 

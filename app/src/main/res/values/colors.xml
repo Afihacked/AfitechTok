@@ -14,7 +14,7 @@
     <color name="dark_red">#780000</color>
     <color name="colorDisabled">#A0A0A0</color>
     <color name="blackTab">#000000</color>
-    <color name="sttsbar">#CA2424</color>
+    <color name="sttsbar">#9E0000</color>
     <color name="selection_bg">#9EB40000</color> <!-- biru semi-transparan -->
 
     <color name="shimmer_placeholder">#DDDDDD</color>
