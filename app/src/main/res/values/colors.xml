@@ -6,7 +6,7 @@
     <color name="colorOnSurface">#000000</color> <!-- Warna teks hitam -->
     <color name="colorHint">#888888</color> <!-- Warna hint -->
 
-        <color name="colorPrimary">#FF0000</color> <!-- Warna saat fokus -->
+        <color name="colorPrimary">#E53935</color> <!-- Warna saat fokus -->
         <color name="colorOutline">#000000</color> <!-- Warna saat tidak aktif -->
         <color name="colorAccent">#FF5722</color>
     <color name="light_gray">#BCBCBC</color>

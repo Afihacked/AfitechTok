@@ -23,7 +23,7 @@
             <ImageView
                 android:layout_width="80dp"
                 android:layout_height="80dp"
-                android:src="@drawable/ic_launcher_foreground"
+                android:src="@mipmap/ic_launcher_foreground"
                 android:contentDescription="@string/logo_afitech"
                 android:layout_marginBottom="16dp" />
 

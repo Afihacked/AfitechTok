@@ -17,10 +17,10 @@
             android:title="WhatsApp"
             android:icon="@drawable/ic_wa"/>
 
-        <item
-            android:id="@+id/nav_yt_offline"
-            android:title="Youtube"
-            android:icon="@drawable/ic_yt2"/>
+<!--        <item-->
+<!--            android:id="@+id/nav_yt_offline"-->
+<!--            android:title="Youtube"-->
+<!--            android:icon="@drawable/ic_yt2"/>-->
 
         <item
             android:id="@+id/nav_history"

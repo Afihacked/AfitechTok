@@ -8,11 +8,11 @@ plugins {
 }
 
 android {
-    namespace = "com.afitech.sosmedtoolkit"
+    namespace = "com.afitech.afitechtok"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.afitech.sosmedtoolkit"
+        applicationId = "com.afitech.afitechtok"
         minSdk = 29
         targetSdk = 35
         versionCode = 17
@@ -47,7 +47,7 @@ android {
 
     applicationVariants.configureEach {
         outputs.configureEach {
-            val appName = "Sosmed Toolkit"
+            val appName = "AfitechTok"
             val versionName = "4.5-beta"
             val versionCode = 17
             val outputImpl = this as? com.android.build.gradle.api.ApkVariantOutput

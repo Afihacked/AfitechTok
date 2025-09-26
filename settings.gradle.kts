@@ -20,5 +20,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Sosmed Toolkit"
+rootProject.name = "AfitechTok"
 include(":app")

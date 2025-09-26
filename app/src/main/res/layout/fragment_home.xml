@@ -61,9 +61,9 @@
                 <!-- Logo -->
                 <ImageView
                     android:id="@+id/logoImage"
-                    android:layout_width="64dp"
+                    android:layout_width="80dp"
                     android:layout_height="64dp"
-                    android:src="@drawable/ic_launcher_foreground"
+                    android:src="@mipmap/ic_launcher_foreground"
                     android:scaleType="centerCrop"
                     android:contentDescription="@string/logo_afitech"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -75,7 +75,7 @@
             <androidx.gridlayout.widget.GridLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:columnCount="2"
+                app:columnCount="1"
                 android:padding="5dp"
                 android:elevation="0dp"
                 android:background="@drawable/rounded_bg"
@@ -106,17 +106,17 @@
                     android:elevation="0dp" />
 
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_yt_download"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    app:layout_columnWeight="1"
-                    android:text="@string/btn_youtube_downloader"
-                    style="@style/Widget.Material3.Button"
-                    android:textColor="@android:color/white"
-                    app:backgroundTint="@android:color/holo_red_dark"
-                    app:cornerRadius="12dp"
-                    android:elevation="0dp" />
+<!--                <com.google.android.material.button.MaterialButton-->
+<!--                    android:id="@+id/btn_yt_download"-->
+<!--                    android:layout_width="0dp"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    app:layout_columnWeight="1"-->
+<!--                    android:text="@string/btn_youtube_downloader"-->
+<!--                    style="@style/Widget.Material3.Button"-->
+<!--                    android:textColor="@android:color/white"-->
+<!--                    app:backgroundTint="@android:color/holo_red_dark"-->
+<!--                    app:cornerRadius="12dp"-->
+<!--                    android:elevation="0dp" />-->
 
 <!--                <com.google.android.material.button.MaterialButton-->
 <!--                    android:id="@+id/btn_ig_download"-->

@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="@android:color/black">
 
-    <com.afitech.sosmedtoolkit.ui.views.AspectRatioVideoView
+    <com.afitech.afitechtok.ui.views.AspectRatioVideoView
         android:id="@+id/fullscreenVideoView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

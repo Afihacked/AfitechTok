@@ -1,26 +1,36 @@
 {
   "project_info": {
-    "project_number": "511322930097",
-    "project_id": "sosmed-toolkit",
-    "storage_bucket": "sosmed-toolkit.firebasestorage.app"
+    "project_number": "771127650918",
+    "project_id": "afitech-137b7",
+    "storage_bucket": "afitech-137b7.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:511322930097:android:cd32a91f02393433ab9b90",
+        "mobilesdk_app_id": "1:771127650918:android:c35d2f1976ed1c8bc65ba7",
         "android_client_info": {
-          "package_name": "com.afitech.sosmedtoolkit"
+          "package_name": "com.afitech.afitechtok"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "771127650918-ef7aaiu74t4qtt6tuirr45t1aqcof8rr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyCteL0eZV8jwX1gFrjFrCyqpLZPykiPA4w"
+          "current_key": "AIzaSyDD2DfG8YYUo_eSjW_5oZ7Fyjeq5f-XV8g"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "771127650918-ef7aaiu74t4qtt6tuirr45t1aqcof8rr.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
