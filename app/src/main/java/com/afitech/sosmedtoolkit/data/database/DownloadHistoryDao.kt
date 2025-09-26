@@ -1,9 +1,9 @@
 package com.afitech.sosmedtoolkit.data.database
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
-import androidx.room.Delete
 import com.afitech.sosmedtoolkit.data.model.DownloadHistory
 import kotlinx.coroutines.flow.Flow
 
@@ -27,9 +27,4 @@ interface DownloadHistoryDao {
 
     @Query("DELETE FROM download_history WHERE filePath = :filePath")
     suspend fun deleteByPath(filePath: String)
-
-
-
 }
-
-

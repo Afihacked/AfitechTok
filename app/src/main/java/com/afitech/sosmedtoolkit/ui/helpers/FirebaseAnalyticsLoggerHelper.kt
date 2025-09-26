@@ -14,13 +14,13 @@ object AnalyticsLogger {
     }
 
     object Params {
-        const val DOWNLOAD_TYPE = "download_type"     // video, audio, image
-        const val SOURCE = "source"                   // tiktok, instagram, etc.
-        const val FROM = "from"                       // rewarded_ad, button_click
+        const val DOWNLOAD_TYPE = "download_type" // video, audio, image
+        const val SOURCE = "source" // tiktok, instagram, etc.
+        const val FROM = "from" // rewarded_ad, button_click
         const val TIMESTAMP = "timestamp"
-        const val COUNT = "count"                     // jumlah item (khusus image slide)
-        const val ERROR_MESSAGE = "error_message"     // jika gagal
-        const val AD_TYPE = "ad_type"                 // interstitial, rewarded
+        const val COUNT = "count" // jumlah item (khusus image slide)
+        const val ERROR_MESSAGE = "error_message" // jika gagal
+        const val AD_TYPE = "ad_type" // interstitial, rewarded
         const val DEVICE_MODEL = "device_model"
         const val REWARD_TYPE = "reward_type"
         const val REWARD_AMOUNT = "reward_amount"

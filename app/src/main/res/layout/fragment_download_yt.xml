@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?android:attr/windowBackground"
+    android:background="@color/white"
     android:fitsSystemWindows="true">
 
     <!-- Konten Scrollable -->
@@ -22,7 +22,6 @@
 
             <!-- Input URL -->
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/textInputLayout"
                 style="@style/EditTextTheme"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -60,65 +59,211 @@
                     android:padding="15dp"
                     android:textSize="14sp"
                     android:maxLines="1" />
+
+                <!-- Pilih Format -->
+                <RadioGroup
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:layout_gravity="center">
+
+                    <com.google.android.material.radiobutton.MaterialRadioButton
+                        android:id="@+id/radioMp4"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/radio_mp4"
+                        android:textSize="14sp"
+                        android:checked="true"
+                        app:buttonTint="@color/radio_selector"
+                        android:textColor="@color/colorOnSurface" />
+
+                    <com.google.android.material.radiobutton.MaterialRadioButton
+                        android:id="@+id/radioMp3"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/radio_mp3"
+                        android:textSize="14sp"
+                        android:textColor="@color/colorOnSurface"
+                        app:buttonTint="@color/radio_selector"
+                        android:layout_marginStart="16dp" />
+                </RadioGroup>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Pilih Format -->
-            <RadioGroup
-                android:id="@+id/radioGroupFormat"
+
+
+            <!-- Baris Tombol Download & YouTube -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardPaste"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="@android:color/holo_red_dark">
+
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:id="@+id/iconPaste"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:contentDescription="paste_icon"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_add"
+                        android:tint="@android:color/white" />
+                </com.google.android.material.card.MaterialCardView>
+
+
+                <!-- Tombol Download -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDownload"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/download"
+                    android:textSize="18sp"
+                    android:textColor="@android:color/white"
+                    android:backgroundTint="@android:color/holo_red_dark"
+                    app:cornerRadius="12dp"
+                    app:iconGravity="textStart"
+                    android:paddingVertical="12dp" />
+
+                <!-- Spasi antar tombol -->
+                <Space
+                    android:layout_width="14dp"
+                    android:layout_height="wrap_content" />
+
+                <!-- Tombol YouTube -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    app:cardCornerRadius="18dp"
+                    android:background="#00780000"
+                    app:cardElevation="0dp">
+
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:id="@+id/btnOpenYoutube"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:contentDescription="Youtube"
+                        android:src="@drawable/ic_youtube2" />
+                </androidx.cardview.widget.CardView>
+            </LinearLayout>
+
+<!--            Tutorial-->
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center">
-
-                <RadioButton
-                    android:id="@+id/radioMp4"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="MP4"
-                    android:textSize="14sp"
-                    android:checked="true"
-                    android:textColor="@color/colorOnSurface"
-                    android:drawableTint="@android:color/holo_red_dark" />
-
-                <RadioButton
-                    android:id="@+id/radioMp3"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="MP3"
-                    android:textSize="14sp"
-                    android:textColor="@color/colorOnSurface"
-                    android:drawableTint="@android:color/holo_red_dark"
-                    android:layout_marginStart="16dp" />
-            </RadioGroup>
-
-            <!-- Tombol Download -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnDownload"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginEnd="16dp"
-                android:text="@string/download"
+                android:text="BAGAIMANA CARA UNDUH DARI YOUTUBE?"
                 android:textSize="18sp"
-                android:textColor="@android:color/white"
-                android:backgroundTint="@android:color/holo_red_dark"
-                app:cornerRadius="18dp"
-                app:iconGravity="textStart"
-                android:paddingVertical="12dp" />
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnOpenYoutube"
+                android:textStyle="bold"
+                android:layout_marginTop="24dp"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:textColor="@android:color/black" />
+
+            <ScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:layout_marginStart="16dp"
-                android:layout_marginEnd="16dp"
-                android:text="Ambil Link"
-                android:textSize="16sp"
-                android:textColor="@android:color/white"
-                android:backgroundTint="@android:color/holo_red_dark"
-                app:cornerRadius="18dp"
-                app:iconGravity="textStart"
-                android:paddingVertical="12dp" />
+                android:layout_marginTop="16dp"
+                android:overScrollMode="never"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="50dp"
+                    android:paddingBottom="16dp">
+
+                    <!-- Gambar Tutorial 1 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center_horizontal"
+                        android:layout_marginBottom="28dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="1. Klik Ikon Youtube Untuk Salin Tautan Video."
+                            android:textStyle="bold"
+                            android:textSize="16sp"
+                            android:textColor="@android:color/black"
+                            android:layout_gravity="left"/>
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:adjustViewBounds="true"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/step1_yt" />
+                    </LinearLayout>
+
+                    <!-- Gambar Tutorial 2 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center_horizontal"
+                        android:layout_marginBottom="28dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="2. Jika Aplikasi Tidak Menempel Tautan Otomatis Klik Tombol Tempel."
+                            android:textStyle="bold"
+                            android:textSize="16sp"
+                            android:textColor="@android:color/black"
+                            android:layout_gravity="left"/>
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:adjustViewBounds="true"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/step2_yt" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center_horizontal"
+                        android:layout_marginBottom="28dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="3. Pilih Format yang Ingin Diunduh. Kemudian Klik Tombol Unduh Tunggu Proses Hingga Selesai."
+                            android:textStyle="bold"
+                            android:textSize="16sp"
+                            android:textColor="@android:color/black"
+                            android:layout_gravity="left"/>
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:adjustViewBounds="true"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/step3_yt" />
+                    </LinearLayout>
+
+                    </LinearLayout>
+            </ScrollView>
+
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>

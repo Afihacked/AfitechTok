@@ -48,7 +48,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-
 class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
     private lateinit var inputLayout: TextInputLayout
     private lateinit var editText: TextInputEditText
@@ -86,7 +85,7 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
 
         // Clipboard Manager
         clipboardManager = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        checkClipboardOnStart()     // Cek saat pertama kali fragment muncul
+        checkClipboardOnStart() // Cek saat pertama kali fragment muncul
         checkClipboardForLink()
 
         // Tombol Download dengan Dropdown
@@ -105,7 +104,6 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
             } else {
                 Toast.makeText(requireContext(), "Link tidak valid", Toast.LENGTH_SHORT).show()
             }
-
         }
 
         editText.addTextChangedListener {
@@ -119,7 +117,6 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
 
 // Regex ketat di luar listener
         val INSTAGRAM_REGEX = Regex("^https://(www\\.)?instagram\\.com/[^\\s]+$")
-
 
         fun detectPlatformPrecise(url: String): String {
             return when {
@@ -162,7 +159,6 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
                     inputLayout.error = null
                 }
                 setDownloadButtonEnabled(platform != "invalid")
-
             }
 
             override fun afterTextChanged(s: Editable?) {}
@@ -171,9 +167,10 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
     override fun onResume() {
         super.onResume()
         setStatusBarColor(R.color.colorPrimary, isLightStatusBar = false)
-        checkClipboardOnStart()  // ini akan berjalan tiap fragment kembali ke foreground
+        checkClipboardOnStart() // ini akan berjalan tiap fragment kembali ke foreground
     }
-    //inisialisasi
+
+    // inisialisasi
     private var toastCooldown = false
     private var hasUserInput = false
 
@@ -183,10 +180,10 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
     }
 
     private fun setDownloadButtonEnabled(enabled: Boolean) {
-        downloadButton.isEnabled = enabled         // Tetap dipakai biar aman walau LinearLayout
+        downloadButton.isEnabled = enabled // Tetap dipakai biar aman walau LinearLayout
         downloadButton.isClickable = enabled
         downloadButton.isFocusable = enabled
-        downloadButton.alpha = if (enabled) 1f else 0.5f  // Visual efek: buram saat nonaktif
+        downloadButton.alpha = if (enabled) 1f else 0.5f // Visual efek: buram saat nonaktif
     }
 
     private fun checkClipboardOnStart() {
@@ -194,7 +191,7 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
         if (clipData != null && clipData.itemCount > 0) {
             val copiedText = clipData.getItemAt(0).text.toString().trim()
             when (detectPlatform(copiedText)) {
-                "instagram" -> {  // ubah dari "tiktok" ke "instagram"
+                "instagram" -> { // ubah dari "tiktok" ke "instagram"
                     editText.setText(copiedText)
                 }
                 "invalid" -> {
@@ -220,7 +217,7 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
             if (clipData != null && clipData.itemCount > 0) {
                 val copiedText = clipData.getItemAt(0).text.toString().trim()
                 when (detectPlatform(copiedText)) {
-                    "instagram" -> {  // ubah dari "tiktok" ke "instagram"
+                    "instagram" -> { // ubah dari "tiktok" ke "instagram"
                         editText.setText(copiedText)
                     }
 
@@ -242,7 +239,6 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
         }
     }
 
-
     private fun detectPlatform(url: String): String {
         // Regex yang lebih luas untuk Instagram, termasuk reels, stories, posts, dll.
         val instagramPattern = Regex("^https?://(www\\.)?instagram\\.com/[^\\s]+")
@@ -251,8 +247,6 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
             else -> "invalid"
         }
     }
-
-
 
     // Fungsi bantu konversi dp ke px
     private fun Context.dpToPx(dp: Int): Int {
@@ -360,9 +354,9 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
                         val timeStamp = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(
                             Date()
                         )
-                        val fileName = "instagram_video_${System.currentTimeMillis()}${timeStamp}.mp4"
+                        val fileName = "instagram_video_${System.currentTimeMillis()}$timeStamp.mp4"
                         val backendDownloadUrl = "https://afitech.fun/download/instagram" +
-                                "?url=${Uri.encode(cleanUrl)}&format=mp4"
+                            "?url=${Uri.encode(cleanUrl)}&format=mp4"
 
                         Downloader.downloadFile(
                             context = requireContext(),
@@ -378,7 +372,6 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
                             downloadHistoryDao = downloadHistoryDao,
                             source = "instagram"
                         )
-
 
                         withContext(Dispatchers.Main) {
                             Toast.makeText(requireContext(), "Video berhasil diunduh", Toast.LENGTH_SHORT).show()
@@ -400,7 +393,7 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
                         } else {
                             val fileName = "instagram_img_${System.currentTimeMillis()}.jpg"
                             val backendDownloadUrl = "https://afitech.fun/download/instagram-photo" +
-                                    "?url=${Uri.encode(cleanUrl)}"
+                                "?url=${Uri.encode(cleanUrl)}"
 
                             Downloader.downloadFile(
                                 context = requireContext(),
@@ -416,7 +409,6 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
                                 downloadHistoryDao = downloadHistoryDao,
                                 source = "instagram"
                             )
-
 
                             withContext(Dispatchers.Main) {
                                 Toast.makeText(requireContext(), "Gambar berhasil diunduh", Toast.LENGTH_SHORT).show()
@@ -461,7 +453,7 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
             selectedIndices.forEachIndexed { idx, slideIndex ->
                 try {
                     val backendDownloadUrl = "https://afitechapi-railway.up.railway.app/download/instagram-photo" +
-                            "?url=${Uri.encode(cleanUrl)}&media=$slideIndex"
+                        "?url=${Uri.encode(cleanUrl)}&media=$slideIndex"
 
                     val fileName = "instagram_img_${System.currentTimeMillis()}_$slideIndex.jpg"
 
@@ -480,16 +472,18 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
                         source = "instagram"
                     )
 
-
                     if (idx == total - 1) {
                         withContext(Dispatchers.Main) {
                             Toast.makeText(requireContext(), "Gambar berhasil diunduh", Toast.LENGTH_SHORT).show()
                         }
                     }
-
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(requireContext(), "Gagal mengunduh gambar: ${e.message}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            requireContext(),
+                            "Gagal mengunduh gambar: ${e.message}",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             }
@@ -611,8 +605,6 @@ class DownloadFragmentIG : Fragment(R.layout.fragment_download_ig) {
             }
         }
     }
-
-
 
     private fun showError(message: String) {
         lifecycleScope.launch(Dispatchers.Main) {

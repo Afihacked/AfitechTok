@@ -5,10 +5,6 @@
         <item name="colorOnSurface">@color/colorOnSurface</item>
     </style>
     <!-- Tema utama aplikasi -->
-    <style name="Theme.TikDownloader" parent="Base.Theme.TikDownloader">
-        <!-- Tambahkan ini agar status bar tidak transparan -->
-        <item name="android:statusBarColor">@color/sttsbar</item>
-    </style>
     <!-- Tema Popup Menu -->
     <style name="PopupMenuStyle" parent="Widget.Material3.PopupMenu">
         <item name="android:popupBackground">@color/colorSurface</item>

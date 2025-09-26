@@ -37,18 +37,19 @@ import com.afitech.sosmedtoolkit.R
 import com.afitech.sosmedtoolkit.data.database.AppDatabase
 import com.afitech.sosmedtoolkit.data.database.DownloadHistoryDao
 import com.afitech.sosmedtoolkit.network.TikTokDownloader
+import com.afitech.sosmedtoolkit.ui.helpers.AnalyticsLogger
 import com.afitech.sosmedtoolkit.ui.services.DownloadServiceTT
 import com.afitech.sosmedtoolkit.utils.CuanManager
 import com.afitech.sosmedtoolkit.utils.areAdsEnabled
 import com.afitech.sosmedtoolkit.utils.openAppWithFallback
 import com.afitech.sosmedtoolkit.utils.setStatusBarColor
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
+import com.facebook.shimmer.ShimmerFrameLayout
 import com.google.android.gms.ads.AdError
-import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textfield.TextInputLayout
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.FullScreenContentCallback
@@ -57,21 +58,17 @@ import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
-import kotlinx.coroutines.delay
-
-import com.bumptech.glide.request.target.Target
-import com.bumptech.glide.load.engine.GlideException
-import com.bumptech.glide.load.DataSource
-import com.bumptech.glide.request.RequestListener
-import com.facebook.shimmer.ShimmerFrameLayout
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.google.firebase.Firebase
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.analytics
-import com.afitech.sosmedtoolkit.ui.helpers.AnalyticsLogger
-
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
-
 
     private lateinit var inputLayout: TextInputLayout
     private lateinit var editText: TextInputEditText
@@ -127,10 +124,11 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
                         val message = when {
                             successCount >= 0 && totalCount > 0 -> {
-                                if (successCount == totalCount)
+                                if (successCount == totalCount) {
                                     "Berhasil mengunduh semua gambar ($totalCount)"
-                                else
+                                } else {
                                     "Berhasil $successCount dari $totalCount gambar"
+                                }
                             }
 
                             else -> if (success) "Unduh TikTok selesai!" else "Unduhan TikTok gagal!"
@@ -142,8 +140,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             }
         }
     }
-
-
 
     @SuppressLint("SourceLockedOrientationActivity")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -218,8 +214,11 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                 textCount.setTextColor(
                     ContextCompat.getColor(
                         requireContext(),
-                        if (currentLength > maxCharacters) android.R.color.holo_red_dark
-                        else android.R.color.darker_gray
+                        if (currentLength > maxCharacters) {
+                            android.R.color.holo_red_dark
+                        } else {
+                            android.R.color.darker_gray
+                        }
                     )
                 )
 
@@ -243,7 +242,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
         // Tombol Paste
 
-
         // Tombol Download
         downloadButton.setOnClickListener {
             val link = editText.text.toString().trim()
@@ -260,9 +258,8 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                 Toast.makeText(requireContext(), "Link tidak valid", Toast.LENGTH_SHORT).show()
             }
         }
-
     }
-    //end oncreated
+    // end oncreated
 
     override fun onStart() {
         super.onStart()
@@ -294,8 +291,9 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     }
 
     private fun setupPasteButton() {
-        val btnPaste = view?.findViewById<LinearLayout>(R.id.btnPaste)
-        btnPaste?.apply {
+        val iconPaste = view?.findViewById<ImageView>(R.id.iconPaste)
+
+        iconPaste?.apply {
             isClickable = true
             isFocusable = true
             setOnClickListener {
@@ -322,10 +320,22 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                         editText.setSelection(clipText.length)
                         lastClipboard = clipText
                         Toast.makeText(requireContext(), "Link berhasil ditempel", Toast.LENGTH_SHORT).show()
+
+                        // Ubah ikon menjadi ceklis
+                        setImageResource(R.drawable.ic_checked)
+
+                        // Kembalikan ke ikon tambah setelah 2 detik
+//                        Handler(Looper.getMainLooper()).postDelayed({
+//                            setImageResource(R.drawable.ic_add)
+//                        }, 2000)
                     }
 
                     else -> {
-                        Toast.makeText(requireContext(), "Link tidak valid. Harus link TikTok.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            requireContext(),
+                            "Link tidak valid. Harus link TikTok.",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             }
@@ -350,17 +360,22 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         if (!isAdded) return
 
         val adRequest = AdRequest.Builder().build()
-        InterstitialAd.load(requireContext(), getString(R.string.admob_interstitial_id), adRequest, object : InterstitialAdLoadCallback() {
-            override fun onAdLoaded(ad: InterstitialAd) {
-                interstitialAd = ad
-                Log.d("AdMob", "Iklan Interstitial berhasil dimuat.")
-            }
+        InterstitialAd.load(
+            requireContext(),
+            getString(R.string.admob_interstitial_id),
+            adRequest,
+            object : InterstitialAdLoadCallback() {
+                override fun onAdLoaded(ad: InterstitialAd) {
+                    interstitialAd = ad
+                    Log.d("AdMob", "Iklan Interstitial berhasil dimuat.")
+                }
 
-            override fun onAdFailedToLoad(adError: LoadAdError) {
-                interstitialAd = null
-                Log.e("AdMob", "Gagal memuat iklan Interstitial: ${adError.message}")
+                override fun onAdFailedToLoad(adError: LoadAdError) {
+                    interstitialAd = null
+                    Log.e("AdMob", "Gagal memuat iklan Interstitial: ${adError.message}")
+                }
             }
-        })
+        )
     }
 
     private fun loadRewardedAd() {
@@ -369,17 +384,22 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         if (!isAdded) return
 
         val adRequest = AdRequest.Builder().build()
-        RewardedAd.load(requireContext(), getString(R.string.admob_rewarded_id), adRequest, object : RewardedAdLoadCallback() {
-            override fun onAdLoaded(ad: RewardedAd) {
-                rewardedAd = ad
-                Log.d("AdMob", "Iklan Rewarded berhasil dimuat.")
-            }
+        RewardedAd.load(
+            requireContext(),
+            getString(R.string.admob_rewarded_id),
+            adRequest,
+            object : RewardedAdLoadCallback() {
+                override fun onAdLoaded(ad: RewardedAd) {
+                    rewardedAd = ad
+                    Log.d("AdMob", "Iklan Rewarded berhasil dimuat.")
+                }
 
-            override fun onAdFailedToLoad(adError: LoadAdError) {
-                rewardedAd = null
-                Log.e("AdMob", "Gagal memuat iklan Rewarded: ${adError.message}")
+                override fun onAdFailedToLoad(adError: LoadAdError) {
+                    rewardedAd = null
+                    Log.e("AdMob", "Gagal memuat iklan Rewarded: ${adError.message}")
+                }
             }
-        })
+        )
     }
 
     private fun showInterstitialAd(onAdComplete: () -> Unit) {
@@ -483,8 +503,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         }
     }
 
-
-
     private fun checkClipboardOnStart() {
         val clipData = clipboardManager.primaryClip ?: return
         if (clipData.itemCount <= 0) return
@@ -494,7 +512,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
         when (detectPlatform(copiedText)) {
             "tiktok" -> {
-                if (editText.text.toString().isNotBlank()) return  // tambahkan ini
+                if (editText.text.toString().isNotBlank()) return // tambahkan ini
                 editText.setText(copiedText)
                 editText.setSelection(copiedText.length)
                 lastClipboard = copiedText
@@ -502,7 +520,11 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             "invalid" -> {
                 if (!toastCooldown) {
                     toastCooldown = true
-                    Toast.makeText(requireContext(), "Link tidak valid. Hanya TikTok yang didukung.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "Link tidak valid. Hanya TikTok yang didukung.",
+                        Toast.LENGTH_SHORT
+                    ).show()
                     viewLifecycleOwner.lifecycleScope.launch {
                         delay(2000)
                         toastCooldown = false
@@ -572,7 +594,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                 return@showRewardedAd
             }
 
-
             requireActivity().runOnUiThread {
                 updateDownloadButtonState(downloadButton, unduhText, isEnabled = false, text = "Menunggu...")
             }
@@ -600,7 +621,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             }
         }
     }
-
 
     private fun updateDownloadButtonState(
         layout: LinearLayout,
@@ -763,7 +783,10 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                         .centerCrop()
                         .listener(object : RequestListener<Drawable> {
                             override fun onLoadFailed(
-                                e: GlideException?, model: Any?, target: Target<Drawable>, isFirstResource: Boolean
+                                e: GlideException?,
+                                model: Any?,
+                                target: Target<Drawable>,
+                                isFirstResource: Boolean
                             ): Boolean {
                                 shimmerLayout.stopShimmer()
                                 shimmerLayout.visibility = View.GONE
@@ -773,8 +796,11 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                             }
 
                             override fun onResourceReady(
-                                resource: Drawable, model: Any, target: Target<Drawable>,
-                                dataSource: DataSource, isFirstResource: Boolean
+                                resource: Drawable,
+                                model: Any,
+                                target: Target<Drawable>,
+                                dataSource: DataSource,
+                                isFirstResource: Boolean
                             ): Boolean {
                                 shimmerLayout.stopShimmer()
                                 shimmerLayout.visibility = View.GONE
@@ -850,7 +876,9 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                             showInterstitialAd {
                                 isAdShowing = false
                                 downloadSelectedImagesWithService(
-                                    selectedImages.toList(), originalUrl, buttonLayout
+                                    selectedImages.toList(),
+                                    originalUrl,
+                                    buttonLayout
                                 )
                             }
                         } else {
@@ -879,8 +907,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             }
     }
 
-
-
     private fun showToastSafe(message: String) {
         if (!isAdded) return
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
@@ -901,7 +927,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         originalUrl: String,
         buttonLayout: LinearLayout,
     ) {
-
         val intent = Intent(requireContext(), DownloadServiceTT::class.java).apply {
             putExtra(DownloadServiceTT.EXTRA_VIDEO_URL, originalUrl)
             putExtra(DownloadServiceTT.EXTRA_FORMAT, "Gambar")
@@ -928,7 +953,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         }
     }
 
-
     private fun showError(message: String) {
         if (!isAdded || view == null) return
 
@@ -952,10 +976,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
     override fun onResume() {
         super.onResume()
-        setStatusBarColor(R.color.sttsbar , isLightStatusBar = false)
-        checkClipboardOnStart()  // ini akan berjalan tiap fragment kembali ke foreground
+        setStatusBarColor(R.color.sttsbar, isLightStatusBar = false)
+        checkClipboardOnStart() // ini akan berjalan tiap fragment kembali ke foreground
     }
 }
-
-
-

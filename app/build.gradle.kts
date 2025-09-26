@@ -15,8 +15,8 @@ android {
         applicationId = "com.afitech.sosmedtoolkit"
         minSdk = 29
         targetSdk = 35
-        versionCode = 14
-        versionName = "4.1-beta"
+        versionCode = 17
+        versionName = "4.5-beta"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -48,8 +48,8 @@ android {
     applicationVariants.configureEach {
         outputs.configureEach {
             val appName = "Sosmed Toolkit"
-            val versionName = "4.1-beta"
-            val versionCode = 14
+            val versionName = "4.5-beta"
+            val versionCode = 17
             val outputImpl = this as? com.android.build.gradle.api.ApkVariantOutput
             outputImpl?.outputFileName = "${appName}_v${versionName}_(${versionCode}).apk"
         }
@@ -81,10 +81,6 @@ dependencies {
 
     // AdMob
     implementation(libs.play.services.ads.api)
-
-    // Media Playback
-    implementation(libs.androidx.media3.exoplayer)
-    implementation(libs.androidx.media3.ui)
 
     // UI & Animasi
     implementation(libs.lottie)

@@ -47,7 +47,6 @@ object TikTokDownloader {
         }
     }
 
-
     // Cek apakah URL TikTok adalah slide (bukan video biasa)
     fun isTikTokSlide(url: String): Boolean {
         val json = fetchApiData(url) ?: return false
@@ -98,23 +97,4 @@ object TikTokDownloader {
 
         return slideImages
     }
-
-
-    // Ambil semua gambar slide (opsional, jika masih pakai struktur lama)
-//    fun getSlideImages(tiktokUrl: String): List<String>? {
-//        val json = fetchApiData(tiktokUrl) ?: return null
-//        if (json.optInt("code", -1) != 0) {
-//            Log.e("TikTokDownloader", "Gagal mendapatkan gambar slide dari URL: $tiktokUrl")
-//            return null
-//        }
-//
-//        val imagesArray = json.optJSONObject("data")?.optJSONArray("images") ?: return null
-//        val slideImages = List(imagesArray.length()) { index -> imagesArray.optString(index) }
-//
-//        if (slideImages.isEmpty()) {
-//            Log.e("TikTokDownloader", "Tidak ada gambar slide ditemukan di URL: $tiktokUrl")
-//        }
-//
-//        return slideImages
-//    }
 }

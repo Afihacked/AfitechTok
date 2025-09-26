@@ -29,7 +29,6 @@ class HistoryListViewModel(private val repository: DownloadHistoryRepository) : 
         }
     }
 
-
     fun deleteMultiple(histories: List<DownloadHistory>, onFinish: (() -> Unit)? = null) {
         viewModelScope.launch {
             val ids = histories.map { it.id }.filter { it != 0 }
@@ -37,8 +36,4 @@ class HistoryListViewModel(private val repository: DownloadHistoryRepository) : 
             onFinish?.invoke()
         }
     }
-
-
 }
-
-

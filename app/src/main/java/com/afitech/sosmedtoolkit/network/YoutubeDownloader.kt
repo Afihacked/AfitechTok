@@ -13,6 +13,7 @@ import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -30,13 +31,12 @@ object YouTubeDownloader {
         fun onProgressUpdate(progress: Int)
     }
 
-    // suspend function agar bisa dipanggil dari coroutine
     suspend fun downloadVideo(
         context: Context,
         videoUrl: String,
         quality: String? = "highest",
         progressCallback: ProgressCallback? = null,
-    ): Boolean {
+    ): Pair<Boolean, Long> {
         return download(context, videoUrl, isAudio = false, quality, progressCallback)
     }
 
@@ -45,7 +45,7 @@ object YouTubeDownloader {
         videoUrl: String,
         quality: String? = "best",
         progressCallback: ProgressCallback? = null,
-    ): Boolean {
+    ): Pair<Boolean, Long> {
         return download(context, videoUrl, isAudio = true, quality, progressCallback)
     }
 
@@ -55,7 +55,7 @@ object YouTubeDownloader {
         isAudio: Boolean,
         quality: String? = null,
         progressCallback: ProgressCallback? = null,
-    ): Boolean = withContext(Dispatchers.IO) {
+    ): Pair<Boolean, Long> = withContext(Dispatchers.IO) {
         try {
             runOnUiThread(context) { LoadingDialogYT.show(context) }
 
@@ -76,7 +76,10 @@ object YouTubeDownloader {
             val httpUrl = urlBuilder.build()
             Log.d("YouTubeDownloader", "Meminta: $httpUrl")
 
-            val youtubeRegex = Regex("^(https://(www\\.)?youtube\\.com/(watch\\?v=\\S+|shorts/\\S+|clip/\\S+)|https://youtu\\.be/\\S+)$")
+            val youtubeRegex =
+                Regex(
+                    "^(https://(www\\.)?youtube\\.com/(watch\\?v=\\S+|shorts/\\S+|clip/\\S+)|https://youtu\\.be/\\S+)$"
+                )
             if (!youtubeRegex.matches(videoUrl)) {
                 throw IllegalArgumentException("Link YouTube tidak valid")
             }
@@ -102,11 +105,11 @@ object YouTubeDownloader {
                 .trim('_')
                 .take(100)
             val timeStamp = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(Date())
-            val fileName = "$sanitizedTitle${timeStamp}.$format".lowercase()
+            val fileName = "$sanitizedTitle$timeStamp.$format".lowercase()
             val mimeType = if (isAudio) "audio/mpeg" else "video/mp4"
 
-            // Panggil Downloader.downloadFile suspend function
-            val saveResult = Downloader.downloadFile(
+            // Unduh dan simpan file
+            val savedFile: File? = Downloader.downloadFile(
                 context = context,
                 fileUrl = httpUrl.toString(),
                 fileName = fileName,
@@ -118,20 +121,23 @@ object YouTubeDownloader {
                 source = "youtube"
             )
 
+            val actualSize = savedFile?.length() ?: 0L
 
             runOnUiThread(context) {
                 LoadingDialogYT.dismiss()
-                if (saveResult) Toast.makeText(context, "Unduhan selesai: $fileName", Toast.LENGTH_SHORT).show()
+                if (savedFile != null) {
+                    Toast.makeText(context, "Unduhan selesai: $fileName", Toast.LENGTH_SHORT).show()
+                }
             }
 
-            saveResult
+            return@withContext Pair(savedFile != null, actualSize)
         } catch (e: Exception) {
             Log.e("YouTubeDownloader", "Gagal: ${e.message}", e)
             runOnUiThread(context) {
                 LoadingDialogYT.dismiss()
                 Toast.makeText(context, "Gagal mengunduh: ${e.message}", Toast.LENGTH_LONG).show()
             }
-            false
+            return@withContext Pair(false, 0L)
         }
     }
 

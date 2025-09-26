@@ -60,7 +60,7 @@ class MainActivity : AppCompatActivity() {
         RemoteConfigHelper.init(this)
 
         sharedPref = getSharedPreferences("theme_pref", MODE_PRIVATE)
-        ThemeHelper.applyTheme(this)  // Terapkan tema sebelum super.onCreate supaya langsung berpengaruh
+        ThemeHelper.applyTheme(this) // Terapkan tema sebelum super.onCreate supaya langsung berpengaruh
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_main)
@@ -90,7 +90,9 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
 
         val toggle = ActionBarDrawerToggle(
-            this, drawerLayout, toolbar,
+            this,
+            drawerLayout,
+            toolbar,
             R.string.navigation_drawer_open,
             R.string.navigation_drawer_close
         )
@@ -100,8 +102,8 @@ class MainActivity : AppCompatActivity() {
         navView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.nav_tt_offline -> replaceFragment(DownloadFragmentTT(), getString(R.string.nav_tt_offline))
-//                R.id.nav_yt_offline -> replaceFragment(DownloadFragmentYT(), getString(R.string.nav_yt_offline))
 //                R.id.nav_ig_offline -> replaceFragment(DownloadFragmentIG(), getString(R.string.nav_ig))
+                R.id.nav_yt_offline -> replaceFragment(DownloadFragmentYT(), getString(R.string.nav_yt_offline))
                 R.id.nav_wa_offline -> replaceFragment(WhatsappStoryFragment(), getString(R.string.nav_wa_offline))
                 R.id.nav_history -> replaceFragment(HistoryFragment(), getString(R.string.nav_history))
                 R.id.nav_about -> replaceFragment(TentangFragment(), getString(R.string.nav_about))
@@ -120,7 +122,8 @@ class MainActivity : AppCompatActivity() {
                     getString(R.string.nav_yt_offline)
                 )
                 "tt_downloader" -> replaceFragment(DownloadFragmentTT(), getString(R.string.nav_tt_offline))
-                "ig_downloader" -> replaceFragment(DownloadFragmentIG(), getString(R.string.nav_ig))
+//                "ig_downloader" -> replaceFragment(DownloadFragmentIG(), getString(R.string.nav_ig))
+                "yt_downloader" -> replaceFragment(DownloadFragmentYT(), getString(R.string.nav_ig))
                 "wa_downloader" -> replaceFragment(WhatsappStoryFragment(), getString(R.string.nav_wa_offline))
                 "history" -> replaceFragment(HistoryFragment(), getString(R.string.nav_history))
                 "settings" -> replaceFragment(SettingsFragment(), getString(R.string.nav_settings))
@@ -153,13 +156,9 @@ class MainActivity : AppCompatActivity() {
                         subMenu?.getItem(j)?.isChecked = false
                     }
                 }
-
             }
         }
-
     }
-
-
 
 //    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
 //        menuInflater.inflate(R.menu.main_toolbar_menu, menu)
@@ -188,30 +187,35 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleBackPressed() {
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
-                    drawerLayout.closeDrawer(GravityCompat.START)
-                    return
-                }
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                        drawerLayout.closeDrawer(GravityCompat.START)
+                        return
+                    }
 
-                val currentFragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
+                    val currentFragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
 
-                if (currentFragment is HomeFragment) {
-                    finish()
-                } else {
-                    supportFragmentManager.popBackStack(
-                        null,
-                        androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE
-                    )
-                    replaceFragment(HomeFragment(), getString(R.string.nav_home))
+                    if (currentFragment is HomeFragment) {
+                        finish()
+                    } else {
+                        supportFragmentManager.popBackStack(
+                            null,
+                            androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE
+                        )
+                        replaceFragment(HomeFragment(), getString(R.string.nav_home))
+                    }
                 }
             }
-        })
+        )
     }
 
     override fun onRequestPermissionsResult(
-        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQ_NOTIF) {

@@ -16,10 +16,13 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.RadioButton
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.widget.AppCompatImageView
 import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -28,6 +31,7 @@ import com.afitech.sosmedtoolkit.network.NetworkHelper
 import com.afitech.sosmedtoolkit.ui.components.LoadingDialogYT
 import com.afitech.sosmedtoolkit.ui.services.DownloadService
 import com.afitech.sosmedtoolkit.utils.CuanManager
+import com.afitech.sosmedtoolkit.utils.areAdsEnabled
 import com.afitech.sosmedtoolkit.utils.openAppWithFallback
 import com.afitech.sosmedtoolkit.utils.setStatusBarColor
 import com.google.android.gms.ads.AdView
@@ -110,14 +114,61 @@ class DownloadFragmentYT : Fragment() {
         adView = view.findViewById(R.id.adView)
 
         clipboardManager = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        checkClipboardOnStart()     // Cek saat pertama kali fragment muncul
+        checkClipboardOnStart() // Cek saat pertama kali fragment muncul
         checkClipboardForLink()
 
-        // Inisialisasi dan muat iklan menggunakan AdMobManager
+        // Inisialisasi iklan
         cuanManager.initializeAdMob(requireContext())
-        cuanManager.loadAd(adView)// AdMob
 
-        val btnOpenYoutube = view.findViewById<MaterialButton>(R.id.btnOpenYoutube)
+        if (requireContext().areAdsEnabled()) {
+            cuanManager.loadAd(adView)
+            adView.visibility = View.VISIBLE
+        } else {
+            adView.visibility = View.GONE
+        }
+
+        val iconPaste = view.findViewById<AppCompatImageView>(R.id.iconPaste)
+
+        iconPaste.setOnClickListener {
+            val clipData = clipboardManager.primaryClip
+            if (clipData == null || clipData.itemCount == 0) {
+                Toast.makeText(requireContext(), "Anda belum salin link YouTube", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val clipText = clipData.getItemAt(0).coerceToText(requireContext()).toString().trim()
+            val currentText = editTextUrl.text.toString().trim()
+
+            when {
+                clipText.isEmpty() -> {
+                    Toast.makeText(requireContext(), "Clipboard kosong", Toast.LENGTH_SHORT).show()
+                }
+
+                clipText == currentText -> {
+                    Toast.makeText(requireContext(), "Link sudah ditempel", Toast.LENGTH_SHORT).show()
+                }
+
+                isYoutubeLink(clipText) -> {
+                    editTextUrl.setText(clipText)
+                    editTextUrl.setSelection(clipText.length)
+                    Toast.makeText(requireContext(), "Link berhasil ditempel", Toast.LENGTH_SHORT).show()
+
+                    // Ubah ikon menjadi 'checked'
+                    iconPaste.setImageResource(R.drawable.ic_checked)
+
+//                    // Kembalikan ke ikon awal setelah 2 detik
+//                    Handler(Looper.getMainLooper()).postDelayed({
+//                        iconPaste.setImageResource(R.drawable.ic_add)
+//                    }, 2000)
+                }
+
+                else -> {
+                    Toast.makeText(requireContext(), "Link tidak valid. Harus link YouTube.", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        val btnOpenYoutube = view.findViewById<ImageView>(R.id.btnOpenYoutube)
         btnOpenYoutube.setOnClickListener {
             openAppWithFallback(
                 context = requireContext(),
@@ -135,7 +186,10 @@ class DownloadFragmentYT : Fragment() {
         val maxWithTolerance = maxCharacters + tolerance
 
 // URL validation
-        val youtube_regex = Regex("^(https://(www\\.)?youtube\\.com/(watch\\?v=\\S+|shorts/\\S+|clip/\\S+)|https://youtu\\.be/[^\\s]+)$")
+        val youtube_regex =
+            Regex(
+                "^(https://(www\\.)?youtube\\.com/(watch\\?v=\\S+|shorts/\\S+|clip/\\S+)|https://youtu\\.be/[^\\s]+)$"
+            )
 
         // Fungsi untuk mendeteksi platform dengan URL yang valid
         fun detectPlatformPrecise(url: String): String {
@@ -182,7 +236,6 @@ class DownloadFragmentYT : Fragment() {
                     editTextUrl.error = null
                 }
                 setDownloadButtonEnabled(platform != "invalid")
-
             }
 
             override fun afterTextChanged(s: Editable?) {}
@@ -206,7 +259,10 @@ class DownloadFragmentYT : Fragment() {
             }
 
             // Validasi URL menggunakan regex
-            val youtubeRegex = Regex("^(https://(www\\.)?youtube\\.com/(watch\\?v=\\S+|shorts/\\S+|clip/\\S+)|https://youtu\\.be/\\S+)$")
+            val youtubeRegex =
+                Regex(
+                    "^(https://(www\\.)?youtube\\.com/(watch\\?v=\\S+|shorts/\\S+|clip/\\S+)|https://youtu\\.be/\\S+)$"
+                )
             if (!youtubeRegex.matches(videoUrl)) {
                 showToast("Link YouTube tidak valid atau format salah.")
                 return@setOnClickListener
@@ -249,8 +305,12 @@ class DownloadFragmentYT : Fragment() {
                 Handler(Looper.getMainLooper()).post {
                     btnDownload.apply {
                         isEnabled = true // Aktifkan tombol kembali
-                        text = if (success) "Unduh Selesai" else "" +
+                        text = if (success) {
+                            "Unduh Selesai"
+                        } else {
+                            "" +
                                 "Coba Lagi"
+                        }
                     }
 
                     // Sembunyikan loading dialog setelah selesai
@@ -261,8 +321,6 @@ class DownloadFragmentYT : Fragment() {
             // Menyambungkan callback dengan logika selesai di dalam service
             DownloadService.setDoneCallback(doneCallback)
         }
-
-
     }
 
     override fun onDestroyView() {
@@ -273,10 +331,10 @@ class DownloadFragmentYT : Fragment() {
     }
 
     private fun setDownloadButtonEnabled(enabled: Boolean) {
-        btnDownload.isEnabled = enabled         // Tetap dipakai biar aman walau LinearLayout
+        btnDownload.isEnabled = enabled // Tetap dipakai biar aman walau LinearLayout
         btnDownload.isClickable = enabled
         btnDownload.isFocusable = enabled
-        btnDownload.alpha = if (enabled) 1f else 0.5f  // Visual efek: buram saat nonaktif
+        btnDownload.alpha = if (enabled) 1f else 0.5f // Visual efek: buram saat nonaktif
     }
     private var toastCooldown = false
     private var hasUserInput = false
@@ -291,7 +349,11 @@ class DownloadFragmentYT : Fragment() {
                 else -> {
                     if (!toastCooldown) {
                         toastCooldown = true
-                        Toast.makeText(requireContext(), "Link yang disalin bukan dari YouTube.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            requireContext(),
+                            "Link yang disalin bukan dari YouTube.",
+                            Toast.LENGTH_SHORT
+                        ).show()
                         Handler(Looper.getMainLooper()).postDelayed({
                             toastCooldown = false
                         }, 2000)
@@ -313,7 +375,11 @@ class DownloadFragmentYT : Fragment() {
                     else -> {
                         if (!toastCooldown) {
                             toastCooldown = true
-                            Toast.makeText(requireContext(), "Link yang disalin bukan dari YouTube.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                requireContext(),
+                                "Link yang disalin bukan dari YouTube.",
+                                Toast.LENGTH_SHORT
+                            ).show()
                             Handler(Looper.getMainLooper()).postDelayed({
                                 toastCooldown = false
                             }, 2000)
@@ -325,10 +391,12 @@ class DownloadFragmentYT : Fragment() {
     }
 
     private fun isYoutubeLink(text: String): Boolean {
-        val YOUTUBE_REGEX = Regex("^(https://(www\\.)?youtube\\.com/(watch\\?v=\\S+|shorts/\\S+|clip/\\S+)|https://youtu\\.be/[^\\s]+)$")
+        val YOUTUBE_REGEX =
+            Regex(
+                "^(https://(www\\.)?youtube\\.com/(watch\\?v=\\S+|shorts/\\S+|clip/\\S+)|https://youtu\\.be/[^\\s]+)$"
+            )
         return YOUTUBE_REGEX.containsMatchIn(text)
     }
-
 
     private fun showToast(msg: String) {
         Handler(Looper.getMainLooper()).post {
@@ -337,7 +405,7 @@ class DownloadFragmentYT : Fragment() {
     }
     override fun onResume() {
         super.onResume()
-        setStatusBarColor(R.color. dark_red, isLightStatusBar = false)
-        checkClipboardOnStart()  // ini akan berjalan tiap fragment kembali ke foreground
+        setStatusBarColor(R.color.sttsbar, isLightStatusBar = false)
+        checkClipboardOnStart() // ini akan berjalan tiap fragment kembali ke foreground
     }
 }

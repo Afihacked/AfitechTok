@@ -23,7 +23,8 @@ class ImageStoryFragment : Fragment() {
     private lateinit var prefs: SharedPreferences
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentImageStoryBinding.inflate(inflater, container, false)

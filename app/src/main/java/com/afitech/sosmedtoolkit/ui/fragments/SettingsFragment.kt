@@ -18,7 +18,8 @@ class SettingsFragment : Fragment() {
     private lateinit var tvDescription: TextView
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? = inflater.inflate(R.layout.fragment_settings, container, false)
 

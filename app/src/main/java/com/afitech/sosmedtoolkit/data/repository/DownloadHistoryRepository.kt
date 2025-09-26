@@ -18,4 +18,3 @@ class DownloadHistoryRepository(private val dao: DownloadHistoryDao) {
         dao.deleteMultipleById(ids)
     }
 }
-

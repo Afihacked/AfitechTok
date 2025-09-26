@@ -20,7 +20,6 @@ import com.afitech.sosmedtoolkit.data.model.StoryItem
 import com.bumptech.glide.Glide
 import kotlinx.coroutines.*
 
-
 class StoryAdapter(
     private var stories: List<StoryItem>,
     private val context: Context
@@ -75,7 +74,6 @@ class StoryAdapter(
                 showFullscreenImage(story.uri)
             }
         }
-
     }
 
     override fun getItemCount(): Int = stories.size
@@ -215,28 +213,31 @@ class StoryAdapter(
             }
         })
 
-        val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onDoubleTap(e: MotionEvent): Boolean {
-                if (!isZoomed) {
-                    val focusX = e.x
-                    val focusY = e.y
-                    val scaleFactor = maxScale / currentScale
-                    matrix.postScale(scaleFactor, scaleFactor, focusX, focusY)
-                    currentScale = maxScale
-                    isZoomed = true
-                } else {
-                    currentScale = minScale
-                    val dx = (viewWidth - imageWidth * currentScale) / 2f
-                    val dy = (viewHeight - imageHeight * currentScale) / 2f
-                    matrix.setScale(currentScale, currentScale)
-                    matrix.postTranslate(dx, dy)
-                    isZoomed = false
+        val gestureDetector = GestureDetector(
+            context,
+            object : GestureDetector.SimpleOnGestureListener() {
+                override fun onDoubleTap(e: MotionEvent): Boolean {
+                    if (!isZoomed) {
+                        val focusX = e.x
+                        val focusY = e.y
+                        val scaleFactor = maxScale / currentScale
+                        matrix.postScale(scaleFactor, scaleFactor, focusX, focusY)
+                        currentScale = maxScale
+                        isZoomed = true
+                    } else {
+                        currentScale = minScale
+                        val dx = (viewWidth - imageWidth * currentScale) / 2f
+                        val dy = (viewHeight - imageHeight * currentScale) / 2f
+                        matrix.setScale(currentScale, currentScale)
+                        matrix.postTranslate(dx, dy)
+                        isZoomed = false
+                    }
+                    fixTranslation()
+                    imageView.imageMatrix = matrix
+                    return true
                 }
-                fixTranslation()
-                imageView.imageMatrix = matrix
-                return true
             }
-        })
+        )
 
         imageView.setOnTouchListener { _, event ->
             gestureDetector.onTouchEvent(event)
@@ -271,7 +272,9 @@ class StoryAdapter(
             if (keyCode == KeyEvent.KEYCODE_BACK) {
                 dialog.dismiss()
                 true
-            } else false
+            } else {
+                false
+            }
         }
 
         dialog.setContentView(imageView)
@@ -295,7 +298,7 @@ class StoryAdapter(
                 val mimeType = contentResolver.getType(uri) ?: "image/jpeg"
                 // Bisa ambil nama file asli dari Uri, atau buat default saja:
                 val originalFileName = "WhatsAppStory_${System.currentTimeMillis()}." +
-                MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
+                    MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
 
                 // Pastikan downloadHistoryDao sudah di-set di StorySaver sebelumnya
                 StorySaver.saveToGallery(
@@ -319,7 +322,6 @@ class StoryAdapter(
             }
         }
     }
-
 
     class StoryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val mediaView: ImageView = itemView.findViewById(R.id.mediaView)
@@ -380,7 +382,6 @@ class StoryAdapter(
             }
         }
 
-
         fun toggleControls() {
             isControlVisible = !isControlVisible
             controlPanel.visibility = if (isControlVisible) View.VISIBLE else View.GONE
@@ -433,14 +434,10 @@ class StoryAdapter(
         dialog.show()
     }
 
-
     private fun formatTime(ms: Int): String {
         val totalSeconds = ms / 1000
         val minutes = totalSeconds / 60
         val seconds = totalSeconds % 60
         return String.format("%02d:%02d", minutes, seconds)
     }
-
-
-
 }

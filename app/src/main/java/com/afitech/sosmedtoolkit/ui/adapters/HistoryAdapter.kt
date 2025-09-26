@@ -86,8 +86,11 @@ class HistoryAdapter(
                     } catch (e: Exception) {
                         null
                     }
-                    if (bitmap != null) holder.thumbnail.setImageBitmap(bitmap)
-                    else holder.thumbnail.setImageResource(R.drawable.ic_file)
+                    if (bitmap != null) {
+                        holder.thumbnail.setImageBitmap(bitmap)
+                    } else {
+                        holder.thumbnail.setImageResource(R.drawable.ic_file)
+                    }
                 }
                 "Audio" -> holder.thumbnail.setImageResource(R.drawable.ic_music_note)
                 "Image" -> Glide.with(context).load(uri).placeholder(R.drawable.ic_placeholder).into(holder.thumbnail)
@@ -109,12 +112,15 @@ class HistoryAdapter(
                 toggleSelection(history)
             } else if (fileExists) {
                 val intent = Intent(Intent.ACTION_VIEW).apply {
-                    setDataAndType(uri, when (history.fileType) {
-                        "Video" -> "video/*"
-                        "Audio" -> "audio/*"
-                        "Image" -> "image/*"
-                        else -> "*/*"
-                    })
+                    setDataAndType(
+                        uri,
+                        when (history.fileType) {
+                            "Video" -> "video/*"
+                            "Audio" -> "audio/*"
+                            "Image" -> "image/*"
+                            else -> "*/*"
+                        }
+                    )
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
                 context.startActivity(intent)
@@ -164,7 +170,6 @@ class HistoryAdapter(
             }
             popup.show()
         }
-
     }
 
     private fun showDeleteConfirmation(
@@ -188,7 +193,6 @@ class HistoryAdapter(
         dialog.show()
     }
 
-
     fun deleteSelectedItems() {
         val toDelete = selectedItems.toList()
         if (toDelete.isNotEmpty()) {
@@ -208,10 +212,22 @@ class HistoryAdapter(
         val dateFormatted = DateFormat.format("dd MMM yyyy, HH:mm", history.downloadDate).toString()
 
         val displayPath = when {
-            history.fileType.equals("Video", ignoreCase = true) -> "/storage/emulated/0/Movies/Afitech-Tiktok/${history.fileName}"
-            history.fileType.equals("Audio", ignoreCase = true) -> "/storage/emulated/0/Music/Afitech-Tiktok/${history.fileName}"
-            history.fileType.equals("Image", ignoreCase = true) -> "/storage/emulated/0/Pictures/Afitech-Tiktok/${history.fileName}"
-            else -> "/storage/emulated/0/Download/TikTokDownloads/${history.fileName}"
+            history.fileType.equals(
+                "Video",
+                ignoreCase = true
+            ) -> "/storage/emulated/0/Movies/Afitech-${history.source.replaceFirstChar { it.uppercaseChar() }
+            }/${history.fileName}"
+            history.fileType.equals(
+                "Audio",
+                ignoreCase = true
+            ) -> "/storage/emulated/0/Music/Afitech-${history.source.replaceFirstChar { it.uppercaseChar() }
+            }/${history.fileName}"
+            history.fileType.equals(
+                "Image",
+                ignoreCase = true
+            ) -> "/storage/emulated/0/Pictures/Afitech-${history.source.replaceFirstChar { it.uppercaseChar() }
+            }/${history.fileName}"
+            else -> "/storage/emulated/0/Download/${history.source.capitalize()}Downloads/${history.fileName}"
         }
 
         val view = LayoutInflater.from(context).inflate(R.layout.rincian_file_dialog, null)
@@ -238,7 +254,6 @@ class HistoryAdapter(
                 val clip = ClipData.newPlainText("filePath", displayPath)
                 clipboard.setPrimaryClip(clip)
                 Toast.makeText(context, "Lokasi berhasil disalin", Toast.LENGTH_SHORT).show()
-
             }
         }
 

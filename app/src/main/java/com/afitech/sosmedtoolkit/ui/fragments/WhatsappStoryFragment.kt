@@ -10,7 +10,6 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.webkit.WebViewClient
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -61,7 +60,6 @@ class WhatsappStoryFragment : Fragment() {
         }
     }
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -74,7 +72,8 @@ class WhatsappStoryFragment : Fragment() {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         binding = FragmentWhatsappStoryBinding.inflate(inflater, container, false)
@@ -116,8 +115,8 @@ class WhatsappStoryFragment : Fragment() {
 
         val videoId = "bLWR7XqRhTU" // ← Ganti sesuai kebutuhan
         val isPortrait = when (videoId) {
-            "bLWR7XqRhTU" -> true  // ← Kamu tandai sendiri bahwa video ini portrait
-            else -> false          // default landscape
+            "bLWR7XqRhTU" -> true // ← Kamu tandai sendiri bahwa video ini portrait
+            else -> false // default landscape
         }
 
         // Ubah tinggi WebView berdasarkan orientasi
@@ -132,7 +131,7 @@ class WhatsappStoryFragment : Fragment() {
         frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
         allowfullscreen></iframe>
         </body></html>
-    """.trimIndent()
+        """.trimIndent()
 
         webView.loadDataWithBaseURL(null, html, "text/html", "utf-8", null)
     }
@@ -141,15 +140,12 @@ class WhatsappStoryFragment : Fragment() {
         return (dp * resources.displayMetrics.density).toInt()
     }
 
-
-
     private fun showStoryUI() {
         binding.tutorialBlock.visibility = View.GONE
         binding.viewPager.visibility = View.VISIBLE
         binding.tabLayout.visibility = View.VISIBLE
         setupViewPagerWithTabs()
     }
-
 
     private fun setupViewPagerWithTabs() {
         val pagerAdapter = StoryPagerAdapter(this)
@@ -200,7 +196,6 @@ class WhatsappStoryFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        setStatusBarColor(R.color.sttsbar , isLightStatusBar = false)
+        setStatusBarColor(R.color.sttsbar, isLightStatusBar = false)
     }
 }
-

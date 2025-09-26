@@ -1,17 +1,17 @@
 package com.afitech.sosmedtoolkit.data.model
 
 import android.app.Application
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.afitech.sosmedtoolkit.utils.StoryUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.afitech.sosmedtoolkit.utils.StoryUtils
-import android.net.Uri
 
 class StoryViewModel(application: Application) : AndroidViewModel(application) {
 

@@ -2,7 +2,6 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/itemContainer"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?attr/colorSurface"
@@ -42,7 +41,6 @@
 
         <!-- Area teks (klik dan tahan untuk aksi play & select) -->
         <LinearLayout
-            android:id="@+id/textContainer"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="wrap_content"

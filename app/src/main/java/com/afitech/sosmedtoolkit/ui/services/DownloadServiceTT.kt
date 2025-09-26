@@ -22,16 +22,16 @@ import java.util.*
 class DownloadServiceTT : Service() {
 
     companion object {
-        const val ACTION_PROGRESS   = "com.afitech.sosmedtoolkit.TIKTOK_PROGRESS"
-        const val ACTION_COMPLETE   = "com.afitech.sosmedtoolkit.TIKTOK_COMPLETE"
-        const val EXTRA_PROGRESS    = "com.afitech.sosmedtoolkit.EXTRA_PROGRESS"
-        const val EXTRA_SUCCESS     = "com.afitech.sosmedtoolkit.EXTRA_SUCCESS"
-        const val EXTRA_VIDEO_URL   = "video_url"
-        const val EXTRA_FORMAT      = "format"
-        const val EXTRA_IS_SLIDE    = "is_slide_download"
-        const val EXTRA_IMAGE_URLS  = "image_urls"
-        const val NOTIF_CHANNEL_ID  = "tiktok_download_channel"
-        const val NOTIF_ID          = 2
+        const val ACTION_PROGRESS = "com.afitech.sosmedtoolkit.TIKTOK_PROGRESS"
+        const val ACTION_COMPLETE = "com.afitech.sosmedtoolkit.TIKTOK_COMPLETE"
+        const val EXTRA_PROGRESS = "com.afitech.sosmedtoolkit.EXTRA_PROGRESS"
+        const val EXTRA_SUCCESS = "com.afitech.sosmedtoolkit.EXTRA_SUCCESS"
+        const val EXTRA_VIDEO_URL = "video_url"
+        const val EXTRA_FORMAT = "format"
+        const val EXTRA_IS_SLIDE = "is_slide_download"
+        const val EXTRA_IMAGE_URLS = "image_urls"
+        const val NOTIF_CHANNEL_ID = "tiktok_download_channel"
+        const val NOTIF_ID = 2
 
         private var doneCallback: ((Boolean) -> Unit)? = null
         fun setDoneCallback(callback: ((Boolean) -> Unit)?) { doneCallback = callback }
@@ -44,7 +44,6 @@ class DownloadServiceTT : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-
         Log.d("DownloadServiceTT", "✅ onStartCommand() dipanggil")
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannel()
@@ -74,7 +73,12 @@ class DownloadServiceTT : Service() {
                         val imageUrls = selectedImageUrls
                         if (imageUrls.isNullOrEmpty()) {
                             Log.e("DownloadServiceTT", "Gambar kosong atau bukan slide")
-                            AnalyticsLogger.logDownloadFailed(analytics, "tiktok", "image", "Gambar kosong atau bukan slide")
+                            AnalyticsLogger.logDownloadFailed(
+                                analytics,
+                                "tiktok",
+                                "image",
+                                "Gambar kosong atau bukan slide"
+                            )
                             broadcastResult(false)
                             return@launch
                         }
@@ -109,36 +113,41 @@ class DownloadServiceTT : Service() {
                 val fileName = generateFileName(videoUrl, format)
                 val dao = AppDatabase.getDatabase(applicationContext).downloadHistoryDao()
 
-                val success = Downloader.downloadFile(
+                val downloadedFile = Downloader.downloadFile(
                     context = applicationContext,
                     fileUrl = downloadUrl,
                     fileName = fileName,
                     mimeType = mimeType,
                     onProgressUpdate = { progress: Int, downloadedBytes: Long, totalBytes: Long ->
                         val percent = progress.coerceIn(0, 100)
+                        val downloaded = formatBytes(downloadedBytes)
+                        val total = formatBytes(totalBytes)
                         val contentText = if (percent >= 100) {
                             "Unduhan selesai"
                         } else {
-                            val downloaded = formatBytes(downloadedBytes)
-                            val total = formatBytes(totalBytes)
                             "Mengunduh… $percent% ($downloaded / $total)"
                         }
-                        lbm.sendBroadcast(Intent(ACTION_PROGRESS).apply {
-                            putExtra(EXTRA_PROGRESS, percent)
-                        })
+
+                        lbm.sendBroadcast(
+                            Intent(ACTION_PROGRESS).apply {
+                                putExtra(EXTRA_PROGRESS, percent)
+                            }
+                        )
+
                         updateProgressNotification(notifTitle, percent, contentText)
                     },
                     downloadHistoryDao = dao,
                     source = "tiktok"
                 )
 
-                if (success) {
+                if (downloadedFile != null && downloadedFile.exists()) {
                     AnalyticsLogger.logDownloadCompleted(analytics, "tiktok", format)
+                    broadcastResult(true)
                 } else {
-                    AnalyticsLogger.logDownloadFailed(analytics, "tiktok", format, "Download gagal, status success false")
+                    Log.e("DownloadServiceTT", "File tidak ditemukan atau null")
+                    AnalyticsLogger.logDownloadFailed(analytics, "tiktok", format, "Download gagal: file null")
+                    broadcastResult(false)
                 }
-
-                broadcastResult(success)
             } catch (e: Exception) {
                 Log.e("DownloadServiceTT", "Gagal mengunduh: ${e.message}", e)
                 AnalyticsLogger.logDownloadFailed(analytics, "tiktok", format, e.message ?: "Unknown error")
@@ -173,7 +182,7 @@ class DownloadServiceTT : Service() {
             var successCount = 0
 
             for ((index, imageUrl) in images.withIndex()) {
-                val fileName = "IMG_${timeStamp}${index}.jpg"
+                val fileName = "IMG_${timeStamp}$index.jpg"
 
                 try {
                     Downloader.downloadFile(
@@ -183,9 +192,11 @@ class DownloadServiceTT : Service() {
                         mimeType = "image/jpeg",
                         onProgressUpdate = { progress, _, _ ->
                             val overallProgress = ((index * 100) + progress) / images.size
-                            lbm.sendBroadcast(Intent(ACTION_PROGRESS).apply {
-                                putExtra(EXTRA_PROGRESS, overallProgress)
-                            })
+                            lbm.sendBroadcast(
+                                Intent(ACTION_PROGRESS).apply {
+                                    putExtra(EXTRA_PROGRESS, overallProgress)
+                                }
+                            )
                             updateProgressNotification(notifTitle, overallProgress)
                         },
                         downloadHistoryDao = dao,
@@ -194,7 +205,12 @@ class DownloadServiceTT : Service() {
                     successCount++
                 } catch (e: Exception) {
                     Log.e("DownloadServiceTT", "Gagal unduh gambar ke-$index: ${e.message}", e)
-                    AnalyticsLogger.logDownloadFailed(analytics, "tiktok", "image", "Gagal unduh gambar ke-$index: ${e.message}")
+                    AnalyticsLogger.logDownloadFailed(
+                        analytics,
+                        "tiktok",
+                        "image",
+                        "Gagal unduh gambar ke-$index: ${e.message}"
+                    )
                 }
             }
 
@@ -209,9 +225,11 @@ class DownloadServiceTT : Service() {
     private fun broadcastResult(success: Boolean) {
         Log.d("DownloadServiceTT", "📤 broadcastResult() - success: $success")
         val lbm = LocalBroadcastManager.getInstance(applicationContext)
-        lbm.sendBroadcast(Intent(ACTION_COMPLETE).apply {
-            putExtra(EXTRA_SUCCESS, success)
-        })
+        lbm.sendBroadcast(
+            Intent(ACTION_COMPLETE).apply {
+                putExtra(EXTRA_SUCCESS, success)
+            }
+        )
         doneCallback?.invoke(success)
         doneCallback = null
         stopForeground(STOP_FOREGROUND_DETACH)
@@ -232,12 +250,24 @@ class DownloadServiceTT : Service() {
     }
 
     private fun extractUsernameFromUrl(url: String): String? {
-        if (url.contains("vt.tiktok.com")) {
-            val resolvedUrl = resolveShortLink(url)
-            return resolvedUrl?.let { extractUsernameFromUrl(it) }
+        try {
+            var finalUrl = url
+
+            // Resolve short link jika perlu
+            if (url.contains("vt.tiktok.com") || url.contains("vm.tiktok.com")) {
+                resolveShortLink(url)?.let { resolved ->
+                    finalUrl = resolved
+                }
+            }
+
+            // Tangkap @username dari URL biasa TikTok
+            val regex = Regex("""https?://www\.tiktok\.com/@([^/?]+)/?""")
+            val match = regex.find(finalUrl)
+            return match?.groupValues?.get(1)
+        } catch (e: Exception) {
+            Log.e("extractUsernameFromUrl", "Gagal ekstrak username: ${e.message}", e)
+            return null
         }
-        val regex = Regex("""^https://(vm|vt)\\.tiktok\\.com/[A-Za-z0-9\\-_]+/?$""")
-        return regex.find(url)?.groupValues?.get(1)
     }
 
     private fun resolveShortLink(shortUrl: String): String? {
@@ -311,7 +341,9 @@ class DownloadServiceTT : Service() {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         return PendingIntent.getActivity(
-            this, 0, intent,
+            this,
+            0,
+            intent,
             PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
     }

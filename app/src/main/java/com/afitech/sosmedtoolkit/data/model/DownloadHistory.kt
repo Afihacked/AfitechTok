@@ -9,5 +9,6 @@ data class DownloadHistory(
     val fileName: String,
     val filePath: String,
     val fileType: String, // "Video", "Audio", atau "Image"
-    val downloadDate: Long // Simpan dalam format timestamp
+    val downloadDate: Long,
+    val source: String // Sumber: tiktok, youtube, whatsapp, dll
 )

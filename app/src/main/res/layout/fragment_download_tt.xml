@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?android:attr/windowBackground"
+    android:background="@color/white"
     android:fitsSystemWindows="true">
 
     <!-- Konten Scroll -->
@@ -58,7 +58,6 @@
                     android:paddingHorizontal="8dp">
 
                     <TextView
-                        android:id="@+id/text"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
@@ -91,42 +90,29 @@
                 android:gravity="center"
                 android:layout_marginTop="16dp">
 
-                <!-- Tombol Tempel -->
-                <androidx.cardview.widget.CardView
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
+                    android:layout_margin="8dp"
                     app:cardCornerRadius="12dp"
-                    app:cardElevation="0dp">
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="@android:color/holo_red_dark">
 
-                    <LinearLayout
-                        android:id="@+id/btnPaste"
-                        android:layout_width="match_parent"
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:id="@+id/iconPaste"
+                        android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:background="@android:color/holo_red_dark"
-                        android:backgroundTint="@android:color/holo_red_dark"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="12dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Tempel"
-                            android:textColor="@android:color/white"
-                            android:textSize="16sp" />
-                    </LinearLayout>
-                </androidx.cardview.widget.CardView>
+                        android:contentDescription="paste_icon"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_add"
+                        android:tint="@android:color/white" />
+                </com.google.android.material.card.MaterialCardView>
 
                 <!-- Tombol Unduh -->
                 <androidx.cardview.widget.CardView
                     android:layout_width="0dp"
                     android:layout_weight="2"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
                     app:cardCornerRadius="12dp"
                     app:cardElevation="0dp">
 
@@ -256,7 +242,7 @@
                             android:layout_marginTop="8dp"
                             android:adjustViewBounds="true"
                             android:scaleType="fitCenter"
-                            android:src="@drawable/step1" />
+                            android:src="@drawable/step1_tt" />
                     </LinearLayout>
 
                     <!-- Gambar Tutorial 2 -->
@@ -332,7 +318,7 @@
                             android:layout_marginTop="8dp"
                             android:adjustViewBounds="true"
                             android:scaleType="fitCenter"
-                            android:src="@drawable/step2" />
+                            android:src="@drawable/step2_tt" />
                     </LinearLayout>
 
                     <LinearLayout

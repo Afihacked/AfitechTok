@@ -17,13 +17,13 @@ import kotlinx.coroutines.*
 class DownloadService : Service() {
 
     companion object {
-        const val ACTION_PROGRESS   = "com.afitech.sosmedtoolkit.ACTION_PROGRESS"
-        const val ACTION_COMPLETE   = "com.afitech.sosmedtoolkit.ACTION_COMPLETE"
-        const val EXTRA_PROGRESS    = "com.afitech.sosmedtoolkit.EXTRA_PROGRESS"
-        const val EXTRA_SUCCESS     = "com.afitech.sosmedtoolkit.EXTRA_SUCCESS"
-        const val EXTRA_VIDEO_URL   = "video_url"
-        const val NOTIF_CHANNEL_ID  = "download_channel"
-        const val NOTIF_ID          = 1
+        const val ACTION_PROGRESS = "com.afitech.sosmedtoolkit.ACTION_PROGRESS"
+        const val ACTION_COMPLETE = "com.afitech.sosmedtoolkit.ACTION_COMPLETE"
+        const val EXTRA_PROGRESS = "com.afitech.sosmedtoolkit.EXTRA_PROGRESS"
+        const val EXTRA_SUCCESS = "com.afitech.sosmedtoolkit.EXTRA_SUCCESS"
+        const val EXTRA_VIDEO_URL = "video_url"
+        const val NOTIF_CHANNEL_ID = "download_channel"
+        const val NOTIF_ID = 1
 
         private var doneCallback: ((Boolean) -> Unit)? = null
         fun setDoneCallback(callback: (Boolean) -> Unit) { doneCallback = callback }
@@ -69,7 +69,7 @@ class DownloadService : Service() {
 
         // Jalankan coroutine yang memanggil suspend function YouTubeDownloader
         serviceScope.launch {
-            val success = if (format == "mp3") {
+            val (success, _) = if (format == "mp3") {
                 YouTubeDownloader.downloadAudio(applicationContext, videoUrl, progressCallback = progressCb)
             } else {
                 YouTubeDownloader.downloadVideo(applicationContext, videoUrl, progressCallback = progressCb)
@@ -149,8 +149,12 @@ class DownloadService : Service() {
             putExtra(EXTRA_VIDEO_URL, videoUrl)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
-        return PendingIntent.getActivity(this, 0, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        return PendingIntent.getActivity(
+            this,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
     }
 
     private fun createNotificationChannel() {

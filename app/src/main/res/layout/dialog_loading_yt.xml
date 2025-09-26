@@ -19,7 +19,6 @@
             android:indeterminate="true" />
 
         <TextView
-            android:id="@+id/textLoading"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Menghubungkan server..."

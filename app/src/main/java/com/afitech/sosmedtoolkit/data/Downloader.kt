@@ -27,7 +27,7 @@ object Downloader {
         onProgressUpdate: (progress: Int, downloadedBytes: Long, totalBytes: Long) -> Unit,
         downloadHistoryDao: DownloadHistoryDao,
         source: String = "tiktok"
-    ): Boolean = withContext(Dispatchers.IO) {
+    ): File? = withContext(Dispatchers.IO) {
         try {
             val url = URL(fileUrl)
             val connection = url.openConnection() as HttpURLConnection
@@ -46,16 +46,14 @@ object Downloader {
                 fileName = uniqueFileName,
                 mimeType = mimeType,
                 fileSize = fileSize,
-                onProgressUpdate = { progress, downloadedBytes, totalBytes ->
-                    onProgressUpdate(progress, downloadedBytes, totalBytes)
-                },
+                onProgressUpdate = onProgressUpdate,
                 source = source
             )
 
             inputStream.close()
             connection.disconnect()
 
-            if (uri != null) {
+            return@withContext if (uri != null) {
                 val downloadHistory = DownloadHistory(
                     fileName = uniqueFileName,
                     filePath = uri.toString(),
@@ -65,21 +63,36 @@ object Downloader {
                         mimeType.startsWith("image") -> "Image"
                         else -> "Other"
                     },
-                    downloadDate = System.currentTimeMillis()
+                    downloadDate = System.currentTimeMillis(),
+                    source = source
                 )
+
                 downloadHistoryDao.insertDownload(downloadHistory)
                 Log.d("Downloader", "Riwayat unduhan berhasil disimpan: $downloadHistory")
-                true
+
+                // 🔽 Konversi URI ke file untuk mengukur ukuran file
+                val realPath = getPathFromUri(context, uri)
+                if (realPath != null) File(realPath) else null
             } else {
                 Log.e("Downloader", "Gagal menyimpan file ke MediaStore.")
-                false
+                null
             }
         } catch (e: Exception) {
             Log.e("Downloader", "Gagal mengunduh file: ${e.message}", e)
-            false
+            null
         }
     }
-
+    fun getPathFromUri(context: Context, uri: Uri): String? {
+        val projection = arrayOf(MediaStore.MediaColumns.DATA)
+        val cursor = context.contentResolver.query(uri, projection, null, null, null)
+        cursor?.use {
+            if (it.moveToFirst()) {
+                val columnIndex = it.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA)
+                return it.getString(columnIndex)
+            }
+        }
+        return null
+    }
 
     // Fungsi umum untuk menyimpan dari InputStream ke MediaStore sesuai source
     suspend fun saveToMediaStoreFromStream(
@@ -106,7 +119,6 @@ object Downloader {
         }
     }
 
-
     private suspend fun saveToMediaStore(
         context: Context,
         inputStream: InputStream,
@@ -118,7 +130,13 @@ object Downloader {
     ): Uri? {
         return runCatching {
             saveToMediaStoreFromStream(
-                context, inputStream, fileName, mimeType, fileSize, onProgressUpdate, source
+                context,
+                inputStream,
+                fileName,
+                mimeType,
+                fileSize,
+                onProgressUpdate,
+                source
             )
         }.getOrNull()
     }
@@ -156,7 +174,9 @@ object Downloader {
             contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
             context.contentResolver.update(uri, contentValues, null, null)
             Pair(uri, outputStream)
-        } else null
+        } else {
+            null
+        }
     } catch (e: Exception) {
         Log.e("Downloader", "Gagal MediaStore Whatsapp: ${e.message}", e)
         null
@@ -167,15 +187,17 @@ object Downloader {
         fileName: String,
         mimeType: String
     ): Pair<Uri, OutputStream>? = try {
-        val relativePath = if (mimeType.startsWith("video"))
+        val relativePath = if (mimeType.startsWith("video")) {
             Environment.DIRECTORY_MOVIES + "/Afitech-Youtube"
-        else
+        } else {
             Environment.DIRECTORY_MUSIC + "/Afitech-Youtube"
+        }
 
-        val mediaUri = if (mimeType.startsWith("video"))
+        val mediaUri = if (mimeType.startsWith("video")) {
             MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-        else
+        } else {
             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+        }
 
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
@@ -192,7 +214,9 @@ object Downloader {
             contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
             context.contentResolver.update(uri, contentValues, null, null)
             Pair(uri, outputStream)
-        } else null
+        } else {
+            null
+        }
     } catch (e: Exception) {
         Log.e("Downloader", "Gagal MediaStore YouTube: ${e.message}", e)
         null
@@ -230,7 +254,9 @@ object Downloader {
             contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
             context.contentResolver.update(uri, contentValues, null, null)
             Pair(uri, outputStream)
-        } else null
+        } else {
+            null
+        }
     } catch (e: Exception) {
         Log.e("Downloader", "Gagal MediaStore Instagram: ${e.message}", e)
         null
@@ -270,7 +296,9 @@ object Downloader {
             contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
             context.contentResolver.update(uri, contentValues, null, null)
             Pair(uri, outputStream)
-        } else null
+        } else {
+            null
+        }
     } catch (e: Exception) {
         Log.e("Downloader", "Gagal MediaStore TikTok: ${e.message}", e)
         null
@@ -290,10 +318,11 @@ object Downloader {
                 mimeType.startsWith("image") -> Environment.DIRECTORY_PICTURES + "/Afitech-Instagram"
                 else -> Environment.DIRECTORY_DOWNLOADS + "/InstagramDownloads"
             }
-            "youtube" -> if (mimeType.startsWith("video"))
+            "youtube" -> if (mimeType.startsWith("video")) {
                 Environment.DIRECTORY_MOVIES + "/Afitech-Youtube"
-            else
+            } else {
                 Environment.DIRECTORY_MUSIC + "/Afitech-Youtube"
+            }
             "whatsapp" -> when {
                 mimeType.startsWith("video") -> Environment.DIRECTORY_MOVIES + "/Afitech-Whatsapp"
                 mimeType.startsWith("image") -> Environment.DIRECTORY_PICTURES + "/Afitech-Whatsapp"
@@ -320,7 +349,6 @@ object Downloader {
 
         return newFileName
     }
-
 
     private fun copyStreamWithProgress(
         input: InputStream,
@@ -353,5 +381,4 @@ object Downloader {
             onProgressUpdate(100, totalRead, fileSize)
         }
     }
-
 }

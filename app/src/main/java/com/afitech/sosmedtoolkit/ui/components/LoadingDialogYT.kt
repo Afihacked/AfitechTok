@@ -33,7 +33,7 @@ object LoadingDialogYT {
         showSabarRunnable = Runnable {
             sabarText?.visibility = View.VISIBLE
         }
-        handler?.postDelayed(showSabarRunnable!!, 6000)
+        handler?.postDelayed(showSabarRunnable!!, 10000)
     }
 
     fun dismiss() {

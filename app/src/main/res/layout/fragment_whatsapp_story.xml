@@ -17,7 +17,6 @@
 
         <!-- Judul -->
         <TextView
-            android:id="@+id/tutorialTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Panduan Mengaktifkan Fitur Unduhan Status WhatsApp"

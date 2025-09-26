@@ -19,6 +19,7 @@ object StorySaver {
         sourceUri: Uri,
         originalFileName: String,
         mimeType: String,
+        source: String = "whatsapp", // ✅ Tambahkan parameter source
         onProgressUpdate: (Int) -> Unit = {}
     ) {
         CoroutineScope(Dispatchers.IO).launch {
@@ -37,11 +38,15 @@ object StorySaver {
                     .take(100)
 
                 val extFromFileName = originalFileName.substringAfterLast(".", "")
-                val extension = if (extFromFileName.isNotEmpty()) extFromFileName else when {
-                    mimeType.startsWith("video") -> "mp4"
-                    mimeType.startsWith("image") -> "jpg"
-                    mimeType.startsWith("audio") -> "mp3"
-                    else -> "dat"
+                val extension = if (extFromFileName.isNotEmpty()) {
+                    extFromFileName
+                } else {
+                    when {
+                        mimeType.startsWith("video") -> "mp4"
+                        mimeType.startsWith("image") -> "jpg"
+                        mimeType.startsWith("audio") -> "mp3"
+                        else -> "dat"
+                    }
                 }
 
                 val fileNameWithDate = "$sanitizedBaseName$timeStamp.$extension".lowercase()
@@ -50,7 +55,7 @@ object StorySaver {
                     context = context,
                     fileName = fileNameWithDate,
                     mimeType = mimeType,
-                    source = "whatsapp"
+                    source = source // ✅ Sesuaikan juga di sini
                 )
 
                 val savedUri = Downloader.saveToMediaStoreFromStream(
@@ -59,8 +64,8 @@ object StorySaver {
                     fileName = uniqueFileName,
                     mimeType = mimeType,
                     fileSize = -1,
-                    onProgressUpdate = { progress, _, _ -> onProgressUpdate(progress) }, // ✅ Wrap ke versi lama
-                    source = "whatsapp"
+                    onProgressUpdate = { progress, _, _ -> onProgressUpdate(progress) },
+                    source = source // ✅ Juga di sini
                 )
 
                 inputStream.close()
@@ -69,6 +74,7 @@ object StorySaver {
                     val fileType = when {
                         mimeType.startsWith("video") -> "Video"
                         mimeType.startsWith("image") -> "Image"
+                        mimeType.startsWith("audio") -> "Audio"
                         else -> "Other"
                     }
 
@@ -76,11 +82,11 @@ object StorySaver {
                         fileName = uniqueFileName,
                         filePath = savedUri.toString(),
                         fileType = fileType,
-                        downloadDate = System.currentTimeMillis()
+                        downloadDate = System.currentTimeMillis(),
+                        source = source // ✅ Tambahkan ini
                     )
                     downloadHistoryDao.insertDownload(downloadHistory)
                 }
-
             } catch (e: Exception) {
                 e.printStackTrace()
             }

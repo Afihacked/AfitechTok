@@ -195,8 +195,6 @@ class HistoryListFragment : Fragment() {
         }.launchIn(lifecycleScope)
     }
 
-
-
     private fun isFileExist(filePath: String): Boolean {
         return try {
             val uri = Uri.parse(filePath)
@@ -238,9 +236,6 @@ class HistoryListFragment : Fragment() {
             false
         }
     }
-
-
-
 
     private fun View.fadeIn() {
         startAnimation(AnimationUtils.loadAnimation(context, R.anim.fade_in))

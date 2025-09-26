@@ -18,7 +18,8 @@ class TentangFragment : Fragment() {
     private val adUnitId = "ca-app-pub-2025447201837747/8904457185"
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? = inflater.inflate(R.layout.fragment_tentang, container, false)
 

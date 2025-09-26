@@ -5,13 +5,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.afitech.sosmedtoolkit.R
-import com.google.android.gms.ads.AdView
-import androidx.appcompat.app.AppCompatActivity
 import com.afitech.sosmedtoolkit.utils.CuanManager
 import com.afitech.sosmedtoolkit.utils.areAdsEnabled
 import com.afitech.sosmedtoolkit.utils.setStatusBarColor
+import com.google.android.gms.ads.AdView
 
 private lateinit var adView: AdView
 private val cuanManager = CuanManager()
@@ -20,7 +20,8 @@ class HomeFragment : Fragment() {
 
     // Override onCreateView untuk menambahkan logika untuk merubah warna status bar dan inisialisasi lainnya
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         val view = inflater.inflate(R.layout.fragment_home, container, false)
@@ -41,12 +42,12 @@ class HomeFragment : Fragment() {
             parentFragmentManager.beginTransaction()
                 .setCustomAnimations(
                     R.anim.slide_in_right, // animasi masuk fragment
-                    R.anim.slide_out_left,  // animasi keluar fragment
-                    R.anim.slide_in_left,   // animasi masuk fragment
-                    R.anim.slide_out_right  // animasi keluar fragment
+                    R.anim.slide_out_left, // animasi keluar fragment
+                    R.anim.slide_in_left, // animasi masuk fragment
+                    R.anim.slide_out_right // animasi keluar fragment
                 )
-                .replace(R.id.fragment_container, fragment)  // mengganti fragment
-                .addToBackStack(null)  // menambah fragment ke back stack
+                .replace(R.id.fragment_container, fragment) // mengganti fragment
+                .addToBackStack(null) // menambah fragment ke back stack
                 .commit()
 
             // Mengubah judul toolbar sesuai dengan fragment yang dipilih
@@ -57,9 +58,12 @@ class HomeFragment : Fragment() {
         view.findViewById<Button>(R.id.btn_tt_download).setOnClickListener {
             transaction(DownloadFragmentTT(), getString(R.string.nav_tt_offline))
         }
-//        view.findViewById<Button>(R.id.btn_yt_download).setOnClickListener {
-//            transaction(DownloadFragmentYT(), getString(R.string.nav_yt_offline))
+//        view.findViewById<Button>(R.id.btn_ig_download).setOnClickListener {
+//            transaction(DownloadFragmentIG(), getString(R.string.nav_ig))
 //        }
+        view.findViewById<Button>(R.id.btn_yt_download).setOnClickListener {
+            transaction(DownloadFragmentYT(), getString(R.string.nav_yt_offline))
+        }
         view.findViewById<Button>(R.id.btn_wa_story).setOnClickListener {
             transaction(WhatsappStoryFragment(), getString(R.string.nav_wa_offline))
         }
@@ -74,7 +78,7 @@ class HomeFragment : Fragment() {
     override fun onResume() {
         super.onResume()
 
-        setStatusBarColor(R.color.sttsbar , isLightStatusBar = false)
+        setStatusBarColor(R.color.sttsbar, isLightStatusBar = false)
 
         // Mengatur judul ke default "Home" menggunakan string dari resources
         val appName = getString(R.string.nav_home)

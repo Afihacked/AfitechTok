@@ -24,7 +24,8 @@ class HistoryFragment : Fragment() {
 
     override fun onCreateView(
 
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentHistoryBinding.inflate(inflater, container, false)
@@ -68,7 +69,6 @@ class HistoryFragment : Fragment() {
 
             tab.customView = textView
         }.attach()
-
     }
 
     override fun onDestroyView() {
@@ -78,7 +78,6 @@ class HistoryFragment : Fragment() {
     override fun onResume() {
         super.onResume()
 
-        setStatusBarColor(R.color.sttsbar , isLightStatusBar = false)
-
+        setStatusBarColor(R.color.sttsbar, isLightStatusBar = false)
     }
 }
