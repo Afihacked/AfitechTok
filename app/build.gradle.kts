@@ -65,7 +65,6 @@ android {
     }
 }
 
-
 dependencies {
     // Core
     implementation(libs.androidx.core.ktx)
@@ -81,6 +80,9 @@ dependencies {
 
     // AdMob
     implementation(libs.play.services.ads.api)
+
+    // ✅ Start.io SDK
+    implementation(libs.inapp.sdk)
 
     // UI & Animasi
     implementation(libs.lottie)
@@ -108,7 +110,7 @@ dependencies {
     implementation ("com.github.bumptech.glide:glide:4.16.0")
     kapt ("com.github.bumptech.glide:compiler:4.16.0")
 
-//    firebase
+    // Firebase
     implementation(platform("com.google.firebase:firebase-bom:32.7.1"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-crashlytics")

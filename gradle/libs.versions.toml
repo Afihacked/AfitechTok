@@ -1,5 +1,6 @@
 [versions]
 agp = "8.13.0"
+inappSdk = "5.2.4"
 jsoup = "1.14.3"
 kotlin = "1.9.24"
 coreKtx = "1.15.0"
@@ -21,6 +22,7 @@ fragmentKtx = "1.5.5"
 [libraries]
 fragmentKtx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragmentKtx" }
 
+inapp-sdk = { module = "com.startapp:inapp-sdk", version.ref = "inappSdk" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 lottie = { module = "com.airbnb.android:lottie", version.ref = "lottie" }

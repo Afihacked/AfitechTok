@@ -117,13 +117,7 @@ class MainActivity : AppCompatActivity() {
             val fragmentTarget = intent.getStringExtra(EXTRA_FRAGMENT)
             val videoUrl = intent.getStringExtra(EXTRA_VIDEO_URL)
             when (fragmentTarget) {
-                "yt_downloader" -> replaceFragment(
-                    DownloadFragmentYT.newInstance(videoUrl),
-                    getString(R.string.nav_yt_offline)
-                )
                 "tt_downloader" -> replaceFragment(DownloadFragmentTT(), getString(R.string.nav_tt_offline))
-//                "ig_downloader" -> replaceFragment(DownloadFragmentIG(), getString(R.string.nav_ig))
-                "yt_downloader" -> replaceFragment(DownloadFragmentYT(), getString(R.string.nav_ig))
                 "wa_downloader" -> replaceFragment(WhatsappStoryFragment(), getString(R.string.nav_wa_offline))
                 "history" -> replaceFragment(HistoryFragment(), getString(R.string.nav_history))
                 "settings" -> replaceFragment(SettingsFragment(), getString(R.string.nav_settings))
@@ -158,32 +152,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-    }
-
-//    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-//        menuInflater.inflate(R.menu.main_toolbar_menu, menu)
-//        menu?.findItem(R.id.action_night_mode)?.let { updateThemeIcon(it) }
-//        return true
-//    }
-//
-//    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-//        return when (item.itemId) {
-//            R.id.action_night_mode -> {
-//                val isDarkMode = ThemeHelper.getIsDarkMode(sharedPref)
-//                val newMode = !isDarkMode
-//                ThemeHelper.toggleTheme(sharedPref, newMode)
-//                updateThemeIcon(item)  // Update icon menu langsung
-//                recreate()
-//                true
-//            }
-//            else -> super.onOptionsItemSelected(item)
-//        }
-//    }
-
-    private fun updateThemeIcon(item: MenuItem) {
-        val isDarkMode = ThemeHelper.getIsDarkMode(sharedPref)
-        item.setIcon(if (isDarkMode) R.drawable.sun else R.drawable.moon)
-        item.title = if (isDarkMode) "Mode Terang" else "Mode Malam"
     }
 
     private fun handleBackPressed() {

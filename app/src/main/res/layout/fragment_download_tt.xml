@@ -37,7 +37,7 @@
                 app:endIconMode="clear_text"
                 app:hintAnimationEnabled="true"
                 app:hintEnabled="true"
-                app:hintTextColor="@android:color/holo_red_dark">
+                app:hintTextColor="@color/colorPrimary">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/inputLink"
@@ -63,7 +63,7 @@
                         android:layout_weight="1"
                         android:gravity="start"
                         android:text="@string/copyright"
-                        android:textColor="@android:color/holo_red_dark"
+                        android:textColor="@color/colorPrimary"
                         android:textSize="12sp"
                         android:textStyle="italic"
                         android:layout_marginTop="2dp"/>
@@ -96,7 +96,7 @@
                     android:layout_margin="8dp"
                     app:cardCornerRadius="12dp"
                     app:cardElevation="4dp"
-                    app:cardBackgroundColor="@android:color/holo_red_dark">
+                    app:cardBackgroundColor="@color/colorPrimary">
 
                     <androidx.appcompat.widget.AppCompatImageView
                         android:id="@+id/iconPaste"
@@ -134,8 +134,8 @@
                             android:id="@+id/btnDownload"
                             android:layout_width="match_parent"
                             android:layout_height="48dp"
-                            android:background="@android:color/holo_red_dark"
-                            android:backgroundTint="@android:color/holo_red_dark"
+                            android:background="@color/colorPrimary"
+                            android:backgroundTint="@color/colorPrimary"
                             android:clickable="true"
                             android:focusable="true"
                             android:gravity="center_vertical"
@@ -363,5 +363,10 @@
             android:layout_height="wrap_content"
             app:adSize="BANNER"
             app:adUnitId="ca-app-pub-2025447201837747/8904457185"/>
+
+        <FrameLayout
+            android:id="@+id/fallbackContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

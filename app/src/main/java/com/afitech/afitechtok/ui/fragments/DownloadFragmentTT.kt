@@ -59,9 +59,9 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     private lateinit var textProgress: TextView
     private lateinit var unduhtext: TextView
     private lateinit var adView: AdView
-
-    private val cuanManager = CuanManager()
     private lateinit var adsManager: AdsManager
+
+    private lateinit var fallbackContainer: FrameLayout
     private lateinit var firebaseAnalytics: FirebaseAnalytics
     private lateinit var downloadHistoryDao: DownloadHistoryDao
 
@@ -145,7 +145,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        cuanManager.destroyAd(adView)
+        adsManager.destroyBanner(adView)
         DownloadServiceTT.setDoneCallback(null)
         clipboardManager.removePrimaryClipChangedListener(clipboardListener)
     }
@@ -166,6 +166,8 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         textProgress = view.findViewById(R.id.textProgress)
         unduhtext = view.findViewById(R.id.unduhtext)
         adView = view.findViewById(R.id.adView)
+        fallbackContainer = view.findViewById(R.id.fallbackContainer)
+
 
         val btnOpenTikTok = view.findViewById<AppCompatImageView>(R.id.btnOpenTiktok)
         btnOpenTikTok.setOnClickListener {
@@ -181,15 +183,19 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     }
 
     private fun initAds() {
-        cuanManager.initializeAdMob(requireContext())
+        if (requireContext().areAdsEnabled()) {
+            // ✅ Banner dengan fallback otomatis (AdMob → Start.io)
+            adsManager.loadBanner(adView, fallbackContainer)
+            adView.visibility = View.VISIBLE
+        } else {
+            adView.visibility = View.GONE
+        }
+
+        // ✅ Preload Rewarded & Interstitial
         adsManager.loadRewardedAd(getString(R.string.admob_rewarded_id))
         adsManager.loadInterstitialAd(getString(R.string.admob_interstitial_id))
-
-        if (requireContext().areAdsEnabled()) {
-            cuanManager.loadAd(adView)
-            adView.visibility = View.VISIBLE
-        } else adView.visibility = View.GONE
     }
+
 
     private fun initClipboard() {
         clipboardManager = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -409,12 +415,16 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     private fun startDownloadWithNotification(videoUrl: String, format: String) {
         if (isAdShowing || !isAdded) return
         isAdShowing = true
+
         val unduhText = downloadButton.findViewById<TextView>(R.id.unduhtext)
-        adsManager.showRewardedAd(getString(R.string.admob_rewarded_id)) { rewardGranted ->
+
+        // ✅ tampilkan Rewarded yang sudah di-preload (fallback otomatis kalau gagal)
+        adsManager.showRewardedAd { rewardGranted ->
             if (!isAdded) {
                 isAdShowing = false
                 return@showRewardedAd
             }
+
             if (!rewardGranted) {
                 requireActivity().runOnUiThread {
                     downloadButton.setDownloadState(unduhText, true, "Coba Lagi")
@@ -422,15 +432,20 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                 }
                 return@showRewardedAd
             }
+
+            // ✅ update UI sebelum mulai unduhan
             requireActivity().runOnUiThread {
                 downloadButton.setDownloadState(unduhText, false, "Menunggu...")
             }
 
+            // ✅ mulai service download
             val intent = Intent(requireContext(), DownloadServiceTT::class.java).apply {
                 putExtra(DownloadServiceTT.EXTRA_VIDEO_URL, videoUrl)
                 putExtra(DownloadServiceTT.EXTRA_FORMAT, format)
             }
             ContextCompat.startForegroundService(requireContext(), intent)
+
+            // ✅ callback setelah selesai download
             DownloadServiceTT.setDoneCallback { isSuccess ->
                 if (!isAdded) return@setDoneCallback
                 requireActivity().runOnUiThread {
@@ -446,6 +461,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             }
         }
     }
+
 
     private fun updateDownloadButtonState(
         layout: LinearLayout,
@@ -698,7 +714,8 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
                         if (!isAdShowing) {
                             isAdShowing = true
-                            adsManager.showInterstitialAd(getString(R.string.admob_interstitial_id)) {
+                            // ✅ Interstitial yang sudah di-preload, fallback otomatis kalau gagal
+                            adsManager.showInterstitialAd {
                                 isAdShowing = false
                                 downloadSelectedImagesWithService(
                                     selectedImages.toList(),
@@ -710,6 +727,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                             showToastSafe("Mohon tunggu, iklan sedang ditampilkan.")
                         }
                     }
+
 
 
                     btnPilihSemua.setOnClickListener {

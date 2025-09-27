@@ -5,20 +5,21 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.afitech.afitechtok.R
-import com.afitech.afitechtok.utils.CuanManager
+import com.afitech.afitechtok.utils.AdsManager
 import com.afitech.afitechtok.utils.areAdsEnabled
 import com.afitech.afitechtok.utils.setStatusBarColor
 import com.google.android.gms.ads.AdView
 
-private lateinit var adView: AdView
-private val cuanManager = CuanManager()
-
 class HomeFragment : Fragment() {
 
-    // Override onCreateView untuk menambahkan logika untuk merubah warna status bar dan inisialisasi lainnya
+    private lateinit var adsManager: AdsManager
+    private lateinit var adView: AdView
+    private lateinit var fallbackContainer: FrameLayout
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -26,44 +27,39 @@ class HomeFragment : Fragment() {
     ): View {
         val view = inflater.inflate(R.layout.fragment_home, container, false)
 
-        // Menginisialisasi AdMob
+        // ✅ Ads Manager
+        adsManager = AdsManager(requireContext())
         adView = view.findViewById(R.id.adView)
-        cuanManager.initializeAdMob(requireContext())
-        // Mendapatkan referensi untuk AdView dan memuat iklan
+        fallbackContainer = view.findViewById(R.id.fallbackContainer)
+
+        // ✅ Load Banner (AdMob → fallback ke Start.io)
         if (requireContext().areAdsEnabled()) {
-            cuanManager.loadAd(adView)
+            adsManager.loadBanner(adView, fallbackContainer)
             adView.visibility = View.VISIBLE
         } else {
             adView.visibility = View.GONE
+            fallbackContainer.removeAllViews()
         }
 
-        // Fungsi untuk berpindah antar fragment dengan animasi dan perubahan judul toolbar
+        // Navigasi antar fragment
         val transaction = { fragment: Fragment, title: String ->
             parentFragmentManager.beginTransaction()
                 .setCustomAnimations(
-                    R.anim.slide_in_right, // animasi masuk fragment
-                    R.anim.slide_out_left, // animasi keluar fragment
-                    R.anim.slide_in_left, // animasi masuk fragment
-                    R.anim.slide_out_right // animasi keluar fragment
+                    R.anim.slide_in_right,
+                    R.anim.slide_out_left,
+                    R.anim.slide_in_left,
+                    R.anim.slide_out_right
                 )
-                .replace(R.id.fragment_container, fragment) // mengganti fragment
-                .addToBackStack(null) // menambah fragment ke back stack
+                .replace(R.id.fragment_container, fragment)
+                .addToBackStack(null)
                 .commit()
 
-            // Mengubah judul toolbar sesuai dengan fragment yang dipilih
             (activity as AppCompatActivity).supportActionBar?.title = title
         }
 
-        // Menambahkan listener untuk tombol-tombol yang berpindah fragment
         view.findViewById<Button>(R.id.btn_tt_download).setOnClickListener {
             transaction(DownloadFragmentTT(), getString(R.string.nav_tt_offline))
         }
-//        view.findViewById<Button>(R.id.btn_ig_download).setOnClickListener {
-//            transaction(DownloadFragmentIG(), getString(R.string.nav_ig))
-//        }
-//        view.findViewById<Button>(R.id.btn_yt_download).setOnClickListener {
-//            transaction(DownloadFragmentYT(), getString(R.string.nav_yt_offline))
-//        }
         view.findViewById<Button>(R.id.btn_wa_story).setOnClickListener {
             transaction(WhatsappStoryFragment(), getString(R.string.nav_wa_offline))
         }
@@ -74,18 +70,16 @@ class HomeFragment : Fragment() {
         return view
     }
 
-    // Pastikan judul kembali ke default ketika HomeFragment muncul
     override fun onResume() {
         super.onResume()
-
         setStatusBarColor(R.color.sttsbar, isLightStatusBar = false)
 
-        // Mengatur judul ke default "Home" menggunakan string dari resources
         val appName = getString(R.string.nav_home)
         (activity as AppCompatActivity).supportActionBar?.title = appName
     }
+
     override fun onDestroyView() {
         super.onDestroyView()
-        cuanManager.destroyAd(adView) // Menghancurkan iklan saat view dihancurkan
+        adsManager.destroyBanner(adView)
     }
 }

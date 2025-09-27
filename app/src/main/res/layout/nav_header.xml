@@ -4,7 +4,7 @@
     android:layout_height="160dp"
     android:gravity="bottom"
     android:padding="16dp"
-    android:background="@android:color/holo_red_dark"
+    android:background="@color/colorPrimary"
     android:theme="@style/Theme.Material3.DayNight.NoActionBar">
 
     <TextView
