@@ -1,0 +1,7 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Warna dasar -->
+    <item android:drawable="@color/colorPrimary" />
+
+    <!-- Texture transparan di atas -->
+    <item android:drawable="@drawable/bg_texture" />
+</layer-list>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Track saat aktif (50% transparan dari colorPrimary) -->
-    <item android:color="#DC565656" android:state_checked="true" />
+    <item android:color="@color/colorPrimary" android:state_checked="true" />
     <!-- Track saat tidak aktif (abu tipis) -->
     <item android:color="#33000000" />
 </selector>
