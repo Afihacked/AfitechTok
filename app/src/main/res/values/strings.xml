@@ -39,5 +39,10 @@ Nikmati kemudahan mengunduh video dari berbagai platform populer seperti TikTok,
     <string name="copyright">*Hargai Konten Orang Lain:)</string>
     <string name="radio_mp4">MP4</string>
     <string name="radio_mp3">MP3</string>
+    <string name="whatsapp">WhatsApp</string>
+    <string name="tiktok">TikTok</string>
+    <string name="riwayat_unduh">Riwayat Unduh</string>
+    <string name="tentang_">Tentang</string>
+    <string name="pengaturan">Pengaturan</string>
 
 </resources>

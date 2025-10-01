@@ -6,8 +6,7 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.widget.ImageView
-import android.widget.TextView
+import android.view.View
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.ActionBarDrawerToggle
@@ -18,23 +17,19 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
+import androidx.viewpager2.widget.ViewPager2
 import com.afitech.afitechtok.R
+import com.afitech.afitechtok.ui.adapters.MainPagerAdapter
 import com.afitech.afitechtok.ui.fragments.*
 import com.afitech.afitechtok.ui.helpers.RemoteConfigHelper
 import com.afitech.afitechtok.ui.helpers.ThemeHelper
 import com.afitech.afitechtok.ui.services.DownloadServiceTT
-import com.bumptech.glide.Glide
 import com.google.android.material.navigation.NavigationView
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.FirebaseApp
 import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.analytics.analytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -50,23 +45,20 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var firebaseAnalytics: FirebaseAnalytics
 
-    private var tvGreeting: TextView? = null
-    private var ivGreetingIcon: ImageView? = null
+    private lateinit var viewPager: ViewPager2
+    private lateinit var tabLayout: TabLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         FirebaseApp.initializeApp(this)
 
-        // ✅ Crashlytics
         FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(true)
         FirebaseCrashlytics.getInstance().log("MainActivity onCreate() called")
 
-        // 🔧 Remote Config init
         RemoteConfigHelper.init(this)
 
         sharedPref = getSharedPreferences("theme_pref", MODE_PRIVATE)
         ThemeHelper.applyTheme(this)
         super.onCreate(savedInstanceState)
-
         setContentView(R.layout.activity_main)
 
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
@@ -105,110 +97,108 @@ class MainActivity : AppCompatActivity() {
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
 
+        // Setup Tab + ViewPager
+        viewPager = findViewById(R.id.viewPager)
+        tabLayout = findViewById(R.id.tabLayout)
+        val adapter = MainPagerAdapter(this)
+        viewPager.adapter = adapter
+
+        TabLayoutMediator(tabLayout, viewPager) { tab, position ->
+            when (position) {
+                0 -> tab.setIcon(R.drawable.ic_tiktok2)     // sama dengan drawer
+                1 -> tab.setIcon(R.drawable.ic_wa)
+                2 -> tab.setIcon(R.drawable.ic_manager)
+            }
+        }.attach()
+
+        // Judul toolbar saat ganti tab
+        viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                super.onPageSelected(position)
+                when (position) {
+                    0 -> {
+                        navView.setCheckedItem(R.id.nav_tt_offline)
+                        supportActionBar?.title = getString(R.string.btn_tiktok_downloader)
+                    }
+                    1 -> {
+                        navView.setCheckedItem(R.id.nav_wa_offline)
+                        supportActionBar?.title = getString(R.string.btn_whatsapp_story)
+                    }
+                    2 -> {
+                        navView.setCheckedItem(R.id.nav_history)
+                        supportActionBar?.title = getString(R.string.nav_history)
+                    }
+                }
+            }
+        })
+
+        // Drawer item click
         navView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
-                R.id.nav_tt_offline -> replaceFragment(DownloadFragmentTT(), getString(R.string.nav_tt_offline))
-                R.id.nav_wa_offline -> replaceFragment(WhatsappStoryFragment(), getString(R.string.nav_wa_offline))
-                R.id.nav_history -> replaceFragment(HistoryFragment(), getString(R.string.nav_history))
-                R.id.nav_about -> replaceFragment(TentangFragment(), getString(R.string.nav_about))
-                R.id.nav_settings -> replaceFragment(SettingsFragment(), getString(R.string.nav_settings))
+                R.id.nav_tt_offline -> {
+                    showTabs()
+                    viewPager.currentItem = 0
+                }
+                R.id.nav_wa_offline -> {
+                    showTabs()
+                    viewPager.currentItem = 1
+                }
+                R.id.nav_history -> {
+                    showTabs()
+                    viewPager.currentItem = 2
+                }
+                R.id.nav_about -> {
+                    replaceFragment(TentangFragment(), getString(R.string.nav_about))
+                }
+                R.id.nav_settings -> {
+                    replaceFragment(SettingsFragment(), getString(R.string.nav_settings))
+                }
             }
             drawerLayout.closeDrawers()
             true
         }
 
-        if (savedInstanceState == null) {
-            val fragmentTarget = intent.getStringExtra(EXTRA_FRAGMENT)
-            val videoUrl = intent.getStringExtra(EXTRA_VIDEO_URL)
-            when (fragmentTarget) {
-                "tt_downloader" -> replaceFragment(DownloadFragmentTT(), getString(R.string.nav_tt_offline))
-                "wa_downloader" -> replaceFragment(WhatsappStoryFragment(), getString(R.string.nav_wa_offline))
-                "history" -> replaceFragment(HistoryFragment(), getString(R.string.nav_history))
-                "settings" -> replaceFragment(SettingsFragment(), getString(R.string.nav_settings))
-                else -> replaceFragment(HomeFragment(), "") // greeting langsung
-            }
-        }
-
-        // ✅ Update greeting realtime tiap menit
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                while (true) {
-                    val currentFragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
-                    if (currentFragment is HomeFragment) {
-                        updateGreeting()
-                    }
-                    delay(60_000)
-                }
-            }
-        }
-
         handleBackPressed()
     }
 
-    private fun getGreetingWithIcon(): Pair<String, String> {
-        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-        return when (hour) {
-            in 5..10 -> "Selamat Pagi" to "https://img.icons8.com/emoji/48/sunrise-emoji.png"
-            in 11..14 -> "Selamat Siang" to "https://img.icons8.com/emoji/48/sun-emoji.png"
-            in 15..17 -> "Selamat Sore" to "https://img.icons8.com/emoji/48/sunset-emoji.png"
-            else -> "Selamat Malam" to "https://img.icons8.com/emoji/48/crescent-moon-emoji.png"
-        }
-    }
+    // Ganti fragment ke container ekstra
+    fun replaceFragment(fragment: Fragment, title: String) {
+        findViewById<View>(R.id.extra_fragment_container).visibility = View.VISIBLE
+        findViewById<View>(R.id.viewPager).visibility = View.GONE
+        findViewById<View>(R.id.tabLayout).visibility = View.GONE
 
-    private fun updateGreeting() {
-        val (greeting, iconUrl) = getGreetingWithIcon()
-        tvGreeting?.text = greeting
-        ivGreetingIcon?.let { imageView ->
-            Glide.with(this).load(iconUrl).into(imageView)
-        }
-    }
-
-
-    private fun enableGreetingToolbar() {
-        supportActionBar?.setDisplayShowTitleEnabled(false)
-        supportActionBar?.setDisplayShowCustomEnabled(true)
-        supportActionBar?.setCustomView(R.layout.toolbar_greeting)
-
-        tvGreeting = supportActionBar?.customView?.findViewById(R.id.tvGreeting)
-        ivGreetingIcon = supportActionBar?.customView?.findViewById(R.id.ivGreetingIcon)
-
-        updateGreeting()
-    }
-
-    private fun disableGreetingToolbar(title: String) {
-        supportActionBar?.setDisplayShowCustomEnabled(false)
-        supportActionBar?.setDisplayShowTitleEnabled(true)
-        supportActionBar?.title = title
-
-        // reset reference supaya tidak dipakai lagi
-        tvGreeting = null
-        ivGreetingIcon = null
-    }
-
-
-     fun replaceFragment(fragment: Fragment, title: String) {
         supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, fragment)
+            .replace(R.id.extra_fragment_container, fragment)
             .addToBackStack(null)
             .commit()
 
-        if (fragment is HomeFragment) {
-            enableGreetingToolbar()
-        } else {
-            disableGreetingToolbar(title)
-        }
+        supportActionBar?.title = title
 
-        // Hapus highlight jika kembali ke HomeFragment
-        if (fragment is HomeFragment) {
-            for (i in 0 until navView.menu.size()) {
-                val item = navView.menu.getItem(i)
-                item.isChecked = false
-                if (item.hasSubMenu()) {
-                    val subMenu = item.subMenu
-                    for (j in 0 until (subMenu?.size() ?: 0)) {
-                        subMenu?.getItem(j)?.isChecked = false
-                    }
-                }
+        // 🔥 Sinkron highlight drawer
+        when (fragment) {
+            is TentangFragment -> navView.setCheckedItem(R.id.nav_about)
+            is SettingsFragment -> navView.setCheckedItem(R.id.nav_settings)
+        }
+    }
+
+
+    private fun showTabs() {
+        findViewById<View>(R.id.extra_fragment_container).visibility = View.GONE
+        findViewById<View>(R.id.viewPager).visibility = View.VISIBLE
+        findViewById<View>(R.id.tabLayout).visibility = View.VISIBLE
+
+        when (viewPager.currentItem) {
+            0 -> {
+                supportActionBar?.title = getString(R.string.btn_tiktok_downloader)
+                navView.setCheckedItem(R.id.nav_tt_offline)
+            }
+            1 -> {
+                supportActionBar?.title = getString(R.string.btn_whatsapp_story)
+                navView.setCheckedItem(R.id.nav_wa_offline)
+            }
+            2 -> {
+                supportActionBar?.title = getString(R.string.nav_history)
+                navView.setCheckedItem(R.id.nav_history)
             }
         }
     }
@@ -224,15 +214,17 @@ class MainActivity : AppCompatActivity() {
                         return
                     }
 
-                    val currentFragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
-                    if (currentFragment is HomeFragment) {
-                        finish()
+                    val extraContainer = findViewById<View>(R.id.extra_fragment_container)
+                    if (extraContainer.visibility == View.VISIBLE) {
+                        supportFragmentManager.popBackStack()
+                        showTabs() // ini otomatis update highlight sesuai tab aktif
+                        return
+                    }
+
+                    if (supportFragmentManager.backStackEntryCount > 0) {
+                        supportFragmentManager.popBackStack()
                     } else {
-                        supportFragmentManager.popBackStack(
-                            null,
-                            androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE
-                        )
-                        replaceFragment(HomeFragment(), "")
+                        finish()
                     }
                 }
             }
