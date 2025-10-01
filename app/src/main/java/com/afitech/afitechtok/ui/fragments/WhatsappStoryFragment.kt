@@ -4,16 +4,16 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import android.graphics.Typeface
+import android.net.Uri
 import android.os.Bundle
-import android.view.Gravity
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
+import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 import com.afitech.afitechtok.R
 import com.afitech.afitechtok.data.StorySaver
@@ -28,46 +28,45 @@ class WhatsappStoryFragment : Fragment() {
 
     private lateinit var binding: FragmentWhatsappStoryBinding
     private lateinit var sharedPreferences: SharedPreferences
-
     private lateinit var downloadHistoryDao: DownloadHistoryDao
 
-    private val requestStorageAccessLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val uri = result.data?.data
-            if (uri != null) {
-                val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                requireContext().contentResolver.takePersistableUriPermission(uri, takeFlags)
+    private val requestStorageAccessLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val uri = result.data?.data
+                if (uri != null) {
+                    val takeFlags =
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    requireContext().contentResolver.takePersistableUriPermission(uri, takeFlags)
 
-                saveUri(uri.toString())
-                Toast.makeText(requireContext(), "Akses folder berhasil disimpan", Toast.LENGTH_SHORT).show()
-
-                // ✅ Sembunyikan tutorial, tampilkan ViewPager
-                binding.tutorialBlock.visibility = View.GONE
-                binding.viewPager.visibility = View.VISIBLE
-                binding.tabLayout.visibility = View.VISIBLE
-                setupViewPagerWithTabs()
+                    // 🔍 Validasi folder & isi media
+                    showLoading()
+                    binding.viewPager.postDelayed({
+                        if (isValidStatusesFolder(uri)) {
+                            saveUri(uri.toString())
+                            Toast.makeText(requireContext(), "Akses folder berhasil disimpan", Toast.LENGTH_SHORT).show()
+                            hideLoading()
+                            showStoryUI()
+                        } else {
+                            hideLoading()
+                            showTutorial()
+                        }
+                    }, 400)
+                } else {
+                    Toast.makeText(requireContext(), "URI tidak valid", Toast.LENGTH_SHORT).show()
+                    showTutorial()
+                }
             } else {
-                Toast.makeText(requireContext(), "URI tidak valid", Toast.LENGTH_SHORT).show()
-                // ❌ Tampilkan tutorial ulang
-                binding.tutorialBlock.visibility = View.VISIBLE
+                Toast.makeText(requireContext(), "Permission dibatalkan", Toast.LENGTH_SHORT).show()
+                showTutorial()
             }
-        } else {
-            Toast.makeText(requireContext(), "Permission dibatalkan", Toast.LENGTH_SHORT).show()
-            // ❌ Tampilkan tutorial ulang
-            binding.tutorialBlock.visibility = View.VISIBLE
         }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Inisialisasi database dan DAO
         val db = AppDatabase.getDatabase(requireContext())
         downloadHistoryDao = db.downloadHistoryDao()
-
-        // Assign DAO ke StorySaver agar adapter bisa akses DAO ini
         StorySaver.downloadHistoryDao = downloadHistoryDao
     }
 
@@ -76,81 +75,57 @@ class WhatsappStoryFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+
         binding = FragmentWhatsappStoryBinding.inflate(inflater, container, false)
-        sharedPreferences = requireContext().getSharedPreferences("TikDownloaderPrefs", Context.MODE_PRIVATE)
+        sharedPreferences =
+            requireContext().getSharedPreferences("TikDownloaderPrefs", Context.MODE_PRIVATE)
 
         val uriSaved = getSavedUri()
 
+        // ✅ Kalau belum ada izin atau URI → langsung tutorial
         if (!hasStoragePermission() || uriSaved.isEmpty()) {
-            // ❌ Belum punya akses folder: tampilkan video + tombol
-            binding.tutorialBlock.visibility = View.VISIBLE
-            binding.viewPager.visibility = View.GONE
-            binding.tabLayout.visibility = View.GONE
-
-            // ✅ Tombol "Saya Paham"
-            binding.btnSayaPaham.setOnClickListener {
-                requestStoragePermission()
-            }
-
-            setupTutorialVideo()
+            showTutorial()
         } else {
-            // ✅ Sudah punya akses: langsung tampilkan ViewPager
-            showStoryUI()
+            val uri = Uri.parse(uriSaved)
+            showLoading()
+            binding.viewPager.postDelayed({
+                if (isValidStatusesFolder(uri)) {
+                    hideLoading()
+                    showStoryUI()
+                } else {
+                    hideLoading()
+                    showTutorial()
+                }
+            }, 400)
         }
 
         return binding.root
+
     }
 
-    private fun setupTutorialVideo() {
-        val webView = binding.tutorialVideo
-        val webSettings = webView.settings
+    private fun showTutorial() {
+        hideLoading()
+        binding.tutorialBlock.visibility = View.VISIBLE
+        binding.viewPager.visibility = View.GONE
+        binding.tabLayout.visibility = View.GONE
 
-        webSettings.javaScriptEnabled = true
-        webSettings.loadWithOverviewMode = true
-        webSettings.useWideViewPort = true
-        webSettings.domStorageEnabled = true
-        webSettings.mediaPlaybackRequiresUserGesture = false
-
-        webView.setBackgroundColor(0)
-
-        val videoId = "bLWR7XqRhTU" // ← Ganti sesuai kebutuhan
-        val isPortrait = when (videoId) {
-            "bLWR7XqRhTU" -> true // ← Kamu tandai sendiri bahwa video ini portrait
-            else -> false // default landscape
+        binding.btnGrantAccess.setOnClickListener {
+            showSAFTutorialDialog()
         }
-
-        // Ubah tinggi WebView berdasarkan orientasi
-        val params = webView.layoutParams as ViewGroup.MarginLayoutParams
-        params.height = if (isPortrait) ViewGroup.LayoutParams.MATCH_PARENT else dpToPx(200)
-        params.bottomMargin = dpToPx(16) // ← beri jarak 16dp dari tombol
-        webView.layoutParams = params
-
-        val html = """
-        <html><body style="margin:0;padding:0;">
-        <iframe width="100%" height="100%" src="https://www.youtube.com/embed/$videoId?rel=0" 
-        frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-        allowfullscreen></iframe>
-        </body></html>
-        """.trimIndent()
-
-        webView.loadDataWithBaseURL(null, html, "text/html", "utf-8", null)
-    }
-
-    private fun dpToPx(dp: Int): Int {
-        return (dp * resources.displayMetrics.density).toInt()
     }
 
     private fun showStoryUI() {
+        hideLoading()
         binding.tutorialBlock.visibility = View.GONE
         binding.viewPager.visibility = View.VISIBLE
         binding.tabLayout.visibility = View.VISIBLE
+
+        val pagerAdapter = StoryPagerAdapter(this)
+        binding.viewPager.adapter = pagerAdapter
         setupViewPagerWithTabs()
     }
 
     private fun setupViewPagerWithTabs() {
-        val pagerAdapter = StoryPagerAdapter(this)
-        binding.viewPager.adapter = pagerAdapter
-
         TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
             tab.text = when (position) {
                 0 -> "Gambar"
@@ -164,8 +139,8 @@ class WhatsappStoryFragment : Fragment() {
                 text = tab.text
                 setTextColor(textColor)
                 textSize = 14f
-                setTypeface(null, Typeface.BOLD)
-                gravity = Gravity.CENTER
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                gravity = android.view.Gravity.CENTER
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
@@ -187,15 +162,153 @@ class WhatsappStoryFragment : Fragment() {
         sharedPreferences.edit().putString("savedUri", uri).apply()
     }
 
+    /** SAF diarahkan ke Android/media */
     private fun requestStoragePermission() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+
+            putExtra(
+                "android.provider.extra.INITIAL_URI",
+                Uri.parse("content://com.android.externalstorage.documents/tree/primary%3AAndroid%2Fmedia")
+            )
         }
         requestStorageAccessLauncher.launch(intent)
+    }
+
+    private fun showSAFTutorialDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Panduan")
+            .setMessage(
+                "Ikuti langkah berikut:\n\n" +
+                        "1. Masuk ke folder Android\n" +
+                        "2. Pilih folder media\n" +
+                        "3. Pilih folder com.whatsapp\n" +
+                        "4. Pilih folder WhatsApp\n" +
+                        "5. Pilih folder Media\n" +
+                        "6. Tekan titik tiga kanan atas > aktifkan 'Tampilkan folder tersembunyi'\n" +
+                        "7. Pilih folder .Statuses lalu tekan 'Gunakan Folder Ini'"
+            )
+            .setPositiveButton("Mengerti") { d, _ ->
+                d.dismiss()
+                requestStoragePermission()
+            }
+            .setCancelable(true)
+            .show()
+    }
+
+    /** Validasi folder .Statuses atau beri panduan */
+    private fun isValidStatusesFolder(uri: Uri): Boolean {
+        try {
+            val docFile = DocumentFile.fromTreeUri(requireContext(), uri) ?: return false
+
+            // ✅ Kalau sudah .Statuses
+            if (docFile.name?.contains(".Statuses") == true) {
+                return hasMediaFiles(docFile)
+            }
+
+            // ❌ Kalau belum .Statuses → panduan step
+            val guide = getFolderGuideMessage(docFile)
+            if (guide != null) {
+                AlertDialog.Builder(requireContext())
+                    .setTitle("Panduan")
+                    .setMessage(guide)
+                    .setPositiveButton("Mengerti") { d, _ ->
+                        d.dismiss()
+                        requestStoragePermission()
+                    }
+                    .show()
+            }
+
+            return false
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return false
+    }
+
+    /** Deteksi posisi folder terakhir user */
+    private fun getFolderGuideMessage(folder: DocumentFile): String? {
+        return when {
+            folder.name.equals("Android", ignoreCase = true) ->
+                "Anda memilih folder Android.\n\nLanjutkan dengan masuk ke folder 'media' (m huruf kecil)."
+
+            folder.name == "media" ->
+                "Anda memilih folder 'media'.\n\nLanjutkan dengan pilih folder 'com.whatsapp'."
+
+            folder.name.equals("com.whatsapp", ignoreCase = true) ->
+                "Anda memilih folder com.whatsapp.\n\nLanjutkan dengan masuk ke folder 'WhatsApp'."
+
+            folder.name.equals("WhatsApp", ignoreCase = true) ->
+                "Anda memilih folder WhatsApp.\n\nLanjutkan dengan pilih folder 'Media' (M huruf besar)."
+
+            folder.name == "Media" ->
+                "Anda memilih folder 'Media'.\n\n📌 Lanjutkan dengan menampilkan folder tersembunyi:\n" +
+                        "1. Tekan ikon titik tiga di kanan atas\n" +
+                        "2. Aktifkan 'Tampilkan folder tersembunyi'\n" +
+                        "3. Pilih folder '.Statuses'."
+
+            else ->
+                "Folder yang dipilih bukan lokasi yang benar.\n\nIkuti urutan:\nAndroid > media > com.whatsapp > WhatsApp > Media > .Statuses"
+        }
+    }
+
+    /** Cek isi folder apakah ada media */
+    private fun hasMediaFiles(folder: DocumentFile): Boolean {
+        val files = folder.listFiles()
+        val hasMedia = files.any { f ->
+            f.isFile && (
+                    f.name?.endsWith(".jpg") == true ||
+                            f.name?.endsWith(".png") == true ||
+                            f.name?.endsWith(".mp4") == true
+                    )
+        }
+        if (!hasMedia) {
+            AlertDialog.Builder(requireContext())
+                .setTitle("Belum Ada Status")
+                .setMessage(
+                    "Tidak ditemukan status di folder ini.\n\n" +
+                            "Silakan buka WhatsApp dan tonton story teman Anda terlebih dahulu. " +
+                            "Setelah itu, kembali ke aplikasi ini."
+                )
+                .setPositiveButton("Mengerti") { d, _ -> d.dismiss() }
+                .show()
+            return false
+        }
+        return true
+    }
+
+    /** Overlay loading */
+    private fun showLoading(message: String = "Memeriksa folder...") {
+        binding.loadingOverlay.visibility = View.VISIBLE
+        binding.loadingText.text = message
+        binding.contentContainer.visibility = View.INVISIBLE
+    }
+
+    private fun hideLoading() {
+        binding.loadingOverlay.visibility = View.GONE
+        binding.contentContainer.visibility = View.VISIBLE
     }
 
     override fun onResume() {
         super.onResume()
         setStatusBarColor(R.color.sttsbar, isLightStatusBar = false)
+
+        val uriSaved = getSavedUri()
+
+        if (hasStoragePermission() && uriSaved.isNotEmpty()) {
+            showLoading()
+            val uri = Uri.parse(uriSaved)
+            binding.viewPager.postDelayed({
+                if (isValidStatusesFolder(uri)) {
+                    hideLoading()
+                    showStoryUI()
+                } else {
+                    hideLoading()
+                    showTutorial()
+                }
+            }, 400)
+        } else {
+            showTutorial()
+        }
     }
 }
