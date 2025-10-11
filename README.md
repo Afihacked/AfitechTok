@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Afihacked/AfitechTok/releases/latest/download/app-release.apk">
+  <a href="https://github.com/Afihacked/AfitechTok/releases/latest/download/AfitechTok_v1.0.0_-_1.apk">
     <img src="https://img.shields.io/badge/⬇️_Download-APK-blue?style=for-the-badge&logo=android" alt="Download APK">
   </a>
 </p>
