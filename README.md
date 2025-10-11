@@ -22,6 +22,12 @@
   <img src="https://img.shields.io/github/license/Afihacked/AfitechTok?color=blue" alt="License Badge">
 </p>
 
+<p align="center">
+  <a href="https://github.com/Afihacked/AfitechTok/releases/latest/download/app-release.apk">
+    <img src="https://img.shields.io/badge/⬇️_Download-APK-blue?style=for-the-badge&logo=android" alt="Download APK">
+  </a>
+</p>
+
 ---
 
 ## 🧩 Tentang Aplikasi
@@ -95,7 +101,7 @@ AfitechTok/
 ## 🧰 Instalasi & Build
 
 ### Prasyarat
-- Android Studio Narwhal 3 Feature Drop (2025.1.3)**  
+- Android Studio **Narwhal 3 Feature Drop (2025.1.3)**  
 - JDK **17 atau lebih baru**  
 - Internet aktif untuk sinkronisasi Gradle  
 
@@ -171,6 +177,6 @@ MIT License © 2025 Afihacked
 </p>
 
 <p align="center">
-  <a href="https://github.com/Afihacked">GitHub</a> • •
+  <a href="https://github.com/Afihacked">GitHub</a> •
   <a href="mailto:afitech.services@gmail.com">Email</a>
 </p>
