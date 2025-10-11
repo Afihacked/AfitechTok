@@ -16,7 +16,7 @@
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <!-- Blok Tutorial -->
+        <!-- Blok Tutorial / empty-state (reused) -->
         <LinearLayout
             android:id="@+id/tutorialBlock"
             android:layout_width="match_parent"
@@ -26,8 +26,9 @@
             android:padding="24dp"
             android:visibility="gone">
 
-
+            <!-- teks panduan / juga dipakai untuk empty-state info -->
             <TextView
+                android:id="@+id/tutorialText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
@@ -36,6 +37,7 @@
                 android:textColor="@android:color/black"
                 android:padding="16dp" />
 
+            <!-- Tombol utama (fungsi berubah sesuai state) -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnGrantAccess"
                 android:layout_width="wrap_content"
@@ -46,15 +48,33 @@
                 android:backgroundTint="@color/colorPrimary"
                 android:paddingHorizontal="24dp"
                 android:paddingVertical="12dp"
-                android:elevation="4dp" />
+                android:elevation="4dp"
+                android:layout_marginTop="8dp"/>
 
+            <!-- Tombol Periksa Ulang (hanya tampil di empty-state) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRetry"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Periksa Ulang"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:backgroundTint="@color/colorPrimary"
+                android:paddingHorizontal="24dp"
+                android:paddingVertical="12dp"
+                android:elevation="4dp"
+                android:layout_marginTop="8dp"
+                android:visibility="gone"/>
+
+            <!-- Animasi Lottie (tampilkan hanya di tutorial awal) -->
             <com.airbnb.lottie.LottieAnimationView
                 android:id="@+id/lottieGuide"
                 android:layout_width="200dp"
                 android:layout_height="200dp"
                 app:lottie_autoPlay="true"
                 app:lottie_loop="true"
-                app:lottie_fileName="folder_guide.json" />
+                app:lottie_fileName="folder_guide.json"
+                android:layout_marginTop="16dp" />
         </LinearLayout>
 
         <!-- Tab WhatsApp Story -->
@@ -81,32 +101,6 @@
             android:padding="4dp" />
 
     </LinearLayout>
-
-    <!-- Banner iklan di bawah -->
-<!--    <LinearLayout-->
-<!--        android:id="@+id/adContainer"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:orientation="vertical"-->
-<!--        android:gravity="center"-->
-<!--        android:background="@android:color/transparent"-->
-<!--        android:layout_gravity="bottom">-->
-
-<!--        &lt;!&ndash; AdMob Banner &ndash;&gt;-->
-<!--        <com.google.android.gms.ads.AdView-->
-<!--            android:id="@+id/adView"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            ads:adSize="BANNER"-->
-<!--            app:adUnitId="ca-app-pub-2025447201837747/8904457185" />-->
-
-<!--        &lt;!&ndash; Start.io Fallback Container &ndash;&gt;-->
-<!--        <FrameLayout-->
-<!--            android:id="@+id/fallbackContainer"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:visibility="gone" />-->
-<!--    </LinearLayout>-->
 
     <!-- Overlay loading -->
     <LinearLayout
