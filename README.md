@@ -171,7 +171,6 @@ MIT License © 2025 Afihacked
 </p>
 
 <p align="center">
-  <a href="https://github.com/Afihacked">GitHub</a> •
-  <a href="https://t.me/afihacked">Telegram</a> •
-  <a href="mailto:afihacked@gmail.com">Email</a>
+  <a href="https://github.com/Afihacked">GitHub</a> • •
+  <a href="mailto:afitech.services@gmail.com">Email</a>
 </p>
