@@ -51,10 +51,13 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          cat > ${GITHUB_WORKSPACE}/gradle.properties <<EOF
-STORE_FILE=${KEYSTORE_FILE}
+          cat > "${GITHUB_WORKSPACE}/gradle.properties" <<'EOF'
+STORE_FILE=release.keystore
 qwerty=${KEYSTORE_PASSWORD}
 afitech=${KEY_ALIAS}
+# KEY_PASSWORD is intentionally not inserted here if your build.gradle uses same property as qwerty.
+# If your build.gradle expects a different property name, add it here like:
+# KEY_PASSWORD=${KEY_PASSWORD}
 EOF
           echo "Created gradle.properties in repo root."
 
