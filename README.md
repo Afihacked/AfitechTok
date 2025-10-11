@@ -88,7 +88,7 @@ AfitechTok/
 | Asinkron | **Kotlin Coroutines**, LifecycleScope |
 | Analytics | **Firebase Analytics** |
 | Build | **Gradle Kotlin DSL** |
-| Minimum SDK | **Android 7.0 (API 24)** |
+| Minimum SDK | **Android Q/10.0 (API 29)** |
 
 ---
 
