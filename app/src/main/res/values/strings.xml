@@ -9,7 +9,7 @@
     <string name="nama_file">Nama File</string>
     <string name="thumbnail">Thumbnail</string>
     <string name="video">Video</string>
-    <string name="count_text">0/99</string>
+    <string name="count_text">0/100</string>
     <string name="unduhan_kosong"> \(o_o)/
 \nTidak ada apapun di sini selain jangkrik</string>
     <string name="navigation_drawer_open">Buka Menu</string>
@@ -36,7 +36,7 @@ Nikmati kemudahan mengunduh video dari berbagai platform populer seperti TikTok,
     <string name="tempel_link_instagram_disini">Tempel link instagram disini</string>
     <string name="aksi">aksi</string>
     <string name="hapus_dipilih">Hapus Dipilih</string>
-    <string name="copyright">*Hargai Konten Orang Lain:)</string>
+    <string name="copyright">Hargai Konten Orang Lain.</string>
     <string name="radio_mp4">MP4</string>
     <string name="radio_mp3">MP3</string>
     <string name="whatsapp">WhatsApp</string>

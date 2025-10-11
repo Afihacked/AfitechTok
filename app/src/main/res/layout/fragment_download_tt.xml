@@ -63,9 +63,8 @@
                         android:layout_weight="1"
                         android:gravity="start"
                         android:text="@string/copyright"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/light_gray"
                         android:textSize="12sp"
-                        android:textStyle="italic"
                         android:layout_marginTop="2dp"/>
 
                     <TextView

@@ -16,7 +16,7 @@ android {
         minSdk = 29
         targetSdk = 35
         versionCode = 1
-        versionName = "0.2.0"
+        versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -48,10 +48,9 @@ android {
     applicationVariants.configureEach {
         outputs.configureEach {
             val appName = "AfitechTok"
-            val versionName = "0.2.0"
-            val versionCode = 1
+            val versionName = "1.0.0"
             val outputImpl = this as? com.android.build.gradle.api.ApkVariantOutput
-            outputImpl?.outputFileName = "${appName}_v${versionName}_(${versionCode}).apk"
+            outputImpl?.outputFileName = "${appName}_v${versionName}.apk"
         }
     }
 

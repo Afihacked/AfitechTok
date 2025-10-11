@@ -207,7 +207,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
     private fun initTextWatcher() {
         val textCount = requireView().findViewById<TextView>(R.id.textCount)
-        val maxCharacters = 99
+        val maxCharacters = 100
         val tolerance = 1
         val maxWithTolerance = maxCharacters + tolerance
 
