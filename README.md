@@ -95,7 +95,7 @@ AfitechTok/
 ## 🧰 Instalasi & Build
 
 ### Prasyarat
-- Android Studio **Giraffe+ (2023.3.1)**  
+- Android Studio Narwhal 3 Feature Drop (2025.1.3)**  
 - JDK **17 atau lebih baru**  
 - Internet aktif untuk sinkronisasi Gradle  
 
