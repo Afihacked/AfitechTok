@@ -1,0 +1,113 @@
+name: Build & Publish Release APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android SDK components
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y wget tar unzip lib32stdc++6 lib32z1
+          mkdir -p $HOME/android-sdk/cmdline-tools
+          cd $HOME/android-sdk/cmdline-tools
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
+          unzip cmdline-tools.zip
+          mv cmdline-tools $HOME/android-sdk/cmdline-tools/latest
+          export ANDROID_SDK_ROOT=$HOME/android-sdk
+          yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDROID_SDK_ROOT} "platform-tools" "platforms;android-35" "build-tools;33.0.2"
+
+      - name: Decode keystore from secret
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "${KEYSTORE_BASE64}" ]; then
+            echo "KEYSTORE_BASE64 is empty; skipping keystore creation."
+          else
+            echo "$KEYSTORE_BASE64" | base64 --decode > release.keystore
+            echo "Wrote release.keystore (size: $(stat -c%s release.keystore) bytes)"
+          fi
+
+      - name: Create gradle.properties with keystore info
+        env:
+          KEYSTORE_FILE: release.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          cat > ${GITHUB_WORKSPACE}/gradle.properties <<EOF
+STORE_FILE=${KEYSTORE_FILE}
+qwerty=${KEYSTORE_PASSWORD}
+afitech=${KEY_ALIAS}
+EOF
+          echo "Created gradle.properties in repo root."
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*','**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build release APK
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        env:
+          ANDROID_HOME: $HOME/android-sdk
+          ANDROID_SDK_ROOT: $HOME/android-sdk
+
+      - name: Find release APK
+        id: find_apk
+        run: |
+          set -e
+          apk=$(find app/build/outputs/apk -type f -name "*release*.apk" | head -n 1)
+          if [ -z "$apk" ]; then
+            echo "No release APK found" >&2
+            exit 1
+          fi
+          echo "apk=$apk" >> $GITHUB_OUTPUT
+          echo "Found APK: $apk"
+
+      - name: Copy & rename APK to app-release.apk
+        run: |
+          cp "${{ steps.find_apk.outputs.apk }}" app-release.apk
+          ls -lh app-release.apk
+
+      - name: Create GitHub Release (if not exists) using tag
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload APK to Release
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./app-release.apk
+          asset_name: app-release.apk
+          asset_content_type: application/vnd.android.package-archive
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
