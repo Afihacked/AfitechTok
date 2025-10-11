@@ -51,15 +51,14 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          cat > "${GITHUB_WORKSPACE}/gradle.properties" <<'EOF'
-STORE_FILE=release.keystore
-qwerty=${KEYSTORE_PASSWORD}
-afitech=${KEY_ALIAS}
-# KEY_PASSWORD is intentionally not inserted here if your build.gradle uses same property as qwerty.
-# If your build.gradle expects a different property name, add it here like:
-# KEY_PASSWORD=${KEY_PASSWORD}
-EOF
-          echo "Created gradle.properties in repo root."
+          cat > "${GITHUB_WORKSPACE}/gradle.properties" <<EOF
+          STORE_FILE=${KEYSTORE_FILE}
+          qwerty=${KEYSTORE_PASSWORD}
+          afitech=${KEY_ALIAS}
+          # Jika build.gradle membutuhkan properti key password terpisah, tambahkan baris berikut:
+          # KEY_PASSWORD=${KEY_PASSWORD}
+          EOF
+          echo "✅ gradle.properties berhasil dibuat di root repository."
 
       - name: Cache Gradle
         uses: actions/cache@v4
@@ -86,18 +85,19 @@ EOF
           set -e
           apk=$(find app/build/outputs/apk -type f -name "*release*.apk" | head -n 1)
           if [ -z "$apk" ]; then
-            echo "No release APK found" >&2
+            echo "❌ Tidak ditemukan file APK hasil build!" >&2
             exit 1
           fi
           echo "apk=$apk" >> $GITHUB_OUTPUT
-          echo "Found APK: $apk"
+          echo "✅ APK ditemukan: $apk"
 
       - name: Copy & rename APK to app-release.apk
         run: |
           cp "${{ steps.find_apk.outputs.apk }}" app-release.apk
+          echo "✅ app-release.apk siap diupload"
           ls -lh app-release.apk
 
-      - name: Create GitHub Release (if not exists) using tag
+      - name: Create GitHub Release (if not exists)
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
