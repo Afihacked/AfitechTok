@@ -13,7 +13,7 @@
         android:id="@+id/status_bar_scrim"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:background="@drawable/bg_header"
+        android:background="@color/colorPrimary"
         android:visibility="visible" />
 
     <!-- Konten utama -->
@@ -27,7 +27,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="@drawable/bg_header"
+            android:background="@color/colorPrimary"
             android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
 
         <!-- Container utama -->
