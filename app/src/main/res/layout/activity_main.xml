@@ -4,8 +4,17 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
-    android:fitsSystemWindows="true"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="false">
+
+    <!-- STATUS BAR SCRIM (first child) -->
+    <!-- height akan di-set di runtime melalui WindowInsets -->
+    <View
+        android:id="@+id/status_bar_scrim"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="@drawable/bg_header"
+        android:visibility="visible" />
 
     <!-- Konten utama -->
     <LinearLayout
@@ -18,7 +27,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="@color/colorPrimary"
+            android:background="@drawable/bg_header"
             android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
 
         <!-- Container utama -->
@@ -36,15 +45,18 @@
 
                 <com.google.android.material.tabs.TabLayout
                     android:id="@+id/tabLayout"
-                    android:background="@color/colorPrimary"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:tabIndicatorColor="@android:color/white"
-                    app:tabSelectedTextColor="@android:color/white"
-                    app:tabTextColor="@color/white"
-                    app:tabIconTint="@color/tab_icon_color"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_header"
+                    app:tabIndicator="@drawable/tab_indicator_full"
+                    app:tabIndicatorFullWidth="true"
+                    app:tabIndicatorGravity="bottom"
+                    app:tabIndicatorAnimationMode="elastic"
                     app:tabMode="fixed"
-                    app:tabGravity="fill"/>
+                    app:tabGravity="fill"
+                    app:tabIconTint="@color/tab_icon_color"
+                    app:tabIndicatorColor="@android:color/white"
+                    app:tabIndicatorHeight="4dp" />
 
                 <androidx.viewpager2.widget.ViewPager2
                     android:id="@+id/viewPager"

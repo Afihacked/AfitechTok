@@ -45,4 +45,33 @@ Nikmati kemudahan mengunduh video dari berbagai platform populer seperti TikTok,
     <string name="tentang_">Tentang</string>
     <string name="pengaturan">Pengaturan</string>
 
+    <string name="help">Bantuan</string>
+    <string name="help_only_tiktok">Tutorial ini hanya untuk tab TikTok</string>
+    <string name="step1">Langkah 1</string>
+    <string name="step2">Langkah 2</string>
+    <string name="step3">Langkah 3</string>
+    <string name="step4">Langkah 4</string>
+    <string name="tutorial">Tutorial</string>
+
+    <!-- About strings -->
+    <string name="version_unknown">Versi: -</string>
+    <string name="version_format">Versi: %1$s</string>
+    <string name="about_summary_placeholder">Aplikasi ini membantu mendownload konten dari TikTok dan WhatsApp dengan mudah. Untuk detail lebih lengkap, lihat README.</string>
+    <string name="view_readme">Lihat README</string>
+    <string name="view_license">Lisensi</string>
+    <string name="view_privacy">Kebijakan Privasi</string>
+    <string name="view_source">Sumber (GitHub)</string>
+    <string name="about_credits_txt">Dikembangkan oleh Afitech. Terima kasih kepada semua kontributor dan pengguna.</string>
+    <string name="feedback_subject">Masukan untuk AfitechTok</string>
+    <string name="send_feedback">Kirim Masukan</string>
+    <string name="no_email_client">Tidak ada aplikasi email terpasang di perangkat Anda.</string>
+
+    <string name="donate">Donasi</string>
+    <string name="open_in_browser">Buka di browser</string>
+    <string name="copy_link">Salin tautan</string>
+    <string name="link_copied">Tautan disalin</string>
+    <string name="copy_failed">Gagal menyalin tautan</string>
+    <string name="cannot_open_link">Tidak dapat membuka tautan</string>
+
+
 </resources>

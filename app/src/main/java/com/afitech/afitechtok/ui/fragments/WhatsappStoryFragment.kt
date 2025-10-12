@@ -21,7 +21,7 @@ import com.afitech.afitechtok.data.database.AppDatabase
 import com.afitech.afitechtok.data.database.DownloadHistoryDao
 import com.afitech.afitechtok.databinding.FragmentWhatsappStoryBinding
 import com.afitech.afitechtok.ui.adapters.StoryPagerAdapter
-import com.afitech.afitechtok.utils.setStatusBarColor
+import com.afitech.afitechtok.utils.setStatusBarColorRes
 import com.google.android.material.tabs.TabLayoutMediator
 
 /**
@@ -126,6 +126,9 @@ class WhatsappStoryFragment : Fragment() {
     ): View {
         _binding = FragmentWhatsappStoryBinding.inflate(inflater, container, false)
         sharedPreferences = requireContext().getSharedPreferences("TikDownloaderPrefs", Context.MODE_PRIVATE)
+
+        // jika fragment menempatkan toolbar yang menjulur ke statusbar, gunakan drawBehind = true
+        setStatusBarColorRes(R.color.white, isLightStatusBar = true, drawBehind = true)
 
         // simpan teks awal supaya bisa dikembalikan saat keluar dari empty/tutorial
         originalTutorialText = binding.tutorialText.text
@@ -442,7 +445,6 @@ class WhatsappStoryFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        setStatusBarColor(R.color.sttsbar, isLightStatusBar = false)
 
         val uriSaved = getSavedUri()
         if (hasStoragePermission() && uriSaved.isNotEmpty()) {

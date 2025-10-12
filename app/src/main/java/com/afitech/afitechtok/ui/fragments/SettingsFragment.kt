@@ -10,7 +10,7 @@ import androidx.fragment.app.Fragment
 import com.afitech.afitechtok.R
 import com.afitech.afitechtok.utils.areAdsEnabled
 import com.afitech.afitechtok.utils.setAdsEnabled
-import com.afitech.afitechtok.utils.setStatusBarColor
+import com.afitech.afitechtok.utils.setStatusBarColorRes
 
 class SettingsFragment : Fragment() {
 
@@ -25,6 +25,9 @@ class SettingsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // jika fragment menempatkan toolbar yang menjulur ke statusbar, gunakan drawBehind = true
+        setStatusBarColorRes(R.color.white, isLightStatusBar = true, drawBehind = true)
 
         // Inisialisasi UI
         switchAds = view.findViewById(R.id.switchAds)
@@ -48,9 +51,5 @@ class SettingsFragment : Fragment() {
         } else {
             "Jika diaktifkan, iklan akan dimatikan selama penggunaan aplikasi."
         }
-    }
-    override fun onResume() {
-        super.onResume()
-        setStatusBarColor(R.color.sttsbar, isLightStatusBar = false)
     }
 }

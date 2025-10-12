@@ -116,6 +116,9 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         super.onViewCreated(view, savedInstanceState)
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
+        // jika fragment menempatkan toolbar yang menjulur ke statusbar, gunakan drawBehind = true
+        setStatusBarColorRes(R.color.white, isLightStatusBar = true, drawBehind = true)
+
         firebaseAnalytics = Firebase.analytics
         adsManager = AdsManager(requireContext())
         downloadHistoryDao = AppDatabase.getDatabase(requireContext()).downloadHistoryDao()
@@ -152,7 +155,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
     override fun onResume() {
         super.onResume()
-        setStatusBarColor(R.color.sttsbar, false)
         checkClipboardOnStart()
     }
 

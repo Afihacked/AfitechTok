@@ -23,7 +23,7 @@ import com.afitech.afitechtok.databinding.FragmentHistoryListBinding
 import com.afitech.afitechtok.ui.adapters.HistoryAdapter
 import com.afitech.afitechtok.ui.viewmodel.HistoryListViewModel
 import com.afitech.afitechtok.ui.viewmodel.HistoryListViewModelFactory
-import com.afitech.afitechtok.utils.setStatusBarColor
+import com.afitech.afitechtok.utils.setStatusBarColorRes
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -61,6 +61,9 @@ class HistoryListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+
+        // jika fragment menempatkan toolbar yang menjulur ke statusbar, gunakan drawBehind = true
+        setStatusBarColorRes(R.color.white, isLightStatusBar = true, drawBehind = true)
 
         binding.swipeRefreshLayout.setColorSchemeResources(
             R.color.colorPrimary,
@@ -268,7 +271,6 @@ class HistoryListFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         reloadHistory()
-        setStatusBarColor(R.color.sttsbar, isLightStatusBar = false)
     }
 
     companion object {

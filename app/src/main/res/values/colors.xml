@@ -13,9 +13,10 @@
     <color name="dark_red">#E53935</color>
     <color name="blackTab">#000000</color>
     <color name="sttsbar">#CC3734</color>
-    <color name="selection_bg">#9EB40000</color> <!-- biru semi-transparan -->
+    <color name="selection_bg">#A22B29</color> <!-- biru semi-transparan -->
 
     <color name="shimmer_placeholder">#DDDDDD</color>
+    <color name="navigationBarColor">#CC3734</color>
 
 
 

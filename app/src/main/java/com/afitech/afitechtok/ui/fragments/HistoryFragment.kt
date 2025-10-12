@@ -14,7 +14,7 @@ import androidx.fragment.app.Fragment
 import com.afitech.afitechtok.R
 import com.afitech.afitechtok.databinding.FragmentHistoryBinding
 import com.afitech.afitechtok.ui.adapters.HistoryPagerAdapter
-import com.afitech.afitechtok.utils.setStatusBarColor
+import com.afitech.afitechtok.utils.setStatusBarColorRes
 import com.google.android.material.tabs.TabLayoutMediator
 
 class HistoryFragment : Fragment() {
@@ -39,6 +39,9 @@ class HistoryFragment : Fragment() {
 
         // Set adapter untuk ViewPager2
         binding.viewPager.adapter = HistoryPagerAdapter(this)
+
+        // jika fragment menempatkan toolbar yang menjulur ke statusbar, gunakan drawBehind = true
+        setStatusBarColorRes(R.color.white, isLightStatusBar = true, drawBehind = true)
 
         // Hubungkan TabLayout dengan ViewPager2
         // Hubungkan TabLayout dengan ViewPager2
@@ -77,7 +80,5 @@ class HistoryFragment : Fragment() {
     }
     override fun onResume() {
         super.onResume()
-
-        setStatusBarColor(R.color.sttsbar, isLightStatusBar = false)
     }
 }
