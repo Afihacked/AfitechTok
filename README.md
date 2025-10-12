@@ -173,7 +173,7 @@ MIT License © 2025 Afihacked
 ---
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Made%20with%20❤️%20by-Afihacked-blue" alt="Made by Afihacked">
+  <img src="https://img.shields.io/badge/Made%20with%20❤️%20by-Afitech-blue" alt="Made by Afitech">
 </p>
 
 <p align="center">
