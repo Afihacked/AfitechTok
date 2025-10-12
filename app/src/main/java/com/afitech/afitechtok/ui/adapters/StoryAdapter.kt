@@ -19,6 +19,10 @@ import com.afitech.afitechtok.data.StorySaver
 import com.afitech.afitechtok.data.model.StoryItem
 import com.bumptech.glide.Glide
 import kotlinx.coroutines.*
+import androidx.media3.common.MediaItem
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
+import androidx.media3.common.Player
 
 class StoryAdapter(
     private var stories: List<StoryItem>,
@@ -26,7 +30,7 @@ class StoryAdapter(
 ) : RecyclerView.Adapter<StoryAdapter.StoryViewHolder>() {
 
     private var currentPlayer: MediaPlayer? = null
-    private var currentSurface: Surface? = null
+    private var currentSurface: android.view.Surface? = null
     private var currentTexture: TextureView? = null
     private var currentPlayIcon: ImageView? = null
 
@@ -65,6 +69,8 @@ class StoryAdapter(
             saveStoryToGalleryAsync(uri)
         }
 
+        // NOTE: jika Anda ingin playIcon membuka fullscreen instead of inline,
+        // ubah/komentar salah satu dari dua listener ini. Saat ini playIcon membuka fullscreen.
         holder.playIcon.setOnClickListener {
             showFullscreenPlayer(uri)
         }
@@ -88,7 +94,7 @@ class StoryAdapter(
 
         holder.videoTexture.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
             override fun onSurfaceTextureAvailable(surfaceTexture: SurfaceTexture, width: Int, height: Int) {
-                val surface = Surface(surfaceTexture)
+                val surface = android.view.Surface(surfaceTexture)
                 currentSurface = surface
                 currentPlayer = MediaPlayer().apply {
                     setDataSource(context, uri)
@@ -126,6 +132,7 @@ class StoryAdapter(
             }
         }
     }
+
     private fun showFullscreenImage(uri: Uri) {
         val dialog = Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
@@ -144,6 +151,7 @@ class StoryAdapter(
         val matrix = Matrix()
         val savedMatrix = Matrix()
 
+        // Gesture / state vars
         var startX = 0f
         var startY = 0f
         var mode = 0
@@ -151,7 +159,7 @@ class StoryAdapter(
         val DRAG = 1
 
         var minScale = 1f
-        var maxScale = 2f
+        var maxScale = 3f
         var currentScale = 1f
         var isZoomed = false
 
@@ -201,7 +209,9 @@ class StoryAdapter(
                 viewWidth = imageView.width
                 viewHeight = imageView.height
 
+                // initial scales
                 minScale = minOf(viewWidth / imageWidth, viewHeight / imageHeight)
+                if (minScale <= 0f) minScale = 1f
                 currentScale = minScale
 
                 val dx = (viewWidth - imageWidth * currentScale) / 2f
@@ -213,33 +223,58 @@ class StoryAdapter(
             }
         })
 
-        val gestureDetector = GestureDetector(
-            context,
-            object : GestureDetector.SimpleOnGestureListener() {
-                override fun onDoubleTap(e: MotionEvent): Boolean {
-                    if (!isZoomed) {
-                        val focusX = e.x
-                        val focusY = e.y
-                        val scaleFactor = maxScale / currentScale
-                        matrix.postScale(scaleFactor, scaleFactor, focusX, focusY)
-                        currentScale = maxScale
-                        isZoomed = true
-                    } else {
-                        currentScale = minScale
-                        val dx = (viewWidth - imageWidth * currentScale) / 2f
-                        val dy = (viewHeight - imageHeight * currentScale) / 2f
-                        matrix.setScale(currentScale, currentScale)
-                        matrix.postTranslate(dx, dy)
-                        isZoomed = false
-                    }
-                    fixTranslation()
-                    imageView.imageMatrix = matrix
-                    return true
+        // Scale gesture detector for pinch
+        val scaleDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            override fun onScale(detector: ScaleGestureDetector): Boolean {
+                val scaleFactor = detector.scaleFactor
+                val prevScale = currentScale
+                currentScale *= scaleFactor
+
+                // clamp scale
+                if (currentScale > maxScale) {
+                    currentScale = maxScale
                 }
+                if (currentScale < minScale) {
+                    currentScale = minScale
+                }
+
+                val factor = currentScale / prevScale
+                // scale around gesture focal point
+                matrix.postScale(factor, factor, detector.focusX, detector.focusY)
+                fixTranslation()
+                imageView.imageMatrix = matrix
+                isZoomed = currentScale > minScale + 0.01f
+                return true
             }
-        )
+        })
+
+        // Double-tap toggles between minScale and maxScale
+        val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onDoubleTap(e: MotionEvent): Boolean {
+                val focusX = e.x
+                val focusY = e.y
+                if (!isZoomed) {
+                    val scaleFactor = maxScale / currentScale
+                    matrix.postScale(scaleFactor, scaleFactor, focusX, focusY)
+                    currentScale = maxScale
+                    isZoomed = true
+                } else {
+                    currentScale = minScale
+                    val dx = (viewWidth - imageWidth * currentScale) / 2f
+                    val dy = (viewHeight - imageHeight * currentScale) / 2f
+                    matrix.setScale(currentScale, currentScale)
+                    matrix.postTranslate(dx, dy)
+                    isZoomed = false
+                }
+                fixTranslation()
+                imageView.imageMatrix = matrix
+                return true
+            }
+        })
 
         imageView.setOnTouchListener { _, event ->
+            // give scale detector first shot
+            scaleDetector.onTouchEvent(event)
             gestureDetector.onTouchEvent(event)
 
             when (event.action and MotionEvent.ACTION_MASK) {
@@ -248,6 +283,11 @@ class StoryAdapter(
                     startX = event.x
                     startY = event.y
                     mode = DRAG
+                }
+
+                MotionEvent.ACTION_POINTER_DOWN -> {
+                    // multi-touch: switch to none for drag (pinch handled by ScaleDetector)
+                    mode = NONE
                 }
 
                 MotionEvent.ACTION_MOVE -> {
@@ -298,7 +338,7 @@ class StoryAdapter(
                 val mimeType = contentResolver.getType(uri) ?: "image/jpeg"
                 // Bisa ambil nama file asli dari Uri, atau buat default saja:
                 val originalFileName = "WhatsAppStory_${System.currentTimeMillis()}." +
-                    MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
+                        MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
 
                 // Pastikan downloadHistoryDao sudah di-set di StorySaver sebelumnya
                 StorySaver.saveToGallery(
@@ -330,12 +370,14 @@ class StoryAdapter(
         val downloadButton: ImageButton = itemView.findViewById(R.id.downloadButton)
     }
 
+    // EXOPLAYER fullscreen implementation
     private fun showFullscreenPlayer(uri: Uri) {
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_video_player, null)
         val dialog = Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
         dialog.setContentView(dialogView)
 
-        val videoView: VideoView = dialogView.findViewById(R.id.fullscreenVideoView)
+        // Note: ensure your dialog layout uses PlayerView with id fullscreenVideoView
+        val playerView: PlayerView = dialogView.findViewById(R.id.fullscreenVideoView)
         val playPauseButton: ImageButton = dialogView.findViewById(R.id.playPauseButton)
         val closeButton: ImageButton = dialogView.findViewById(R.id.closeButton)
         val videoSeekBar: SeekBar = dialogView.findViewById(R.id.videoSeekBar)
@@ -344,91 +386,143 @@ class StoryAdapter(
         val overlay: View = dialogView.findViewById(R.id.overlay)
         val controlPanel: View = dialogView.findViewById(R.id.controlPanel)
 
-        val handler = Handler(Looper.getMainLooper())
-        var isControlVisible = false
+        // Build ExoPlayer
+        val exoPlayer = ExoPlayer.Builder(context).build()
+        playerView.player = exoPlayer
 
-        val updateSeekBarRunnable = object : Runnable {
+        // Prepare media
+        val mediaItem = MediaItem.fromUri(uri)
+        exoPlayer.setMediaItem(mediaItem)
+        exoPlayer.prepare()
+        exoPlayer.playWhenReady = true
+
+        // Handler untuk update UI
+        val handler = Handler(Looper.getMainLooper())
+        val updateRunnable = object : Runnable {
             override fun run() {
-                if (videoView.isPlaying) {
-                    val position = videoView.currentPosition
-                    val duration = videoView.duration
-                    val progress = (position * 100) / duration
-                    videoSeekBar.progress = progress
-                    currentTime.text = formatTime(position)
-                    handler.postDelayed(this, 500)
+                try {
+                    val pos = exoPlayer.currentPosition.coerceAtLeast(0L)
+                    val dur = exoPlayer.duration.coerceAtLeast(0L)
+                    if (dur > 0) {
+                        val progress = ((pos * 100) / dur).toInt()
+                        videoSeekBar.progress = progress
+                        currentTime.text = formatTime(pos.toInt())
+                    }
+                } catch (e: Exception) {
+                    // ignore occasionally when player not ready
+                }
+                handler.postDelayed(this, 500)
+            }
+        }
+
+        fun startUpdates() { handler.post(updateRunnable) }
+        fun stopUpdates() { handler.removeCallbacks(updateRunnable) }
+
+        // Player listener
+        exoPlayer.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(state: Int) {
+                if (state == Player.STATE_READY) {
+                    val dur = exoPlayer.duration
+                    if (dur > 0) totalTime.text = formatTime(dur.toInt())
+                    startUpdates()
+                } else if (state == Player.STATE_ENDED) {
+                    playPauseButton.setImageResource(android.R.drawable.ic_media_play)
+                    videoSeekBar.progress = 100
                 }
             }
-        }
 
-        fun updateSeekBar() {
-            handler.post(updateSeekBarRunnable)
-        }
-
-        videoView.setVideoURI(uri)
-        videoView.setOnPreparedListener {
-            videoView.start()
-            playPauseButton.setImageResource(android.R.drawable.ic_media_pause)
-            totalTime.text = formatTime(videoView.duration)
-            updateSeekBar()
-
-            // Tampilkan kontrol saat awal video dibuka
-            if (!isControlVisible) {
-                controlPanel.visibility = View.VISIBLE
-                isControlVisible = true
-                handler.postDelayed({
-                    controlPanel.visibility = View.GONE
-                    isControlVisible = false
-                }, 3000)
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                playPauseButton.setImageResource(
+                    if (isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play
+                )
             }
-        }
+        })
 
-        fun toggleControls() {
-            isControlVisible = !isControlVisible
-            controlPanel.visibility = if (isControlVisible) View.VISIBLE else View.GONE
-
-            if (isControlVisible) {
-                handler.postDelayed({
-                    controlPanel.visibility = View.GONE
-                    isControlVisible = false
-                }, 3000)
-            }
-        }
-
-        overlay.setOnClickListener { toggleControls() }
-
+        // Play/pause
         playPauseButton.setOnClickListener {
-            if (videoView.isPlaying) {
-                videoView.pause()
-                playPauseButton.setImageResource(android.R.drawable.ic_media_play)
-            } else {
-                videoView.start()
-                playPauseButton.setImageResource(android.R.drawable.ic_media_pause)
+            if (exoPlayer.isPlaying) exoPlayer.pause() else exoPlayer.play()
+        }
+
+        // Controls toggling
+        var isControlVisible = false
+        fun showControlsTemporarily() {
+            controlPanel.visibility = View.VISIBLE
+            isControlVisible = true
+            handler.postDelayed({
+                controlPanel.visibility = View.GONE
+                isControlVisible = false
+            }, 3000)
+        }
+
+        overlay.setOnClickListener {
+            if (!isControlVisible) showControlsTemporarily() else {
+                controlPanel.visibility = View.GONE
+                isControlVisible = false
             }
+        }
+
+        // Scrubbing logic: throttle seeks while dragging
+        var pendingSeekPosition: Long = 0L
+        var seekScheduled = false
+        val seekHandler = Handler(Looper.getMainLooper())
+        val seekRunnable = Runnable {
+            try {
+                exoPlayer.seekTo(pendingSeekPosition)
+            } catch (e: Exception) {
+                Log.e("StoryAdapter", "ExoPlayer seek error", e)
+            }
+            seekScheduled = false
         }
 
         videoSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            var userSeeking = false
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
-                    val newPosition = (progress * videoView.duration) / 100
-                    videoView.seekTo(newPosition)
-                    currentTime.text = formatTime(newPosition)
+                    val dur = exoPlayer.duration.takeIf { it > 0 } ?: return
+                    val newPos = (progress * dur) / 100
+                    // update UI waktu saat drag
+                    currentTime.text = formatTime(newPos.toInt())
+                    pendingSeekPosition = newPos
+                    // schedule a throttled seek while dragging (150ms)
+                    if (seekScheduled) {
+                        seekHandler.removeCallbacks(seekRunnable)
+                    }
+                    seekScheduled = true
+                    seekHandler.postDelayed(seekRunnable, 150)
                 }
             }
 
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+                userSeeking = true
+                stopUpdates()
+            }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                userSeeking = false
+                if (seekScheduled) {
+                    seekHandler.removeCallbacks(seekRunnable)
+                    seekScheduled = false
+                }
+                try {
+                    exoPlayer.seekTo(pendingSeekPosition)
+                } catch (e: Exception) {
+                    Log.e("StoryAdapter", "ExoPlayer final seek error", e)
+                }
+                startUpdates()
+            }
         })
 
-        videoView.setOnCompletionListener {
-            playPauseButton.setImageResource(android.R.drawable.ic_media_play)
-            videoSeekBar.progress = 100
-            currentTime.text = formatTime(videoView.duration)
+        closeButton.setOnClickListener {
+            stopUpdates()
+            try { exoPlayer.stop() } catch (_: Exception) {}
+            exoPlayer.release()
+            dialog.dismiss()
         }
 
-        closeButton.setOnClickListener {
-            handler.removeCallbacks(updateSeekBarRunnable)
-            videoView.stopPlayback()
-            dialog.dismiss()
+        dialog.setOnDismissListener {
+            stopUpdates()
+            try { exoPlayer.stop() } catch (_: Exception) {}
+            exoPlayer.release()
         }
 
         dialog.show()
