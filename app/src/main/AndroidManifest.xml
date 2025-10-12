@@ -97,6 +97,10 @@
             android:foregroundServiceType="mediaPlayback|dataSync"
             android:exported="false" />
 
+        <receiver
+            android:name=".ui.helpers.RestartReceiver"
+            android:exported="true" />
+
     </application>
 
     <!-- Queries -->

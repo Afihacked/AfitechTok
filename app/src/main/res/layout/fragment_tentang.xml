@@ -12,16 +12,16 @@
         android:layout_width="match_parent"
         android:layout_height="140dp"
         android:orientation="vertical"
-        android:background="@color/sttsbar"
+        android:background="@drawable/bg_header"
         android:gravity="center"
         android:paddingTop="20dp"
         android:paddingBottom="12dp">
 
         <ImageView
             android:id="@+id/about_logo"
-            android:layout_width="72dp"
-            android:layout_height="72dp"
-            android:src="@mipmap/ic_launcher_round"
+            android:layout_width="65dp"
+            android:layout_height="65dp"
+            android:src="@mipmap/ic_launcher_foreground"
             android:contentDescription="@string/logo_afitech" />
 
         <TextView
@@ -32,7 +32,7 @@
             android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="@android:color/white"
-            android:layout_marginTop="6dp" />
+            android:layout_marginTop="0dp" />
 
         <TextView
             android:id="@+id/about_version"
