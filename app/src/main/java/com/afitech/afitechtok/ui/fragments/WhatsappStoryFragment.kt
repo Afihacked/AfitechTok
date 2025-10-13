@@ -21,7 +21,9 @@ import com.afitech.afitechtok.data.database.AppDatabase
 import com.afitech.afitechtok.data.database.DownloadHistoryDao
 import com.afitech.afitechtok.databinding.FragmentWhatsappStoryBinding
 import com.afitech.afitechtok.ui.adapters.StoryPagerAdapter
+import com.afitech.afitechtok.utils.AdsManager
 import com.afitech.afitechtok.utils.setStatusBarColorRes
+import com.google.android.gms.ads.AdView
 import com.google.android.material.tabs.TabLayoutMediator
 
 /**

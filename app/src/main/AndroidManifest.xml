@@ -74,17 +74,12 @@
         <!-- Meta Data for AdMob -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-2025447201837747~2709749773"/>
+            android:value="ca-app-pub-2480965620056986~1526914321"/>
 
         <!-- Meta Data for Start.io -->
         <meta-data
             android:name="com.startapp.sdk.APPLICATION_ID"
             android:value="208775679"/> <!-- pakai App ID Start.io kamu -->
-
-        <!-- Meta Data for Start.io -->
-        <meta-data
-            android:name="com.startapp.sdk.APPLICATION_ID"
-            android:value="208775679"/>
 
         <!-- Services -->
         <service

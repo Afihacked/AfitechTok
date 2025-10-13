@@ -18,6 +18,9 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import com.afitech.afitechtok.R
+import com.afitech.afitechtok.databinding.FragmentTentangBinding
+import com.afitech.afitechtok.ui.services.DownloadServiceTT
+import com.afitech.afitechtok.utils.AdsManager
 import com.afitech.afitechtok.utils.areAdsEnabled
 import com.afitech.afitechtok.utils.setStatusBarColorRes
 import com.google.android.gms.ads.AdRequest
@@ -30,10 +33,15 @@ import java.io.InputStreamReader
 
 class TentangFragment : Fragment() {
 
-    private lateinit var adView: AdView
-    private lateinit var adContainer: FrameLayout
+    private var _binding: FragmentTentangBinding? = null
+    private val binding get() = _binding!!
 
-    // Ganti dengan Ad Unit ID milikmu jika perlu
+    // AdView nullable — lebih aman
+    private var adView: AdView? = null
+    private lateinit var adsManager: AdsManager
+
+    // Ganti dengan Ad Unit ID milikmu; saat testing gunakan AdMob test id:
+    // val adUnitId = "ca-app-pub-3940256099942544/6300978111" // test banner id
     private val adUnitId = "ca-app-pub-2025447201837747/8904457185"
 
     // Link donasi
@@ -43,7 +51,10 @@ class TentangFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? = inflater.inflate(R.layout.fragment_tentang, container, false)
+    ): View? {
+        _binding = FragmentTentangBinding.inflate(inflater, container, false)
+        return binding.root
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -51,35 +62,24 @@ class TentangFragment : Fragment() {
         // Jika fragment menempatkan toolbar yang menjulur ke statusbar, drawBehind = true
         setStatusBarColorRes(R.color.sttsbar, isLightStatusBar = true, drawBehind = true)
 
-        adContainer = view.findViewById(R.id.adContainer)
-
-        // init views (MaterialButton)
-        val tvAppName = view.findViewById<TextView>(R.id.about_app_name)
-        val tvVersion = view.findViewById<TextView>(R.id.about_version)
-        val tvSummary = view.findViewById<TextView>(R.id.about_summary)
-        val btnReadme = view.findViewById<MaterialButton>(R.id.btn_readme)
-        val btnLicense = view.findViewById<MaterialButton>(R.id.btn_license)
-        val btnPrivacy = view.findViewById<MaterialButton>(R.id.btn_privacy)
-        val btnSource = view.findViewById<MaterialButton>(R.id.btn_source)
-        val btnDonate = view.findViewById<MaterialButton>(R.id.btn_donate)
-        val btnFeedback = view.findViewById<MaterialButton>(R.id.btn_feedback)
+        adsManager = AdsManager(requireContext())
 
         // set version dinamically
         try {
             val pInfo = requireContext().packageManager.getPackageInfo(requireContext().packageName, 0)
-            tvVersion.text = getString(R.string.version_format, pInfo.versionName ?: "-")
+            binding.aboutVersion.text = getString(R.string.version_format, pInfo.versionName ?: "-")
         } catch (e: Exception) {
-            tvVersion.text = getString(R.string.version_unknown)
+            binding.aboutVersion.text = getString(R.string.version_unknown)
         }
 
         // ringkasan: baca README.md asset (format markdown ringan)
         val readme = readAssetFile("README.md")
-        tvSummary.text = if (readme.isNotBlank()) formatMarkdownExcerpt(readme) else getString(R.string.about_summary_placeholder)
+        binding.aboutSummary.text = if (readme.isNotBlank()) formatMarkdownExcerpt(readme) else getString(R.string.about_summary_placeholder)
 
-        btnReadme.setOnClickListener { showTextDialog(getString(R.string.view_readme), "README.md") }
-        btnLicense.setOnClickListener { showTextDialog(getString(R.string.view_license), "LICENSE.md") }
-        btnPrivacy.setOnClickListener { showTextDialog(getString(R.string.view_privacy), "PRIVACY.md") }
-        btnSource.setOnClickListener {
+        binding.btnReadme.setOnClickListener { showTextDialog(getString(R.string.view_readme), "README.md") }
+        binding.btnLicense.setOnClickListener { showTextDialog(getString(R.string.view_license), "LICENSE.md") }
+        binding.btnPrivacy.setOnClickListener { showTextDialog(getString(R.string.view_privacy), "PRIVACY.md") }
+        binding.btnSource.setOnClickListener {
             val repoUrl = "https://github.com/Afihacked/AfitechTok"
             try {
                 startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(repoUrl)))
@@ -93,14 +93,13 @@ class TentangFragment : Fragment() {
         }
 
         // DONASI handler
-        btnDonate.setOnClickListener {
-            // Dialog: Open / Copy link
+        binding.btnDonate.setOnClickListener {
             val items = arrayOf(getString(R.string.open_in_browser), getString(R.string.copy_link))
             AlertDialog.Builder(requireContext())
                 .setTitle(getString(R.string.donate))
                 .setItems(items) { _, which ->
                     when (which) {
-                        0 -> { // open in browser
+                        0 -> {
                             try {
                                 startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(donateUrl)))
                             } catch (e: Exception) {
@@ -110,13 +109,12 @@ class TentangFragment : Fragment() {
                                     .show()
                             }
                         }
-                        1 -> { // copy link
+                        1 -> {
                             try {
                                 val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                 val clip = ClipData.newPlainText("donate_link", donateUrl)
                                 clipboard.setPrimaryClip(clip)
                                 androidx.core.content.ContextCompat.getMainExecutor(requireContext()).execute {
-                                    // show simple confirmation
                                     android.widget.Toast.makeText(requireContext(), getString(R.string.link_copied), android.widget.Toast.LENGTH_SHORT).show()
                                 }
                             } catch (t: Throwable) {
@@ -127,8 +125,8 @@ class TentangFragment : Fragment() {
                 }.show()
         }
 
-        btnFeedback.setOnClickListener {
-            val email = "afitech.services@gmail.com" // ganti dengan email asli
+        binding.btnFeedback.setOnClickListener {
+            val email = "afitech.services@gmail.com"
             val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$email"))
             intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.feedback_subject))
             try {
@@ -141,28 +139,49 @@ class TentangFragment : Fragment() {
             }
         }
 
-        // Inisialisasi SDK AdMob
-        MobileAds.initialize(requireContext())
+        // Inisialisasi SDK AdMob — jalankan sebelum membuat AdView
+        MobileAds.initialize(requireContext()) { /* optional callback */ }
+
+        // kalau iklan diaktifkan, buat AdView dan load
+        // Inisialisasi SDK AdMob — jalankan sebelum membuat AdView
+        MobileAds.initialize(requireContext()) { /* optional callback */ }
 
         if (requireContext().areAdsEnabled()) {
-            adView = AdView(requireContext())
-            adView.setAdSize(getAdaptiveAdSize())
-            adView.adUnitId = adUnitId
-
-            val layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                gravity = Gravity.CENTER_HORIZONTAL
+            // Buat AdView sederhana tanpa adaptive size
+            adView = AdView(requireContext()).apply {
+                adUnitId = this@TentangFragment.adUnitId // atau AdSize.LARGE_BANNER / AdSize.FULL_BANNER sesuai yang kamu mau
             }
 
-            adContainer.removeAllViews()
-            adContainer.addView(adView, layoutParams)
-            adView.loadAd(AdRequest.Builder().build())
-            adContainer.visibility = View.VISIBLE
+            // clear container dan tambahkan
+            binding.adContainer.removeAllViews()
+            val layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            ).apply { gravity = Gravity.CENTER_HORIZONTAL }
+
+            binding.adContainer.addView(adView, layoutParams)
+
+            // load ad
+            adView?.loadAd(AdRequest.Builder().build())
+            binding.adContainer.visibility = View.VISIBLE
+
+            // inisialisasi manager untuk fallback
+            initAds()
         } else {
-            adContainer.removeAllViews()
-            adContainer.visibility = View.GONE
+            binding.adContainer.removeAllViews()
+            binding.adContainer.visibility = View.GONE
+        }
+
+    }
+
+    private fun initAds() {
+        // pastikan adView tersedia
+        if (requireContext().areAdsEnabled() && adView != null) {
+            // load banner melalui AdsManager (admob -> fallback)
+            adsManager.loadBanner(adView!!, binding.fallbackContainer)
+            adView?.visibility = View.VISIBLE
+        } else {
+            adView?.visibility = View.GONE
         }
     }
 
@@ -187,7 +206,6 @@ class TentangFragment : Fragment() {
         val content = readAssetFile(assetName).ifBlank { getString(R.string.about_credits_txt) }
         val view = layoutInflater.inflate(R.layout.dialog_text_scroll, null)
         val tv = view.findViewById<TextView>(R.id.dialog_text)
-        // Jika file adalah markdown, buat render sederhana
         tv.text = if (assetName.endsWith(".md")) formatMarkdown(readAssetFile(assetName)) else content
 
         val dialog = AlertDialog.Builder(requireContext())
@@ -196,8 +214,6 @@ class TentangFragment : Fragment() {
             .setPositiveButton(android.R.string.ok, null)
             .create()
         dialog.show()
-
-        // ukuran dialog nyaman
         dialog.window?.setLayout((resources.displayMetrics.widthPixels * 0.95).toInt(), (resources.displayMetrics.heightPixels * 0.75).toInt())
     }
 
@@ -207,7 +223,6 @@ class TentangFragment : Fragment() {
     }
 
     private fun formatMarkdown(md: String): CharSequence {
-        // very small markdown-to-html helper: # headings and - list -> bullets
         val lines = md.split("\n")
         val sb = StringBuilder()
         for (line in lines) {
@@ -232,12 +247,23 @@ class TentangFragment : Fragment() {
         val displayMetrics = resources.displayMetrics
         val density = displayMetrics.density
         val adWidthPixels = displayMetrics.widthPixels
-        val adWidth = (adWidthPixels / density).toInt()
+        val adWidth = (adWidthPixels / density).toInt().coerceAtLeast(320) // minimal width
         return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(requireContext(), adWidth)
     }
 
     override fun onDestroyView() {
-        if (::adView.isInitialized) adView.destroy()
+        // destroy banner safely
+        try {
+            adView?.let {
+                adsManager.destroyBanner(it)
+                it.destroy()
+            }
+        } catch (t: Throwable) {
+            // ignore cleanup errors
+        }
+        adView = null
+
+        _binding = null
         super.onDestroyView()
     }
 }

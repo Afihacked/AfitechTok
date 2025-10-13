@@ -208,6 +208,16 @@
             <View android:layout_width="match_parent" android:layout_height="18dp" />
 
             <!-- AdMob Banner container (di dalam scroll agar tidak overlapping) -->
+            <com.google.android.gms.ads.AdView
+                android:id="@+id/adView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:adSize="BANNER"
+                app:adUnitId="ca-app-pub-2480965620056986/8954936066"/>
+            <FrameLayout
+                android:id="@+id/fallbackContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
             <FrameLayout
                 android:id="@+id/adContainer"
                 android:layout_width="match_parent"

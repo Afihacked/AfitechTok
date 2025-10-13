@@ -127,4 +127,6 @@
             android:layout_marginTop="12dp" />
     </LinearLayout>
 
+    <!-- AdMob Banner container (di dalam scroll agar tidak overlapping) -->
+
 </LinearLayout>

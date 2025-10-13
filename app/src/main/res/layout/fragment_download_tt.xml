@@ -42,7 +42,7 @@
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/inputLink"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_gravity="center"
                     android:inputType="textUri"
                     android:padding="15dp"
@@ -98,8 +98,8 @@
                     android:layout_margin="6dp">
 
                     <com.google.android.material.card.MaterialCardView
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
+                        android:layout_width="45dp"
+                        android:layout_height="45dp"
                         app:cardCornerRadius="12dp"
                         app:cardElevation="4dp"
                         app:cardBackgroundColor="@color/colorPrimary">
@@ -141,7 +141,7 @@
 
                     <FrameLayout
                         android:layout_width="match_parent"
-                        android:layout_height="40dp">
+                        android:layout_height="45dp">
 
                         <ProgressBar
                             android:id="@+id/progressDownload"
@@ -156,7 +156,7 @@
                         <LinearLayout
                             android:id="@+id/btnDownload"
                             android:layout_width="match_parent"
-                            android:layout_height="40dp"
+                            android:layout_height="45dp"
                             android:background="@color/colorPrimary"
                             android:backgroundTint="@color/colorPrimary"
                             android:clickable="true"
@@ -232,7 +232,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:adSize="BANNER"
-            app:adUnitId="ca-app-pub-2025447201837747/8904457185"/>
+            app:adUnitId="ca-app-pub-2480965620056986/8954936066"/>
 
         <FrameLayout
             android:id="@+id/fallbackContainer"
