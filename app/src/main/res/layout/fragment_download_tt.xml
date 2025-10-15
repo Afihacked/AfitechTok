@@ -42,7 +42,7 @@
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/inputLink"
                     android:layout_width="match_parent"
-                    android:layout_height="40dp"
+                    android:layout_height="48dp"
                     android:layout_gravity="center"
                     android:inputType="textUri"
                     android:padding="15dp"

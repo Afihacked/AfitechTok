@@ -9,6 +9,7 @@ import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.ContextThemeWrapper
 import android.view.Gravity
 import android.view.Gravity.CENTER
@@ -148,9 +149,9 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        adsManager.destroyBanner(adView)
+        try { adsManager.destroyBanner(adView) } catch (_: Throwable) {}
         DownloadServiceTT.setDoneCallback(null)
-        clipboardManager.removePrimaryClipChangedListener(clipboardListener)
+        try { clipboardManager.removePrimaryClipChangedListener(clipboardListener) } catch (_: Throwable) {}
     }
 
     override fun onResume() {
@@ -170,7 +171,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         adView = view.findViewById(R.id.adView)
         fallbackContainer = view.findViewById(R.id.fallbackContainer)
 
-
         val btnOpenTikTok = view.findViewById<AppCompatImageView>(R.id.btnOpenTiktok)
         btnOpenTikTok.setOnClickListener {
             openAppWithFallback(
@@ -186,18 +186,21 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
     private fun initAds() {
         if (requireContext().areAdsEnabled()) {
-            // ✅ Banner dengan fallback otomatis (AdMob → Start.io)
-            adsManager.loadBanner(adView, fallbackContainer)
-            adView.visibility = View.VISIBLE
+            try {
+                // banner: gunakan loadBanner (AdMob -> Start.io fallback)
+                adsManager.loadBanner(adView, fallbackContainer)
+                adView.visibility = View.VISIBLE
+            } catch (t: Throwable) {
+                adView.visibility = View.GONE
+            }
         } else {
             adView.visibility = View.GONE
         }
 
-        // ✅ Preload Rewarded & Interstitial
+        // Preload interstitial & rewarded ASAP
         adsManager.loadRewardedAd(getString(R.string.admob_rewarded_id))
         adsManager.loadInterstitialAd(getString(R.string.admob_interstitial_id))
     }
-
 
     private fun initClipboard() {
         clipboardManager = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -258,6 +261,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             else requireContext().showToastSafe("Link tidak valid")
         }
     }
+
     private fun checkClipboardRealTime() {
         val clipData = clipboardManager.primaryClip
         if (clipData != null && clipData.itemCount > 0) {
@@ -297,7 +301,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                     }
 
                     isLinkValid(clipText) -> {
-                        // Pastikan panjang maksimal tidak melebihi batas
                         val maxCharacters = 99
                         val tolerance = 1
                         val maxWithTolerance = maxCharacters + tolerance
@@ -308,21 +311,12 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                         }
 
                         editText.setText(safeText)
-
-                        // 🔒 FIX: pastikan cursor tidak keluar batas panjang teks
                         val safeIndex = clipText.length.coerceAtMost(safeText.length)
                         editText.setSelection(safeIndex)
 
                         lastClipboard = safeText
                         Toast.makeText(requireContext(), "Link berhasil ditempel", Toast.LENGTH_SHORT).show()
-
-                        // Ubah ikon menjadi ceklis
                         setImageResource(R.drawable.ic_checked)
-
-                        // Kembalikan ke ikon tambah setelah 2 detik
-//                    Handler(Looper.getMainLooper()).postDelayed({
-//                        setImageResource(R.drawable.ic_add)
-//                    }, 2000)
                     }
 
                     else -> {
@@ -336,7 +330,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             }
         }
     }
-
 
     private fun isLinkValid(link: String): Boolean {
         val pattern = Regex("""^https?://(www\.|m\.)?(tiktok\.com|vt\.tiktok\.com)/.+""", RegexOption.IGNORE_CASE)
@@ -359,7 +352,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
         when (detectPlatform(copiedText)) {
             "tiktok" -> {
-                if (editText.text.toString().isNotBlank()) return // tambahkan ini
+                if (editText.text.toString().isNotBlank()) return
                 editText.setText(copiedText)
                 editText.setSelection(copiedText.length)
                 lastClipboard = copiedText
@@ -413,6 +406,25 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         }
     }
 
+    // === Helpers: wait for readiness (polling with timeout) ===
+    private suspend fun waitForRewardedReady(timeoutMillis: Long = 3000L, intervalMillis: Long = 300L): Boolean {
+        val start = System.currentTimeMillis()
+        while (System.currentTimeMillis() - start < timeoutMillis) {
+            if (adsManager.isRewardedReady()) return true
+            delay(intervalMillis)
+        }
+        return adsManager.isRewardedReady()
+    }
+
+    private suspend fun waitForInterstitialReady(timeoutMillis: Long = 3000L, intervalMillis: Long = 300L): Boolean {
+        val start = System.currentTimeMillis()
+        while (System.currentTimeMillis() - start < timeoutMillis) {
+            if (adsManager.isInterstitialReady()) return true
+            delay(intervalMillis)
+        }
+        return adsManager.isInterstitialReady()
+    }
+
     // === Download & Ads ===
     private fun startDownloadWithNotification(videoUrl: String, format: String) {
         if (isAdShowing || !isAdded) return
@@ -420,50 +432,100 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
         val unduhText = downloadButton.findViewById<TextView>(R.id.unduhtext)
 
-        // ✅ tampilkan Rewarded yang sudah di-preload (fallback otomatis kalau gagal)
-        adsManager.showRewardedAd { rewardGranted ->
-            if (!isAdded) {
-                isAdShowing = false
-                return@showRewardedAd
-            }
+        // Use coroutine to optionally wait for rewarded AdMob to be ready
+        viewLifecycleOwner.lifecycleScope.launch {
+            val ready = withContext(Dispatchers.IO) { waitForRewardedReady(timeoutMillis = 3000L) }
 
-            if (!rewardGranted) {
-                requireActivity().runOnUiThread {
-                    downloadButton.setDownloadState(unduhText, true, "Coba Lagi")
-                    isAdShowing = false
-                }
-                return@showRewardedAd
-            }
+            if (ready) {
+                // AdMob ready — show and allow fallback internally (AdsManager will fallback if show fails)
+                adsManager.showRewardedAd(onResult = { rewardGranted ->
+                    if (!isAdded) {
+                        isAdShowing = false
+                        return@showRewardedAd
+                    }
 
-            // ✅ update UI sebelum mulai unduhan
-            requireActivity().runOnUiThread {
-                downloadButton.setDownloadState(unduhText, false, "Menunggu...")
-            }
+                    if (!rewardGranted) {
+                        requireActivity().runOnUiThread {
+                            downloadButton.setDownloadState(unduhText, true, "Coba Lagi")
+                            isAdShowing = false
+                        }
+                        return@showRewardedAd
+                    }
 
-            // ✅ mulai service download
-            val intent = Intent(requireContext(), DownloadServiceTT::class.java).apply {
-                putExtra(DownloadServiceTT.EXTRA_VIDEO_URL, videoUrl)
-                putExtra(DownloadServiceTT.EXTRA_FORMAT, format)
-            }
-            ContextCompat.startForegroundService(requireContext(), intent)
+                    // proceed with download
+                    startDownloadAfterAd(videoUrl, format, unduhText)
+                }, allowFallback = true, onNotShown = {
+                    // called only if allowFallback=false and not shown — not used here
+                    Log.d("DownloadFragmentTT", "Rewarded onNotShown")
+                })
+            } else {
+                // not ready within timeout -> show with fallback (Start.io)
+                Log.d("DownloadFragmentTT", "Rewarded not ready -> show with fallback")
+                adsManager.showRewardedAd(onResult = { rewardGranted ->
+                    if (!isAdded) {
+                        isAdShowing = false
+                        return@showRewardedAd
+                    }
 
-            // ✅ callback setelah selesai download
-            DownloadServiceTT.setDoneCallback { isSuccess ->
-                if (!isAdded) return@setDoneCallback
-                requireActivity().runOnUiThread {
-                    downloadButton.setDownloadState(
-                        unduhText,
-                        true,
-                        if (isSuccess) "Unduh Lagi?" else "Coba Lagi!"
-                    )
-                    if (!isSuccess) showError("Gagal mengunduh $format!")
-                    isAdShowing = false
-                    DownloadServiceTT.setDoneCallback(null)
-                }
+                    if (!rewardGranted) {
+                        requireActivity().runOnUiThread {
+                            downloadButton.setDownloadState(unduhText, true, "Coba Lagi")
+                            isAdShowing = false
+                        }
+                        return@showRewardedAd
+                    }
+
+                    startDownloadAfterAd(videoUrl, format, unduhText)
+                }, allowFallback = true, onNotShown = null)
             }
         }
     }
 
+    private fun startDownloadAfterAd(videoUrl: String, format: String, unduhText: TextView) {
+        requireActivity().runOnUiThread {
+            downloadButton.setDownloadState(unduhText, false, "Menunggu...")
+        }
+
+        val intent = Intent(requireContext(), DownloadServiceTT::class.java).apply {
+            putExtra(DownloadServiceTT.EXTRA_VIDEO_URL, videoUrl)
+            putExtra(DownloadServiceTT.EXTRA_FORMAT, format)
+        }
+        ContextCompat.startForegroundService(requireContext(), intent)
+
+        DownloadServiceTT.setDoneCallback { isSuccess ->
+            if (!isAdded) return@setDoneCallback
+            requireActivity().runOnUiThread {
+                downloadButton.setDownloadState(
+                    unduhText,
+                    true,
+                    if (isSuccess) "Unduh Lagi?" else "Coba Lagi!"
+                )
+                if (!isSuccess) showError("Gagal mengunduh $format!")
+                isAdShowing = false
+                DownloadServiceTT.setDoneCallback(null)
+            }
+        }
+    }
+
+    // helper to show interstitial then perform action
+    private fun showInterstitialThen(actionAfter: () -> Unit) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val ready = withContext(Dispatchers.IO) { waitForInterstitialReady(timeoutMillis = 3000L) }
+            if (ready) {
+                adsManager.showInterstitialAd(onAdComplete = {
+                    actionAfter()
+                }, allowFallback = true, onNotShown = {
+                    // not shown (no fallback) — still proceed
+                    actionAfter()
+                })
+            } else {
+                // not ready -> show with fallback immediately
+                adsManager.showInterstitialAd(onAdComplete = {
+                    actionAfter()
+                }, allowFallback = true, onNotShown = null)
+            }
+        }
+    }
 
     private fun updateDownloadButtonState(
         layout: LinearLayout,
@@ -716,8 +778,8 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
                         if (!isAdShowing) {
                             isAdShowing = true
-                            // ✅ Interstitial yang sudah di-preload, fallback otomatis kalau gagal
-                            adsManager.showInterstitialAd {
+                            // gunakan helper untuk memastikan prioritas AdMob sebelum fallback
+                            showInterstitialThen {
                                 isAdShowing = false
                                 downloadSelectedImagesWithService(
                                     selectedImages.toList(),
@@ -729,8 +791,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                             showToastSafe("Mohon tunggu, iklan sedang ditampilkan.")
                         }
                     }
-
-
 
                     btnPilihSemua.setOnClickListener {
                         isSelectAllActive = if (isSelectAllActive) {
@@ -812,5 +872,4 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             isAdShowing = false
         }
     }
-
 }

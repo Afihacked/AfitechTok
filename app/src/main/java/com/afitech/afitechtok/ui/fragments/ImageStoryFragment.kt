@@ -13,14 +13,23 @@ import androidx.recyclerview.widget.GridLayoutManager
 import com.afitech.afitechtok.data.model.StoryViewModel
 import com.afitech.afitechtok.databinding.FragmentImageStoryBinding
 import com.afitech.afitechtok.ui.adapters.StoryAdapter
+import com.afitech.afitechtok.utils.areAdsEnabled
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.MobileAds
 
 class ImageStoryFragment : Fragment() {
 
     private var _binding: FragmentImageStoryBinding? = null
     private val binding get() = _binding!!
+
     private lateinit var adapter: StoryAdapter
     private lateinit var storyViewModel: StoryViewModel
     private lateinit var prefs: SharedPreferences
+
+    // AdView reference (from layout)
+    private var adView: AdView? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -36,24 +45,63 @@ class ImageStoryFragment : Fragment() {
 
         storyViewModel = ViewModelProvider(this)[StoryViewModel::class.java]
         storyViewModel.stories.observe(viewLifecycleOwner) { list ->
-            // hanya image
             adapter.updateList(list.filter { it.type == "image" })
         }
+
+        // initialize MobileAds once
+        try { MobileAds.initialize(requireContext()) } catch (_: Throwable) {}
+
+        adView = try { binding.adView } catch (_: Throwable) { null }
+        setupAdView()
 
         return binding.root
     }
 
+    private fun setupAdView() {
+        if (adView == null || !requireContext().areAdsEnabled()) {
+            try {
+                binding.adContainer.visibility = View.GONE
+            } catch (_: Throwable) {}
+            return
+        }
+
+        // adaptive size (best-effort)
+        try {
+            val displayMetrics = resources.displayMetrics
+            val density = displayMetrics.density
+            val adWidthPixels = displayMetrics.widthPixels
+            val adWidth = (adWidthPixels / density).toInt().coerceAtLeast(320)
+            val adSize = AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(requireContext(), adWidth)
+            adView?.setAdSize(adSize)
+        } catch (_: Throwable) { /* ignore */ }
+
+        try {
+            val request = AdRequest.Builder().build()
+            adView?.loadAd(request)
+            binding.adContainer.visibility = View.VISIBLE
+        } catch (t: Throwable) {
+            binding.adContainer.visibility = View.GONE
+        }
+    }
+
     override fun onResume() {
         super.onResume()
-        // reload setiap kali fragment tampil
+        try { adView?.resume() } catch (_: Throwable) {}
         val saved = prefs.getString("savedUri", "") ?: ""
         if (saved.isNotEmpty()) {
             storyViewModel.loadStoriesFromUri(Uri.parse(saved))
         }
     }
 
+    override fun onPause() {
+        try { adView?.pause() } catch (_: Throwable) {}
+        super.onPause()
+    }
+
     override fun onDestroyView() {
-        super.onDestroyView()
+        try { adView?.destroy() } catch (_: Throwable) {}
+        adView = null
         _binding = null
+        super.onDestroyView()
     }
 }
