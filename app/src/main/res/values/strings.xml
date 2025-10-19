@@ -73,5 +73,16 @@ Nikmati kemudahan mengunduh video dari berbagai platform populer seperti TikTok,
     <string name="copy_failed">Gagal menyalin tautan</string>
     <string name="cannot_open_link">Tidak dapat membuka tautan</string>
 
+    <!-- ===================== QRIS Section ===================== -->
+    <string name="qris">QRIS</string>
+    <string name="qris_instructions">Scan QRIS di atas untuk berdonasi. Tekan tombol untuk menyimpan atau membagikan gambar.</string>
+    <string name="qris_not_found">Gambar QRIS tidak ditemukan. Pastikan file drawable/qris_image.png ada.</string>
+
+    <!-- ===================== Save / Share ===================== -->
+    <string name="save">Simpan</string>
+    <string name="share">Bagikan</string>
+    <string name="saved_to_gallery">Tersimpan di galeri</string>
+    <string name="save_failed">Gagal menyimpan gambar</string>
+    <string name="share_failed">Gagal membagikan gambar</string>
 
 </resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Mengizinkan share dari cache -->
+    <cache-path name="cache" path="." />
+    <!-- Jika ingin share file dari files/ gunakan <files-path> -->
+</paths>

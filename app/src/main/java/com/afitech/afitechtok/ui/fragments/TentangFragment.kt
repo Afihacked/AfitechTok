@@ -5,16 +5,22 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
 import android.text.Html
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import com.afitech.afitechtok.R
 import com.afitech.afitechtok.databinding.FragmentTentangBinding
@@ -25,7 +31,13 @@ import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
 import java.io.BufferedReader
+import java.io.File
+import java.io.FileOutputStream
 import java.io.InputStreamReader
+import java.io.OutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class TentangFragment : Fragment() {
 
@@ -143,13 +155,18 @@ class TentangFragment : Fragment() {
     }
 
     private fun showDonateOptions() {
-        val items = arrayOf(getString(R.string.open_in_browser), getString(R.string.copy_link))
+        val items = arrayOf(
+            getString(R.string.open_in_browser),
+            getString(R.string.copy_link),
+            getString(R.string.qris) // pastikan string qris ada
+        )
         AlertDialog.Builder(requireContext())
             .setTitle(getString(R.string.donate))
             .setItems(items) { _, which ->
                 when (which) {
                     0 -> openDonateLink()
                     1 -> copyDonateLink()
+                    2 -> showQrisDialog()
                 }
             }.show()
     }
@@ -238,6 +255,178 @@ class TentangFragment : Fragment() {
 
     private fun escapeHtml(s: String) =
         s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+    // ================= QRIS dialog + save & share =================
+
+    private fun showQrisDialog() {
+        val view = layoutInflater.inflate(R.layout.dialog_qris, null)
+        val ivQris = view.findViewById<ImageView>(R.id.iv_qris)
+
+        // Set gambar QRIS (pastikan R.drawable.qris_image ada)
+        try {
+            ivQris.setImageResource(R.drawable.qris_image)
+        } catch (t: Throwable) {
+            AlertDialog.Builder(requireContext())
+                .setMessage(getString(R.string.qris_not_found))
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+            return
+        }
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setTitle(getString(R.string.qris))
+            .setView(view)
+            .setPositiveButton(getString(R.string.save)) { _, _ ->
+                // Save
+                try {
+                    val bitmap = getBitmapFromImageView(ivQris)
+                    if (bitmap != null) {
+                        val saved = saveBitmapToGallery(bitmap, "qris_${timestampString()}.png")
+                        if (saved) {
+                            android.widget.Toast.makeText(requireContext(), getString(R.string.saved_to_gallery), android.widget.Toast.LENGTH_SHORT).show()
+                        } else {
+                            android.widget.Toast.makeText(requireContext(), getString(R.string.save_failed), android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        android.widget.Toast.makeText(requireContext(), getString(R.string.save_failed), android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    android.widget.Toast.makeText(requireContext(), getString(R.string.save_failed), android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton(getString(R.string.share)) { _, _ ->
+                // Share
+                try {
+                    val bitmap = getBitmapFromImageView(ivQris)
+                    if (bitmap != null) {
+                        shareBitmap(bitmap)
+                    } else {
+                        android.widget.Toast.makeText(requireContext(), getString(R.string.share_failed), android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    android.widget.Toast.makeText(requireContext(), getString(R.string.share_failed), android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNeutralButton(android.R.string.ok, null)
+            .create()
+
+        dialog.show()
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.9).toInt(),
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+    }
+
+    // Ambil Bitmap dari ImageView (jika drawable adalah BitmapDrawable)
+    private fun getBitmapFromImageView(iv: ImageView): Bitmap? {
+        val drawable = iv.drawable ?: return null
+        return if (drawable is BitmapDrawable) {
+            drawable.bitmap
+        } else {
+            try {
+                val bmp = Bitmap.createBitmap(
+                    drawable.intrinsicWidth.coerceAtLeast(1),
+                    drawable.intrinsicHeight.coerceAtLeast(1),
+                    Bitmap.Config.ARGB_8888
+                )
+                val canvas = android.graphics.Canvas(bmp)
+                drawable.setBounds(0, 0, canvas.width, canvas.height)
+                drawable.draw(canvas)
+                bmp
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
+        }
+    }
+
+    private fun timestampString(): String {
+        val fmt = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
+        return fmt.format(Date())
+    }
+
+    /**
+     * Save bitmap to gallery using MediaStore (recommended for API 29+).
+     * For older devices it writes to Environment.DIRECTORY_PICTURES and triggers media scan.
+     */
+    private fun saveBitmapToGallery(bitmap: Bitmap, displayName: String): Boolean {
+        return try {
+            val resolver = requireContext().contentResolver
+            val mimeType = "image/png"
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val contentValues = android.content.ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
+                    put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Afitech")
+                    put(MediaStore.MediaColumns.IS_PENDING, 1)
+                }
+                val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+                    ?: return false
+                resolver.openOutputStream(uri).use { out ->
+                    if (out == null) return false
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                }
+                contentValues.clear()
+                contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                resolver.update(uri, contentValues, null, null)
+            } else {
+                // API < 29
+                val picturesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+                val appDir = File(picturesDir, "Afitech")
+                if (!appDir.exists()) appDir.mkdirs()
+                val file = File(appDir, displayName)
+                var out: OutputStream? = null
+                out = FileOutputStream(file)
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                out.flush()
+                out.close()
+
+                // Trigger media scan
+                val uri = Uri.fromFile(file)
+                requireContext().sendBroadcast(Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri))
+            }
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    /**
+     * Share bitmap via FileProvider (write to cache then share).
+     * Requires FileProvider in manifest and provider_paths.xml.
+     */
+    private fun shareBitmap(bitmap: Bitmap) {
+        try {
+            // Tulis ke cache
+            val cachePath = File(requireContext().cacheDir, "images")
+            cachePath.mkdirs()
+            val fileName = "qris_share_${timestampString()}.png"
+            val file = File(cachePath, fileName)
+            val fos = FileOutputStream(file)
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)
+            fos.flush()
+            fos.close()
+
+            // Ambil uri via FileProvider
+            val authority = requireContext().packageName + ".fileprovider"
+            val contentUri = FileProvider.getUriForFile(requireContext(), authority, file)
+
+            val shareIntent = Intent(Intent.ACTION_SEND)
+            shareIntent.type = "image/png"
+            shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri)
+            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            startActivity(Intent.createChooser(shareIntent, getString(R.string.share)))
+        } catch (e: Exception) {
+            e.printStackTrace()
+            android.widget.Toast.makeText(requireContext(), getString(R.string.share_failed), android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // ================================================================
 
     private fun getAdaptiveAdSize(): AdSize {
         val displayMetrics = resources.displayMetrics
