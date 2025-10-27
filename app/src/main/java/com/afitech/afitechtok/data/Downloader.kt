@@ -18,7 +18,7 @@ import java.net.URL
 
 object Downloader {
 
-    // Mengunduh dari URL dan simpan ke MediaStore, source bisa tiktok/instagram/youtube/whatsapp
+    // Mengunduh dari URL dan simpan ke MediaStore, source bisa tiktok/whatsapp/dll
     suspend fun downloadFile(
         context: Context,
         fileUrl: String,
@@ -104,9 +104,8 @@ object Downloader {
         onProgressUpdate: (progress: Int, downloadedBytes: Long, totalBytes: Long) -> Unit = { _, _, _ -> },
         source: String = "tiktok"
     ): Uri? = withContext(Dispatchers.IO) {
+        // Hanya whatsapp khusus, sisanya pakai default (mis. tiktok/dll)
         val mediaStoreResult = when (source.lowercase()) {
-            "youtube" -> getMediaStoreOutputStreamForYouTube(context, fileName, mimeType)
-            "instagram" -> getMediaStoreOutputStreamForInstagram(context, fileName, mimeType)
             "whatsapp" -> getMediaStoreOutputStreamForWhatsapp(context, fileName, mimeType)
             else -> getMediaStoreOutputStream(context, fileName, mimeType)
         }
@@ -182,86 +181,6 @@ object Downloader {
         null
     }
 
-    private fun getMediaStoreOutputStreamForYouTube(
-        context: Context,
-        fileName: String,
-        mimeType: String
-    ): Pair<Uri, OutputStream>? = try {
-        val relativePath = if (mimeType.startsWith("video")) {
-            Environment.DIRECTORY_MOVIES + "/Afitech-Youtube"
-        } else {
-            Environment.DIRECTORY_MUSIC + "/Afitech-Youtube"
-        }
-
-        val mediaUri = if (mimeType.startsWith("video")) {
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-        } else {
-            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
-        }
-
-        val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
-            put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-            put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath)
-            put(MediaStore.MediaColumns.IS_PENDING, 1)
-        }
-
-        val uri = context.contentResolver.insert(mediaUri, contentValues)
-        val outputStream = uri?.let { context.contentResolver.openOutputStream(it) }
-
-        if (uri != null && outputStream != null) {
-            contentValues.clear()
-            contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
-            context.contentResolver.update(uri, contentValues, null, null)
-            Pair(uri, outputStream)
-        } else {
-            null
-        }
-    } catch (e: Exception) {
-        Log.e("Downloader", "Gagal MediaStore YouTube: ${e.message}", e)
-        null
-    }
-
-    private fun getMediaStoreOutputStreamForInstagram(
-        context: Context,
-        fileName: String,
-        mimeType: String
-    ): Pair<Uri, OutputStream>? = try {
-        val relativePath = when {
-            mimeType.startsWith("video") -> Environment.DIRECTORY_MOVIES + "/Afitech-Instagram"
-            mimeType.startsWith("image") -> Environment.DIRECTORY_PICTURES + "/Afitech-Instagram"
-            else -> Environment.DIRECTORY_DOWNLOADS + "/InstagramDownloads"
-        }
-
-        val mediaUri = when {
-            mimeType.startsWith("video") -> MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-            mimeType.startsWith("image") -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-            else -> MediaStore.Files.getContentUri("external")
-        }
-
-        val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
-            put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-            put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath)
-            put(MediaStore.MediaColumns.IS_PENDING, 1)
-        }
-
-        val uri = context.contentResolver.insert(mediaUri, contentValues)
-        val outputStream = uri?.let { context.contentResolver.openOutputStream(it) }
-
-        if (uri != null && outputStream != null) {
-            contentValues.clear()
-            contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
-            context.contentResolver.update(uri, contentValues, null, null)
-            Pair(uri, outputStream)
-        } else {
-            null
-        }
-    } catch (e: Exception) {
-        Log.e("Downloader", "Gagal MediaStore Instagram: ${e.message}", e)
-        null
-    }
-
     private fun getMediaStoreOutputStream(
         context: Context,
         fileName: String,
@@ -312,17 +231,8 @@ object Downloader {
     ): String {
         val baseName = fileName.substringBeforeLast(".")
         val extension = fileName.substringAfterLast(".", "")
+        // Hanya tangani whatsapp dan default (tiktok/dll). Instagram & YouTube telah dihapus.
         val relativeFolder = when (source.lowercase()) {
-            "instagram" -> when {
-                mimeType.startsWith("video") -> Environment.DIRECTORY_MOVIES + "/Afitech-Instagram"
-                mimeType.startsWith("image") -> Environment.DIRECTORY_PICTURES + "/Afitech-Instagram"
-                else -> Environment.DIRECTORY_DOWNLOADS + "/InstagramDownloads"
-            }
-            "youtube" -> if (mimeType.startsWith("video")) {
-                Environment.DIRECTORY_MOVIES + "/Afitech-Youtube"
-            } else {
-                Environment.DIRECTORY_MUSIC + "/Afitech-Youtube"
-            }
             "whatsapp" -> when {
                 mimeType.startsWith("video") -> Environment.DIRECTORY_MOVIES + "/Afitech-Whatsapp"
                 mimeType.startsWith("image") -> Environment.DIRECTORY_PICTURES + "/Afitech-Whatsapp"
