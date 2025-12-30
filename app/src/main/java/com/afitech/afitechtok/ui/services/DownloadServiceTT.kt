@@ -1,21 +1,30 @@
 package com.afitech.afitechtok.ui.services
 
 import android.app.*
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.media.MediaMetadataRetriever
+import android.net.Uri
 import android.os.Build
 import android.os.IBinder
+import android.provider.MediaStore
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.afitech.afitechtok.R
-import com.afitech.afitechtok.data.Downloader
 import com.afitech.afitechtok.data.database.AppDatabase
+import com.afitech.afitechtok.data.model.DownloadHistory
 import com.afitech.afitechtok.network.TikTokDownloader
 import com.afitech.afitechtok.ui.MainActivity
 import com.afitech.afitechtok.ui.helpers.AnalyticsLogger
 import com.google.firebase.analytics.FirebaseAnalytics
 import kotlinx.coroutines.*
+import java.io.File
+import java.io.InputStream
+import java.io.OutputStream
+import java.net.HttpURLConnection
+import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -95,59 +104,117 @@ class DownloadServiceTT : Service() {
 
                 updateProgressNotification(notifTitle, 0, "Menghubungkan ke server TikTok…")
 
-                val downloadUrl = TikTokDownloader.getDownloadUrl(videoUrl, format)
-                if (downloadUrl.isNullOrEmpty()) {
-                    Log.e("DownloadServiceTT", "URL unduhan kosong")
-                    AnalyticsLogger.logDownloadFailed(analytics, "tiktok", format, "URL unduhan kosong")
+                // --- gunakan TikTokDownloader.getDownloadInfo agar ext & mime sesuai konten asli ---
+                val info = TikTokDownloader.getDownloadInfo(videoUrl, format)
+                if (info == null) {
+                    Log.e("DownloadServiceTT", "getDownloadInfo mengembalikan null")
+                    AnalyticsLogger.logDownloadFailed(analytics, "tiktok", format, "getDownloadInfo null")
                     broadcastResult(false)
                     return@launch
                 }
 
-                val mimeType = when (format) {
-                    "Videos" -> "video/mp4"
-                    "Music" -> "audio/mp3"
-                    "JPG", "Gambar" -> "image/jpeg"
-                    else -> "application/octet-stream"
-                }
+                Log.d("DownloadServiceTT", "DownloadInfo: url=${info.url}, ext=${info.ext}, mime=${info.mime}")
 
-                val fileName = generateFileName(videoUrl, format)
+                // generate file name with correct extension
+                val fileName = generateFileName(videoUrl, format, info.ext)
                 val dao = AppDatabase.getDatabase(applicationContext).downloadHistoryDao()
 
-                val downloadedFile = Downloader.downloadFile(
-                    context = applicationContext,
-                    fileUrl = downloadUrl,
-                    fileName = fileName,
-                    mimeType = mimeType,
-                    onProgressUpdate = { progress: Int, downloadedBytes: Long, totalBytes: Long ->
-                        val percent = progress.coerceIn(0, 100)
-                        val downloaded = formatBytes(downloadedBytes)
-                        val total = formatBytes(totalBytes)
-                        val contentText = if (percent >= 100) {
-                            "Unduhan selesai"
-                        } else {
-                            "Mengunduh… $percent% ($downloaded / $total)"
-                        }
+                updateProgressNotification(notifTitle, 0, "Mengunduh file…")
+                // unduh ke file sementara di cache (pastikan ext berawalan titik)
+                val tmpExt = if (info.ext.startsWith(".")) info.ext else ".${info.ext}"
+                val tmpFile = File.createTempFile("afitech_tmp_", tmpExt, cacheDir).apply { deleteOnExit() }
 
-                        lbm.sendBroadcast(
-                            Intent(ACTION_PROGRESS).apply {
-                                putExtra(EXTRA_PROGRESS, percent)
-                            }
-                        )
+                val downloadOk = downloadToFile(info.url, tmpFile) { percent, downloadedBytes, totalBytes ->
+                    val pct = percent.coerceIn(0, 100)
+                    val downloaded = formatBytes(downloadedBytes)
+                    val total = if (totalBytes > 0) formatBytes(totalBytes) else "?"
+                    val contentText = if (pct >= 100) "Unduhan selesai" else "Mengunduh… $pct% ($downloaded / $total)"
 
-                        updateProgressNotification(notifTitle, percent, contentText)
-                    },
-                    downloadHistoryDao = dao,
-                    source = "tiktok"
-                )
+                    lbm.sendBroadcast(Intent(ACTION_PROGRESS).apply { putExtra(EXTRA_PROGRESS, pct) })
+                    updateProgressNotification(notifTitle, pct, contentText)
+                }
 
-                if (downloadedFile != null && downloadedFile.exists()) {
+                if (!downloadOk || !tmpFile.exists()) {
+                    Log.e("DownloadServiceTT", "Download gagal atau file tidak ada")
+                    AnalyticsLogger.logDownloadFailed(analytics, "tiktok", format, "Download failed or tmp file missing")
+                    broadcastResult(false)
+                    return@launch
+                }
+
+                // Jika video -> remux faststart untuk memastikan moov atom di awal
+                var fileToSave = tmpFile
+                var remuxedFlag = false
+                if (info.mime.startsWith("video/") || info.ext.equals(".mp4", ignoreCase = true)) {
+                    val finalTemp = File.createTempFile("afitech_final_", ".mp4", cacheDir)
+                    val remuxed = TikTokDownloader.remuxToFastStart(tmpFile, finalTemp)
+                    if (remuxed && finalTemp.exists()) {
+                        fileToSave = finalTemp
+                        remuxedFlag = true
+                        // hapus tmpFile setelah remux sukses
+                        try { tmpFile.delete() } catch (_: Exception) {}
+                    } else {
+                        Log.w("DownloadServiceTT", "Remux gagal atau tidak menghasilkan file; akan simpan file asli")
+                        // keep tmpFile as fileToSave
+                        try { finalTemp.delete() } catch (_: Exception) {}
+                    }
+                }
+
+                // simpan ke MediaStore sesuai tipe
+                val savedUri = saveFileToMediaStore(applicationContext, fileToSave, fileName, info.mime)
+                if (savedUri != null) {
+                    // hitung metadata: size & duration (jika ada)
+                    val fileSize = try { fileToSave.length() } catch (_: Exception) { -1L }
+                    val durationMs = try {
+                        val mmr = MediaMetadataRetriever()
+                        mmr.setDataSource(fileToSave.absolutePath)
+                        val dur = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()
+                        mmr.release()
+                        dur
+                    } catch (e: Exception) {
+                        Log.w("DownloadServiceTT", "Gagal ambil durasi: ${e.message}")
+                        null
+                    }
+
                     AnalyticsLogger.logDownloadCompleted(analytics, "tiktok", format)
+
+                    // simpan history (sesuai model baru)
+                    try {
+                        val history = DownloadHistory(
+                            id = 0L,
+                            fileName = fileName,
+                            savedUri = savedUri.toString(),
+                            originalUrl = info.url,
+                            mimeType = info.mime,
+                            ext = info.ext,
+                            fileType = when {
+                                info.mime.startsWith("video") -> "Video"
+                                info.mime.startsWith("audio") -> "Audio"
+                                info.mime.startsWith("image") -> "Image"
+                                else -> "Other"
+                            },
+                            fileSize = if (fileSize > 0) fileSize else null,
+                            durationMs = durationMs,
+                            isRemuxed = remuxedFlag,
+                            downloadDate = System.currentTimeMillis(),
+                            source = "tiktok"
+                        )
+                        // DAO insert adalah suspend, kita berada di coroutine
+                        dao.insertDownload(history)
+                    } catch (e: Exception) {
+                        Log.w("DownloadServiceTT", "Gagal simpan history: ${e.message}")
+                    }
+
                     broadcastResult(true)
                 } else {
-                    Log.e("DownloadServiceTT", "File tidak ditemukan atau null")
-                    AnalyticsLogger.logDownloadFailed(analytics, "tiktok", format, "Download gagal: file null")
+                    Log.e("DownloadServiceTT", "Gagal menyimpan ke MediaStore")
+                    AnalyticsLogger.logDownloadFailed(analytics, "tiktok", format, "Save to MediaStore failed")
+                    // cleanup temp if any
+                    try { fileToSave.delete() } catch (_: Exception) {}
                     broadcastResult(false)
                 }
+
+                // cleanup potential temp files (tmpFile already deleted if remux succeeded)
+                try { if (tmpFile.exists()) tmpFile.delete() } catch (_: Exception) {}
             } catch (e: Exception) {
                 Log.e("DownloadServiceTT", "Gagal mengunduh: ${e.message}", e)
                 AnalyticsLogger.logDownloadFailed(analytics, "tiktok", format, e.message ?: "Unknown error")
@@ -156,6 +223,104 @@ class DownloadServiceTT : Service() {
         }
 
         return START_STICKY
+    }
+
+    private suspend fun downloadToFile(urlStr: String, outFile: File, onProgress: (percent: Int, downloaded: Long, total: Long) -> Unit): Boolean {
+        return withContext(Dispatchers.IO) {
+            var conn: HttpURLConnection? = null
+            var input: InputStream? = null
+            var output: OutputStream? = null
+            try {
+                val url = URL(urlStr)
+                conn = (url.openConnection() as HttpURLConnection).apply {
+                    requestMethod = "GET"
+                    connectTimeout = 20000
+                    readTimeout = 30000
+                    instanceFollowRedirects = true
+                    doInput = true
+                    connect()
+                }
+                val total = conn.contentLengthLong.takeIf { it > 0 } ?: -1L
+                input = conn.inputStream
+                output = outFile.outputStream()
+
+                val buffer = ByteArray(8192)
+                var bytesRead: Int
+                var downloaded: Long = 0
+                var lastPercent = -1
+                while (input.read(buffer).also { bytesRead = it } != -1) {
+                    output.write(buffer, 0, bytesRead)
+                    downloaded += bytesRead
+                    if (total > 0) {
+                        val percent = ((downloaded * 100) / total).toInt()
+                        if (percent != lastPercent) {
+                            lastPercent = percent
+                            onProgress(percent, downloaded, total)
+                        }
+                    } else {
+                        // unknown total -> report -1 or approximate via bytes
+                        onProgress(0, downloaded, -1)
+                    }
+                }
+                output.flush()
+                onProgress(100, downloaded, total)
+                true
+            } catch (e: Exception) {
+                Log.e("DownloadServiceTT", "downloadToFile error: ${e.message}", e)
+                false
+            } finally {
+                try { input?.close() } catch (_: Exception) {}
+                try { output?.close() } catch (_: Exception) {}
+                conn?.disconnect()
+            }
+        }
+    }
+
+    private fun saveFileToMediaStore(context: Context, srcFile: File, displayName: String, mime: String): Uri? {
+        return try {
+            val values = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
+                put(MediaStore.MediaColumns.MIME_TYPE, mime)
+                when {
+                    mime.startsWith("video/") -> put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/AfitechTok")
+                    mime.startsWith("audio/") -> put(MediaStore.Audio.Media.RELATIVE_PATH, "Music/AfitechTok")
+                    mime.startsWith("image/") -> put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/AfitechTok")
+                    else -> put(MediaStore.MediaColumns.RELATIVE_PATH, "Download/AfitechTok")
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) put(MediaStore.MediaColumns.IS_PENDING, 1)
+            }
+
+            val collection = when {
+                mime.startsWith("video/") -> MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                mime.startsWith("audio/") -> MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                mime.startsWith("image/") -> MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                else -> MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+            }
+
+            val resolver = context.contentResolver
+            val uri = resolver.insert(collection, values) ?: return null
+
+            // tulis file
+            resolver.openOutputStream(uri)?.use { out ->
+                srcFile.inputStream().use { input ->
+                    input.copyTo(out)
+                }
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                values.clear()
+                values.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                resolver.update(uri, values, null, null)
+            }
+
+            uri
+        } catch (e: Exception) {
+            Log.e("DownloadServiceTT", "saveFileToMediaStore error: ${e.message}", e)
+            null
+        } finally {
+            // attempt delete srcFile (temp)
+            try { srcFile.delete() } catch (_: Exception) {}
+        }
     }
 
     private fun ensureForegroundStarted(title: String) {
@@ -182,27 +347,46 @@ class DownloadServiceTT : Service() {
             var successCount = 0
 
             for ((index, imageUrl) in images.withIndex()) {
-                val fileName = "IMG_${timeStamp}$index.jpg"
+                val fileName = "IMG_${timeStamp}_$index.jpg"
 
                 try {
-                    Downloader.downloadFile(
-                        context = applicationContext,
-                        fileUrl = imageUrl,
-                        fileName = fileName,
-                        mimeType = "image/jpeg",
-                        onProgressUpdate = { progress, _, _ ->
-                            val overallProgress = ((index * 100) + progress) / images.size
-                            lbm.sendBroadcast(
-                                Intent(ACTION_PROGRESS).apply {
-                                    putExtra(EXTRA_PROGRESS, overallProgress)
-                                }
-                            )
-                            updateProgressNotification(notifTitle, overallProgress)
-                        },
-                        downloadHistoryDao = dao,
-                        source = "tiktok"
-                    )
-                    successCount++
+                    updateProgressNotification(notifTitle, 0, "Mengunduh gambar ${index + 1}/${images.size}…")
+
+                    val tmp = File.createTempFile("afitech_img_${index}_", ".jpg", cacheDir)
+                    val ok = downloadToFile(imageUrl, tmp) { progress, _, _ ->
+                        val overallProgress = ((index.toFloat() / images.size) * 100 + (progress.toFloat() / images.size)).toInt()
+                        lbm.sendBroadcast(Intent(ACTION_PROGRESS).apply { putExtra(EXTRA_PROGRESS, overallProgress) })
+                        updateProgressNotification(notifTitle, overallProgress)
+                    }
+                    if (ok) {
+                        val savedUri = saveFileToMediaStore(applicationContext, tmp, fileName, "image/jpeg")
+                        if (savedUri != null) {
+                            successCount++
+
+                            try {
+                                val history = DownloadHistory(
+                                    id = 0L,
+                                    fileName = fileName,
+                                    savedUri = savedUri.toString(),
+                                    originalUrl = imageUrl,
+                                    mimeType = "image/jpeg",
+                                    ext = ".jpg",
+                                    fileType = "Image",
+                                    fileSize = try { tmp.length() } catch (_: Exception) { null },
+                                    durationMs = null,
+                                    isRemuxed = false,
+                                    downloadDate = System.currentTimeMillis(),
+                                    source = "tiktok"
+                                )
+                                dao.insertDownload(history)
+                            } catch (e: Exception) {
+                                Log.w("DownloadServiceTT", "Gagal simpan history slide image: ${e.message}")
+                            }
+                        }
+                    }
+                    else {
+                        Log.e("DownloadServiceTT", "Gagal unduh gambar index $index")
+                    }
                 } catch (e: Exception) {
                     Log.e("DownloadServiceTT", "Gagal unduh gambar ke-$index: ${e.message}", e)
                     AnalyticsLogger.logDownloadFailed(
@@ -237,16 +421,11 @@ class DownloadServiceTT : Service() {
         stopSelf()
     }
 
-    private fun generateFileName(url: String, format: String): String {
+    private fun generateFileName(url: String, format: String, extWithDot: String): String {
         val username = extractUsernameFromUrl(url) ?: "unknown"
         val timeStamp = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(Date())
-        val extension = when (format) {
-            "Videos" -> "mp4"
-            "Music" -> "mp3"
-            "JPG", "Gambar" -> "jpg"
-            else -> "dat"
-        }
-        return "$username $timeStamp.$extension"
+        val ext = if (extWithDot.startsWith(".")) extWithDot.substring(1) else extWithDot
+        return "$username $timeStamp.$ext"
     }
 
     private fun extractUsernameFromUrl(url: String): String? {
@@ -275,8 +454,9 @@ class DownloadServiceTT : Service() {
             val url = java.net.URL(shortUrl)
             val connection = url.openConnection() as java.net.HttpURLConnection
             connection.instanceFollowRedirects = false
+            connection.requestMethod = "GET"
             connection.connect()
-            val resolvedUrl = connection.getHeaderField("Location")
+            val resolvedUrl = connection.getHeaderField("Location") ?: shortUrl
             connection.disconnect()
             resolvedUrl
         } catch (e: Exception) {

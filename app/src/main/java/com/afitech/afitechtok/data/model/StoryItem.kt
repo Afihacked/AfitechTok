@@ -4,5 +4,6 @@ import android.net.Uri
 
 data class StoryItem(
     val uri: Uri,
-    val type: String // "image" atau "video"
+    val type: String,          // "image" atau "video"
+    val lastModified: Long     // 🔥 untuk urut terbaru
 )

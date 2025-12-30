@@ -56,6 +56,9 @@ class WhatsappStoryFragment : Fragment() {
     private var originalTutorialText: CharSequence? = null
     private var originalGrantText: CharSequence? = null
 
+    private var isStoryUIShown = false
+
+    private var pagerAdapter: StoryPagerAdapter? = null
     /**
      * ActivityResult untuk ACTION_OPEN_DOCUMENT_TREE (SAF).
      * Setelah user pilih folder, kita ambil URI persistable permission lalu:
@@ -195,14 +198,21 @@ class WhatsappStoryFragment : Fragment() {
 
     /** Tampilkan UI stories (ViewPager) */
     private fun showStoryUI() {
+        if (isStoryUIShown) return
+
+        isStoryUIShown = true
+
         restoreOriginalTutorial()
         binding.tutorialBlock.visibility = View.GONE
         binding.viewPager.visibility = View.VISIBLE
         binding.tabLayout.visibility = View.VISIBLE
 
-        val pagerAdapter = StoryPagerAdapter(this)
-        binding.viewPager.adapter = pagerAdapter
-        setupViewPagerWithTabs()
+        if (pagerAdapter == null) {
+            pagerAdapter = StoryPagerAdapter(this)
+            binding.viewPager.adapter = pagerAdapter
+            binding.viewPager.offscreenPageLimit = 2
+            setupViewPagerWithTabs()
+        }
     }
 
     /**
@@ -431,53 +441,57 @@ class WhatsappStoryFragment : Fragment() {
 
     /** Overlay loading */
     private fun showLoading(message: String = "Memeriksa folder...") {
-        try {
-            binding.loadingOverlay.visibility = View.VISIBLE
-            binding.loadingText.text = message
-            binding.contentContainer.visibility = View.INVISIBLE
-        } catch (_: Throwable) {}
+        binding.loadingOverlay.visibility = View.VISIBLE
+        binding.loadingText.text = message
     }
 
     private fun hideLoading() {
-        try {
-            binding.loadingOverlay.visibility = View.GONE
-            binding.contentContainer.visibility = View.VISIBLE
-        } catch (_: Throwable) {}
+        binding.loadingOverlay.visibility = View.GONE
     }
+
 
     override fun onResume() {
         super.onResume()
 
         val uriSaved = getSavedUri()
-        if (hasStoragePermission() && uriSaved.isNotEmpty()) {
-            // hanya periksa savedUri — tampilkan empty-state hanya bila savedUri menunjuk .Statuses tapi kosong
-            showLoading()
-            binding.viewPager.postDelayed({
-                try {
-                    val uri = Uri.parse(uriSaved)
-                    val doc = DocumentFile.fromTreeUri(requireContext(), uri)
-                    if (doc != null && isStatusesFolderDoc(doc)) {
-                        if (hasMediaFiles(doc)) {
-                            hideLoading()
-                            showStoryUI()
-                        } else {
-                            hideLoading()
-                            showEmptyStateUI() // hanya tampil kalau .Statuses tapi kosong
-                        }
+
+        if (!hasStoragePermission() || uriSaved.isEmpty()) {
+            showTutorial()
+            return
+        }
+
+        // ❗ HANYA tampilkan overlay loading
+        showLoading()
+
+        binding.viewPager.postDelayed({
+            try {
+                val uri = Uri.parse(uriSaved)
+                val doc = DocumentFile.fromTreeUri(requireContext(), uri)
+
+                if (doc != null && isStatusesFolderDoc(doc)) {
+
+                    if (hasMediaFiles(doc)) {
+                        // ✅ story ada → cukup hilangkan overlay
+                        hideLoading()
                     } else {
                         hideLoading()
-                        showTutorial() // savedUri bukan .Statuses -> user harus lanjut memilih
+                        showEmptyStateUI()
                     }
-                } catch (e: Exception) {
+
+                } else {
                     hideLoading()
-                    e.printStackTrace()
                     showTutorial()
                 }
-            }, 350)
-        } else {
-            showTutorial()
-        }
+
+            } catch (e: Exception) {
+                hideLoading()
+                e.printStackTrace()
+                showTutorial()
+            }
+        }, 250)
     }
+
+
 
     override fun onDestroyView() {
         super.onDestroyView()

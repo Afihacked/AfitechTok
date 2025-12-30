@@ -7,20 +7,32 @@
     android:background="@color/white"
     android:padding="8dp">
 
-    <!-- RecyclerView utama -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerView"
+    <!-- ========================= -->
+    <!-- PULL TO REFRESH WRAPPER -->
+    <!-- ========================= -->
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefresh"
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@id/adContainer"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:clipToPadding="false"
-        android:paddingBottom="8dp"
-        android:scrollbars="vertical" />
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <!-- Container iklan -->
+        <!-- RecyclerView utama -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="8dp"
+            android:scrollbars="vertical" />
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <!-- ========================= -->
+    <!-- CONTAINER IKLAN -->
+    <!-- ========================= -->
     <LinearLayout
         android:id="@+id/adContainer"
         android:layout_width="match_parent"
@@ -33,9 +45,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- AdMob Banner utama
-             - adUnitId didefinisikan di XML (sesuaikan dengan milikmu)
-             - di kode fragment kita akan meng-set adaptive size programmatically -->
         <com.google.android.gms.ads.AdView
             android:id="@+id/adView"
             android:layout_width="match_parent"

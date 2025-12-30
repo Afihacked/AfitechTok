@@ -16,8 +16,9 @@ interface DownloadHistoryDao {
     @Delete
     suspend fun deleteDownload(history: DownloadHistory)
 
+    // sesuaikan id menjadi Long
     @Query("DELETE FROM download_history WHERE id IN (:ids)")
-    suspend fun deleteMultipleById(ids: List<Int>)
+    suspend fun deleteMultipleById(ids: List<Long>)
 
     @Query("SELECT * FROM download_history ORDER BY downloadDate DESC")
     fun getAllDownloads(): Flow<List<DownloadHistory>>
@@ -25,6 +26,15 @@ interface DownloadHistoryDao {
     @Query("SELECT * FROM download_history WHERE fileType = :type ORDER BY downloadDate DESC")
     fun getDownloadsByType(type: String): Flow<List<DownloadHistory>>
 
-    @Query("DELETE FROM download_history WHERE filePath = :filePath")
-    suspend fun deleteByPath(filePath: String)
+    // sekarang kita menyimpan URI hasil MediaStore di kolom `savedUri`
+    @Query("DELETE FROM download_history WHERE savedUri = :savedUri")
+    suspend fun deleteBySavedUri(savedUri: String)
+
+    @Query("""
+    SELECT originalUrl 
+    FROM download_history 
+    WHERE source = :source
+""")
+    suspend fun getAllDownloadedOriginalUrls(source: String): List<String>
+
 }

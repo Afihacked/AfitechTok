@@ -19,43 +19,41 @@ object StorySaver {
         sourceUri: Uri,
         originalFileName: String,
         mimeType: String,
-        source: String = "whatsapp", // ✅ Tambahkan parameter source
+        originalUrl: String? = null,
+        source: String = "whatsapp",
         onProgressUpdate: (Int) -> Unit = {}
     ) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val inputStream = context.contentResolver.openInputStream(sourceUri)
-                    ?: throw Exception("Gagal membuka input stream dari Uri")
+                    ?: throw Exception("Gagal membuka input stream")
 
-                val timeStamp = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(Date())
+                val timeStamp = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+                    .format(Date())
 
-                val baseNameWithoutExt = originalFileName.substringBeforeLast(".")
-
-                val sanitizedBaseName = baseNameWithoutExt
+                val baseName = originalFileName.substringBeforeLast(".")
                     .replace(Regex("[^a-zA-Z0-9\\-_ ]"), "_")
                     .replace(Regex("_+"), "_")
                     .trim('_')
                     .take(100)
 
-                val extFromFileName = originalFileName.substringAfterLast(".", "")
-                val extension = if (extFromFileName.isNotEmpty()) {
-                    extFromFileName
-                } else {
-                    when {
-                        mimeType.startsWith("video") -> "mp4"
-                        mimeType.startsWith("image") -> "jpg"
-                        mimeType.startsWith("audio") -> "mp3"
-                        else -> "dat"
+                val ext = originalFileName.substringAfterLast(".", "")
+                    .ifEmpty {
+                        when {
+                            mimeType.startsWith("video") -> "mp4"
+                            mimeType.startsWith("image") -> "jpg"
+                            mimeType.startsWith("audio") -> "mp3"
+                            else -> "dat"
+                        }
                     }
-                }
 
-                val fileNameWithDate = "$sanitizedBaseName$timeStamp.$extension".lowercase()
+                val finalFileName = "${baseName}_$timeStamp.$ext".lowercase()
 
                 val uniqueFileName = Downloader.generateUniqueFileName(
                     context = context,
-                    fileName = fileNameWithDate,
+                    fileName = finalFileName,
                     mimeType = mimeType,
-                    source = source // ✅ Sesuaikan juga di sini
+                    source = source
                 )
 
                 val savedUri = Downloader.saveToMediaStoreFromStream(
@@ -63,9 +61,11 @@ object StorySaver {
                     inputStream = inputStream,
                     fileName = uniqueFileName,
                     mimeType = mimeType,
-                    fileSize = -1,
-                    onProgressUpdate = { progress, _, _ -> onProgressUpdate(progress) },
-                    source = source // ✅ Juga di sini
+                    fileSize = null,
+                    onProgressUpdate = { progress, _, _ ->
+                        onProgressUpdate(progress)
+                    },
+                    source = source
                 )
 
                 inputStream.close()
@@ -78,14 +78,21 @@ object StorySaver {
                         else -> "Other"
                     }
 
-                    val downloadHistory = DownloadHistory(
+                    val history = DownloadHistory(
                         fileName = uniqueFileName,
-                        filePath = savedUri.toString(),
+                        savedUri = savedUri.toString(),
+                        originalUrl = originalUrl,
+                        mimeType = mimeType,
+                        ext = ".$ext",
                         fileType = fileType,
+                        fileSize = null,
+                        durationMs = null,
+                        isRemuxed = false,
                         downloadDate = System.currentTimeMillis(),
-                        source = source // ✅ Tambahkan ini
+                        source = source
                     )
-                    downloadHistoryDao.insertDownload(downloadHistory)
+
+                    downloadHistoryDao.insertDownload(history)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()

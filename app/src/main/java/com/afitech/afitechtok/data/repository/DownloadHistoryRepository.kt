@@ -6,15 +6,18 @@ import kotlinx.coroutines.flow.Flow
 
 class DownloadHistoryRepository(private val dao: DownloadHistoryDao) {
 
-    fun getAllDownloads(): Flow<List<DownloadHistory>> = dao.getAllDownloads()
+    fun getAllDownloads(): Flow<List<DownloadHistory>> =
+        dao.getAllDownloads()
 
-    fun getDownloadsByType(type: String): Flow<List<DownloadHistory>> = dao.getDownloadsByType(type)
+    fun getDownloadsByType(type: String): Flow<List<DownloadHistory>> =
+        dao.getDownloadsByType(type)
 
     suspend fun deleteDownload(item: DownloadHistory) {
         dao.deleteDownload(item)
     }
 
-    suspend fun deleteMultipleById(ids: List<Int>) {
+    // ✅ FIX: List<Long>, BUKAN List<Int>
+    suspend fun deleteMultipleById(ids: List<Long>) {
         dao.deleteMultipleById(ids)
     }
 }

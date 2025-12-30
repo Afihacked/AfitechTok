@@ -4,8 +4,6 @@ import android.app.Dialog
 import android.content.Context
 import android.graphics.Color
 import android.graphics.Matrix
-import android.graphics.SurfaceTexture
-import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
@@ -20,19 +18,21 @@ import com.afitech.afitechtok.data.model.StoryItem
 import com.bumptech.glide.Glide
 import kotlinx.coroutines.*
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
-import androidx.media3.common.Player
 
 class StoryAdapter(
     private var stories: List<StoryItem>,
     private val context: Context
 ) : RecyclerView.Adapter<StoryAdapter.StoryViewHolder>() {
 
-    private var currentPlayer: MediaPlayer? = null
-    private var currentSurface: android.view.Surface? = null
-    private var currentTexture: TextureView? = null
-    private var currentPlayIcon: ImageView? = null
+    /**
+     * 🔥 CACHE SEMENTARA
+     * Hidup = selama adapter hidup
+     * Adapter hancur → cache otomatis hilang
+     */
+    private val downloadedSet = mutableSetOf<String>()
 
     fun updateList(newStories: List<StoryItem>) {
         stories = newStories
@@ -40,123 +40,143 @@ class StoryAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StoryViewHolder {
-        val view = LayoutInflater.from(context).inflate(R.layout.item_story, parent, false)
+        val view = LayoutInflater.from(context)
+            .inflate(R.layout.item_story, parent, false)
         return StoryViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: StoryViewHolder, position: Int) {
         val story = stories[position]
         val uri = story.uri
+        val key = uri.toString()
 
         Glide.with(context).load(uri).into(holder.mediaView)
-        holder.videoTexture.visibility = View.GONE
+        holder.playIcon.visibility =
+            if (story.type == "video") View.VISIBLE else View.GONE
 
-        holder.playIcon.visibility = if (story.type == "video") View.VISIBLE else View.GONE
+        // ===== ICON STATE (SESSION ONLY) =====
+        holder.downloadIcon.setImageResource(
+            if (downloadedSet.contains(key))
+                R.drawable.ic_checked
+            else
+                R.drawable.ic_download2
+        )
 
-        // Hanya aktifkan klik jika story adalah video
-        if (story.type == "video") {
-            holder.playIcon.setOnClickListener {
-                handleVideoClick(holder, uri)
-            }
-
-            // Toggle Play/Pause saat TextureView diklik
-            holder.videoTexture.setOnClickListener {
-                togglePlayPause(holder.playIcon)
-            }
-        }
-
-        holder.downloadButton.setOnClickListener {
-            saveStoryToGalleryAsync(uri)
-        }
-
-        // NOTE: jika Anda ingin playIcon membuka fullscreen instead of inline,
-        // ubah/komentar salah satu dari dua listener ini. Saat ini playIcon membuka fullscreen.
+        // ===== FULLSCREEN =====
         holder.playIcon.setOnClickListener {
             showFullscreenPlayer(uri)
         }
 
         holder.mediaView.setOnClickListener {
             if (story.type == "image") {
-                showFullscreenImage(story.uri)
+                showFullscreenImage(uri)
+            }
+        }
+
+        // ===== DOWNLOAD =====
+        holder.downloadButton.setOnClickListener {
+
+            if (downloadedSet.contains(key)) {
+                Toast.makeText(
+                    context,
+                    "Story sudah diunduh",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@setOnClickListener
+            }
+
+            saveStoryToGalleryAsync(uri) {
+                downloadedSet.add(key)
+                notifyItemChanged(holder.bindingAdapterPosition)
             }
         }
     }
 
     override fun getItemCount(): Int = stories.size
 
-    private fun handleVideoClick(holder: StoryViewHolder, uri: Uri) {
-        releaseCurrentPlayer()
+    // =======================
+    // DOWNLOAD
+    // =======================
+    private fun saveStoryToGalleryAsync(
+        uri: Uri,
+        onSuccess: () -> Unit
+    ) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val resolver = context.contentResolver
+                val mimeType = resolver.getType(uri) ?: "image/jpeg"
 
-        holder.videoTexture.visibility = View.VISIBLE
-        holder.playIcon.visibility = View.GONE
-        currentPlayIcon = holder.playIcon
-        currentTexture = holder.videoTexture
+                val ext = MimeTypeMap.getSingleton()
+                    .getExtensionFromMimeType(mimeType) ?: "jpg"
 
-        holder.videoTexture.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
-            override fun onSurfaceTextureAvailable(surfaceTexture: SurfaceTexture, width: Int, height: Int) {
-                val surface = android.view.Surface(surfaceTexture)
-                currentSurface = surface
-                currentPlayer = MediaPlayer().apply {
-                    setDataSource(context, uri)
-                    setSurface(surface)
-                    isLooping = true
-                    setOnPreparedListener {
-                        it.start()
-                    }
-                    setOnCompletionListener {
-                        it.seekTo(0)
-                        it.start()
-                    }
-                    prepareAsync()
+                val fileName =
+                    "WhatsAppStory_${System.currentTimeMillis()}.$ext"
+
+                StorySaver.saveToGallery(
+                    context = context,
+                    sourceUri = uri,
+                    originalFileName = fileName,
+                    mimeType = mimeType
+                )
+
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        context,
+                        "Story berhasil disimpan",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    onSuccess()
+                }
+
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        context,
+                        "Gagal menyimpan story",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    Log.e("StoryAdapter", "Download error", e)
                 }
             }
-
-            override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {}
-            override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
-                releaseCurrentPlayer()
-                return true
-            }
-
-            override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {}
         }
     }
 
-    private fun togglePlayPause(playIcon: ImageView?) {
-        currentPlayer?.let {
-            if (it.isPlaying) {
-                it.pause()
-                playIcon?.visibility = View.VISIBLE
-            } else {
-                it.start()
-                playIcon?.visibility = View.GONE
-            }
-        }
+    // =======================
+    // VIEW HOLDER
+    // =======================
+    class StoryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val mediaView: ImageView = itemView.findViewById(R.id.mediaView)
+        val playIcon: ImageView = itemView.findViewById(R.id.playIcon)
+        val downloadButton: FrameLayout = itemView.findViewById(R.id.downloadButton)
+        val downloadIcon: ImageView = itemView.findViewById(R.id.downloadIcon)
     }
 
+    // =======================
+    // FULLSCREEN IMAGE
+    // =======================
     private fun showFullscreenImage(uri: Uri) {
         val dialog = Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-        dialog.setCancelable(true)
 
         val imageView = ImageView(context).apply {
             layoutParams = FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
-            scaleType = ImageView.ScaleType.MATRIX
             setBackgroundColor(Color.BLACK)
+            scaleType = ImageView.ScaleType.MATRIX
             setImageURI(uri)
         }
 
         val matrix = Matrix()
         val savedMatrix = Matrix()
 
-        // Gesture / state vars
-        var startX = 0f
-        var startY = 0f
         var mode = 0
         val NONE = 0
         val DRAG = 1
+
+        var startX = 0f
+        var startY = 0f
 
         var minScale = 1f
         var maxScale = 3f
@@ -178,102 +198,104 @@ class StoryAdapter(
             val scaledWidth = imageWidth * currentScale
             val scaledHeight = imageHeight * currentScale
 
-            var fixTransX = 0f
-            var fixTransY = 0f
+            var fixX = 0f
+            var fixY = 0f
 
             if (scaledWidth <= viewWidth) {
-                fixTransX = (viewWidth - scaledWidth) / 2f - transX
+                fixX = (viewWidth - scaledWidth) / 2f - transX
             } else {
-                if (transX > 0) fixTransX = -transX
-                if (transX + scaledWidth < viewWidth) fixTransX = viewWidth - (transX + scaledWidth)
+                if (transX > 0) fixX = -transX
+                if (transX + scaledWidth < viewWidth)
+                    fixX = viewWidth - (transX + scaledWidth)
             }
 
             if (scaledHeight <= viewHeight) {
-                fixTransY = (viewHeight - scaledHeight) / 2f - transY
+                fixY = (viewHeight - scaledHeight) / 2f - transY
             } else {
-                if (transY > 0) fixTransY = -transY
-                if (transY + scaledHeight < viewHeight) fixTransY = viewHeight - (transY + scaledHeight)
+                if (transY > 0) fixY = -transY
+                if (transY + scaledHeight < viewHeight)
+                    fixY = viewHeight - (transY + scaledHeight)
             }
 
-            matrix.postTranslate(fixTransX, fixTransY)
+            matrix.postTranslate(fixX, fixY)
         }
 
-        imageView.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
-            override fun onGlobalLayout() {
-                imageView.viewTreeObserver.removeOnGlobalLayoutListener(this)
+        imageView.viewTreeObserver.addOnGlobalLayoutListener(
+            object : ViewTreeObserver.OnGlobalLayoutListener {
+                override fun onGlobalLayout() {
+                    imageView.viewTreeObserver.removeOnGlobalLayoutListener(this)
 
-                val drawable = imageView.drawable ?: return
-                imageWidth = drawable.intrinsicWidth.toFloat()
-                imageHeight = drawable.intrinsicHeight.toFloat()
+                    val d = imageView.drawable ?: return
+                    imageWidth = d.intrinsicWidth.toFloat()
+                    imageHeight = d.intrinsicHeight.toFloat()
 
-                viewWidth = imageView.width
-                viewHeight = imageView.height
+                    viewWidth = imageView.width
+                    viewHeight = imageView.height
 
-                // initial scales
-                minScale = minOf(viewWidth / imageWidth, viewHeight / imageHeight)
-                if (minScale <= 0f) minScale = 1f
-                currentScale = minScale
-
-                val dx = (viewWidth - imageWidth * currentScale) / 2f
-                val dy = (viewHeight - imageHeight * currentScale) / 2f
-
-                matrix.setScale(currentScale, currentScale)
-                matrix.postTranslate(dx, dy)
-                imageView.imageMatrix = matrix
-            }
-        })
-
-        // Scale gesture detector for pinch
-        val scaleDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-            override fun onScale(detector: ScaleGestureDetector): Boolean {
-                val scaleFactor = detector.scaleFactor
-                val prevScale = currentScale
-                currentScale *= scaleFactor
-
-                // clamp scale
-                if (currentScale > maxScale) {
-                    currentScale = maxScale
-                }
-                if (currentScale < minScale) {
+                    minScale = minOf(
+                        viewWidth / imageWidth,
+                        viewHeight / imageHeight
+                    )
                     currentScale = minScale
-                }
 
-                val factor = currentScale / prevScale
-                // scale around gesture focal point
-                matrix.postScale(factor, factor, detector.focusX, detector.focusY)
-                fixTranslation()
-                imageView.imageMatrix = matrix
-                isZoomed = currentScale > minScale + 0.01f
-                return true
-            }
-        })
-
-        // Double-tap toggles between minScale and maxScale
-        val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onDoubleTap(e: MotionEvent): Boolean {
-                val focusX = e.x
-                val focusY = e.y
-                if (!isZoomed) {
-                    val scaleFactor = maxScale / currentScale
-                    matrix.postScale(scaleFactor, scaleFactor, focusX, focusY)
-                    currentScale = maxScale
-                    isZoomed = true
-                } else {
-                    currentScale = minScale
                     val dx = (viewWidth - imageWidth * currentScale) / 2f
                     val dy = (viewHeight - imageHeight * currentScale) / 2f
+
                     matrix.setScale(currentScale, currentScale)
                     matrix.postTranslate(dx, dy)
-                    isZoomed = false
+                    imageView.imageMatrix = matrix
                 }
-                fixTranslation()
-                imageView.imageMatrix = matrix
-                return true
             }
-        })
+        )
+
+        val scaleDetector = ScaleGestureDetector(
+            context,
+            object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                override fun onScale(detector: ScaleGestureDetector): Boolean {
+                    val prevScale = currentScale
+                    currentScale *= detector.scaleFactor
+
+                    currentScale = currentScale.coerceIn(minScale, maxScale)
+                    val factor = currentScale / prevScale
+
+                    matrix.postScale(
+                        factor,
+                        factor,
+                        detector.focusX,
+                        detector.focusY
+                    )
+                    fixTranslation()
+                    imageView.imageMatrix = matrix
+                    isZoomed = currentScale > minScale + 0.01f
+                    return true
+                }
+            }
+        )
+
+        val gestureDetector = GestureDetector(
+            context,
+            object : GestureDetector.SimpleOnGestureListener() {
+                override fun onDoubleTap(e: MotionEvent): Boolean {
+                    if (!isZoomed) {
+                        val factor = maxScale / currentScale
+                        matrix.postScale(factor, factor, e.x, e.y)
+                        currentScale = maxScale
+                        isZoomed = true
+                    } else {
+                        currentScale = minScale
+                        val dx = (viewWidth - imageWidth * currentScale) / 2f
+                        val dy = (viewHeight - imageHeight * currentScale) / 2f
+                        matrix.setScale(currentScale, currentScale)
+                        matrix.postTranslate(dx, dy)
+                        isZoomed = false
+                    }
+                    imageView.imageMatrix = matrix
+                    return true
+                }
+            }
+        )
 
         imageView.setOnTouchListener { _, event ->
-            // give scale detector first shot
             scaleDetector.onTouchEvent(event)
             gestureDetector.onTouchEvent(event)
 
@@ -285,92 +307,33 @@ class StoryAdapter(
                     mode = DRAG
                 }
 
-                MotionEvent.ACTION_POINTER_DOWN -> {
-                    // multi-touch: switch to none for drag (pinch handled by ScaleDetector)
-                    mode = NONE
-                }
-
                 MotionEvent.ACTION_MOVE -> {
                     if (mode == DRAG && isZoomed) {
                         matrix.set(savedMatrix)
-                        val dx = event.x - startX
-                        val dy = event.y - startY
-                        matrix.postTranslate(dx, dy)
+                        matrix.postTranslate(
+                            event.x - startX,
+                            event.y - startY
+                        )
                         fixTranslation()
                         imageView.imageMatrix = matrix
                     }
                 }
 
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
-                    mode = NONE
-                }
+                MotionEvent.ACTION_UP,
+                MotionEvent.ACTION_POINTER_UP -> mode = NONE
             }
             true
-        }
-
-        dialog.setOnKeyListener { _, keyCode, _ ->
-            if (keyCode == KeyEvent.KEYCODE_BACK) {
-                dialog.dismiss()
-                true
-            } else {
-                false
-            }
         }
 
         dialog.setContentView(imageView)
         dialog.show()
     }
 
-    private fun releaseCurrentPlayer() {
-        currentPlayer?.stop()
-        currentPlayer?.release()
-        currentPlayer = null
-        currentSurface?.release()
-        currentSurface = null
-        currentTexture?.visibility = View.GONE
-        currentPlayIcon?.visibility = View.VISIBLE
-    }
 
-    private fun saveStoryToGalleryAsync(uri: Uri) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val contentResolver = context.contentResolver
-                val mimeType = contentResolver.getType(uri) ?: "image/jpeg"
-                // Bisa ambil nama file asli dari Uri, atau buat default saja:
-                val originalFileName = "WhatsAppStory_${System.currentTimeMillis()}." +
-                        MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
-
-                // Pastikan downloadHistoryDao sudah di-set di StorySaver sebelumnya
-                StorySaver.saveToGallery(
-                    context = context,
-                    sourceUri = uri,
-                    originalFileName = originalFileName,
-                    mimeType = mimeType,
-                    onProgressUpdate = { progress ->
-                        // Optional: update progress jika perlu
-                    }
-                )
-
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Story berhasil disimpan", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Gagal menyimpan story", Toast.LENGTH_SHORT).show()
-                    Log.e("StoryAdapter", "Gagal menyimpan story: $uri", e)
-                }
-            }
-        }
-    }
-
-    class StoryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val mediaView: ImageView = itemView.findViewById(R.id.mediaView)
-        val videoTexture: TextureView = itemView.findViewById(R.id.videoTexture)
-        val playIcon: ImageView = itemView.findViewById(R.id.playIcon)
-        val downloadButton: ImageButton = itemView.findViewById(R.id.downloadButton)
-    }
-
-    // EXOPLAYER fullscreen implementation
+    // =======================
+    // FULLSCREEN VIDEO
+    // =======================
+// EXOPLAYER fullscreen implementation
     private fun showFullscreenPlayer(uri: Uri) {
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_video_player, null)
         val dialog = Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen)

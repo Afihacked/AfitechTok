@@ -43,9 +43,7 @@ import com.facebook.shimmer.ShimmerFrameLayout
 import com.google.android.gms.ads.AdView
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
-import com.google.firebase.Firebase
 import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.analytics.analytics
 import kotlinx.coroutines.*
 
 class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
@@ -86,27 +84,44 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                     }
                 }
                 DownloadServiceTT.ACTION_COMPLETE -> {
-                    val success = intent.getBooleanExtra(DownloadServiceTT.EXTRA_SUCCESS, false)
+                    val success = intent.getBooleanExtra(
+                        DownloadServiceTT.EXTRA_SUCCESS,
+                        false
+                    )
                     val successCount = intent.getIntExtra("success_count", -1)
                     val totalCount = intent.getIntExtra("total_count", -1)
 
-                    if (isAdded) {
-                        unduhtext.text = if (success) "Unduh Selesai" else "Coba Lagi"
-                        downloadButton.isEnabled = true
-                        progressDownload.visibility = View.GONE
-                        textProgress.visibility = View.GONE
-                        arrowIcon.visibility = View.VISIBLE
+                    if (!isAdded) return
 
-                        val message = when {
-                            successCount >= 0 && totalCount > 0 -> {
-                                if (successCount == totalCount) "Berhasil mengunduh semua gambar ($totalCount)"
-                                else "Berhasil $successCount dari $totalCount gambar"
-                            }
-                            else -> if (success) "Unduh TikTok selesai!" else "Unduhan TikTok gagal!"
+                    // ===== RESET UI STATE =====
+                    progressDownload.visibility = View.GONE
+                    textProgress.visibility = View.GONE
+                    arrowIcon.visibility = View.VISIBLE
+                    downloadButton.isEnabled = true
+
+                    // ===== RESET LOGIC STATE (INI YANG KRUSIAL) =====
+                    isAdShowing = false
+
+                    // ===== TEXT BUTTON =====
+                    unduhtext.text = if (success) "Unduh Lagi?" else "Coba Lagi"
+
+                    // ===== PESAN TOAST =====
+                    val message = when {
+                        successCount >= 0 && totalCount > 0 -> {
+                            if (successCount == totalCount)
+                                "Berhasil mengunduh semua gambar ($totalCount)"
+                            else
+                                "Berhasil $successCount dari $totalCount gambar"
                         }
-                        requireContext().showToastSafe(message)
+                        else -> {
+                            if (success) "Unduh TikTok selesai!"
+                            else "Unduhan TikTok gagal!"
+                        }
                     }
+
+                    requireContext().showToastSafe(message)
                 }
+
             }
         }
     }
@@ -120,7 +135,8 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         // jika fragment menempatkan toolbar yang menjulur ke statusbar, gunakan drawBehind = true
         setStatusBarColorRes(R.color.white, isLightStatusBar = true, drawBehind = true)
 
-        firebaseAnalytics = Firebase.analytics
+        // inisialisasi analytics (non-ktx safe)
+        firebaseAnalytics = FirebaseAnalytics.getInstance(requireContext())
         adsManager = AdsManager(requireContext())
         downloadHistoryDao = AppDatabase.getDatabase(requireContext()).downloadHistoryDao()
 
@@ -149,6 +165,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        isAdShowing = false
         try { adsManager.destroyBanner(adView) } catch (_: Throwable) {}
         DownloadServiceTT.setDoneCallback(null)
         try { clipboardManager.removePrimaryClipChangedListener(clipboardListener) } catch (_: Throwable) {}
@@ -316,7 +333,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
                         lastClipboard = safeText
                         Toast.makeText(requireContext(), "Link berhasil ditempel", Toast.LENGTH_SHORT).show()
-                        setImageResource(R.drawable.ic_checked)
+                        this.setImageResource(R.drawable.ic_checked)
                     }
 
                     else -> {
@@ -427,85 +444,97 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
     // === Download & Ads ===
     private fun startDownloadWithNotification(videoUrl: String, format: String) {
-        if (isAdShowing || !isAdded) return
-        isAdShowing = true
+        if (!isAdded) return
 
         val unduhText = downloadButton.findViewById<TextView>(R.id.unduhtext)
 
-        // Use coroutine to optionally wait for rewarded AdMob to be ready
-        viewLifecycleOwner.lifecycleScope.launch {
-            val ready = withContext(Dispatchers.IO) { waitForRewardedReady(timeoutMillis = 3000L) }
+        // ===== UI LANGSUNG UPDATE =====
+        downloadButton.setDownloadState(unduhText, false, "Menunggu...")
 
-            if (ready) {
-                // AdMob ready — show and allow fallback internally (AdsManager will fallback if show fails)
-                adsManager.showRewardedAd(onResult = { rewardGranted ->
-                    if (!isAdded) {
-                        isAdShowing = false
-                        return@showRewardedAd
-                    }
+        // ===== COBA IKLAN (TIDAK MEMBLOCK DOWNLOAD) =====
+        if (!isAdShowing && requireContext().areAdsEnabled()) {
+            isAdShowing = true
 
-                    if (!rewardGranted) {
-                        requireActivity().runOnUiThread {
-                            downloadButton.setDownloadState(unduhText, true, "Coba Lagi")
-                            isAdShowing = false
-                        }
-                        return@showRewardedAd
-                    }
+            viewLifecycleOwner.lifecycleScope.launch {
+                val rewardedReady = withContext(Dispatchers.IO) {
+                    waitForRewardedReady(timeoutMillis = 1500L)
+                }
 
-                    // proceed with download
-                    startDownloadAfterAd(videoUrl, format, unduhText)
-                }, allowFallback = true, onNotShown = {
-                    // called only if allowFallback=false and not shown — not used here
-                    Log.d("DownloadFragmentTT", "Rewarded onNotShown")
-                })
-            } else {
-                // not ready within timeout -> show with fallback (Start.io)
-                Log.d("DownloadFragmentTT", "Rewarded not ready -> show with fallback")
-                adsManager.showRewardedAd(onResult = { rewardGranted ->
-                    if (!isAdded) {
-                        isAdShowing = false
-                        return@showRewardedAd
-                    }
+                if (rewardedReady) {
+                    adsManager.showRewardedAd(
+                        onResult = { /* reward atau tidak, download tetap jalan */ },
+                        allowFallback = true,
+                        onNotShown = null
+                    )
+                }
 
-                    if (!rewardGranted) {
-                        requireActivity().runOnUiThread {
-                            downloadButton.setDownloadState(unduhText, true, "Coba Lagi")
-                            isAdShowing = false
-                        }
-                        return@showRewardedAd
-                    }
-
-                    startDownloadAfterAd(videoUrl, format, unduhText)
-                }, allowFallback = true, onNotShown = null)
+                // ⚠️ PENTING: reset di sini, jangan nunggu callback
+                isAdShowing = false
             }
         }
+
+        // ===== DOWNLOAD JALAN TANPA NUNGGU IKLAN =====
+        startDownloadService(videoUrl, format, unduhText)
     }
 
-    private fun startDownloadAfterAd(videoUrl: String, format: String, unduhText: TextView) {
-        requireActivity().runOnUiThread {
-            downloadButton.setDownloadState(unduhText, false, "Menunggu...")
-        }
-
+    private fun startDownloadService(
+        videoUrl: String,
+        format: String,
+        unduhText: TextView
+    ) {
         val intent = Intent(requireContext(), DownloadServiceTT::class.java).apply {
             putExtra(DownloadServiceTT.EXTRA_VIDEO_URL, videoUrl)
             putExtra(DownloadServiceTT.EXTRA_FORMAT, format)
         }
+
         ContextCompat.startForegroundService(requireContext(), intent)
 
         DownloadServiceTT.setDoneCallback { isSuccess ->
             if (!isAdded) return@setDoneCallback
+
             requireActivity().runOnUiThread {
                 downloadButton.setDownloadState(
                     unduhText,
                     true,
-                    if (isSuccess) "Unduh Lagi?" else "Coba Lagi!"
+                    if (isSuccess) "Unduh Lagi?" else "Coba Lagi"
                 )
-                if (!isSuccess) showError("Gagal mengunduh $format!")
+
+                if (!isSuccess) {
+                    showError("Gagal mengunduh $format!")
+                }
+
                 isAdShowing = false
                 DownloadServiceTT.setDoneCallback(null)
             }
         }
     }
+
+
+//    private fun startDownloadAfterAd(videoUrl: String, format: String, unduhText: TextView) {
+//        requireActivity().runOnUiThread {
+//            downloadButton.setDownloadState(unduhText, false, "Menunggu...")
+//        }
+//
+//        val intent = Intent(requireContext(), DownloadServiceTT::class.java).apply {
+//            putExtra(DownloadServiceTT.EXTRA_VIDEO_URL, videoUrl)
+//            putExtra(DownloadServiceTT.EXTRA_FORMAT, format)
+//        }
+//        ContextCompat.startForegroundService(requireContext(), intent)
+//
+//        DownloadServiceTT.setDoneCallback { isSuccess ->
+//            if (!isAdded) return@setDoneCallback
+//            requireActivity().runOnUiThread {
+//                downloadButton.setDownloadState(
+//                    unduhText,
+//                    true,
+//                    if (isSuccess) "Unduh Lagi?" else "Coba Lagi!"
+//                )
+//                if (!isSuccess) showError("Gagal mengunduh $format!")
+//                isAdShowing = false
+//                DownloadServiceTT.setDoneCallback(null)
+//            }
+//        }
+//    }
 
     // helper to show interstitial then perform action
     private fun showInterstitialThen(actionAfter: () -> Unit) {
@@ -541,7 +570,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         val url = editText.text.toString().trim()
         val platform = detectPlatform(url)
 
-        if (platform == "unknown") {
+        if (platform == "invalid") {
             showToastSafe("Masukkan link yang valid!")
             return
         }

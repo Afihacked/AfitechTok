@@ -5,15 +5,19 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.afitech.afitechtok.ui.fragments.ImageStoryFragment
 import com.afitech.afitechtok.ui.fragments.VideoStoryFragment
 
-class StoryPagerAdapter(fragment: Fragment) : FragmentStateAdapter(fragment) {
+class StoryPagerAdapter(
+    fragment: Fragment
+) : FragmentStateAdapter(fragment.childFragmentManager, fragment.lifecycle) {
 
-    override fun getItemCount(): Int = 2
+    private val fragments = listOf(
+        ImageStoryFragment(),
+        VideoStoryFragment()
+    )
+
+    override fun getItemCount(): Int = fragments.size
 
     override fun createFragment(position: Int): Fragment {
-        return when (position) {
-            0 -> ImageStoryFragment()
-            1 -> VideoStoryFragment()
-            else -> throw IllegalStateException("Invalid tab position: $position")
-        }
+        return fragments[position]
     }
 }
+

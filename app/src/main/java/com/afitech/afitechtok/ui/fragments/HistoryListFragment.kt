@@ -80,7 +80,7 @@ class HistoryListFragment : Fragment() {
             historyList = emptyList(),
             onDelete = { history ->
                 val deleted = deleteFilePhysical(history)
-                Log.d("DeleteFile", "Hapus filePath: ${history.filePath}, success: $deleted")
+                Log.d("DeleteFile", "Hapus filePath: ${history.savedUri}, success: $deleted")
                 viewLifecycleOwner.lifecycleScope.launch {
                     viewModel.deleteMultiple(listOf(history)) {
                         Toast.makeText(requireContext(), "Berhasil menghapus 1 item", Toast.LENGTH_SHORT).show()
@@ -91,7 +91,7 @@ class HistoryListFragment : Fragment() {
             onMultipleDelete = { list ->
                 list.forEach {
                     val deleted = deleteFilePhysical(it)
-                    Log.d("DeleteFile", "Hapus filePath: ${it.filePath}, success: $deleted")
+                    Log.d("DeleteFile", "Hapus filePath: ${it.savedUri}, success: $deleted")
                 }
                 viewLifecycleOwner.lifecycleScope.launch {
                     viewModel.deleteMultiple(list)
@@ -136,7 +136,7 @@ class HistoryListFragment : Fragment() {
 
     private fun deleteFilePhysical(history: DownloadHistory): Boolean {
         return try {
-            val uri = Uri.parse(history.filePath)
+            val uri = Uri.parse(history.savedUri)
             val path = uri.path
             val file = path?.let { File(it) }
 
@@ -153,7 +153,7 @@ class HistoryListFragment : Fragment() {
                 true
             }
         } catch (e: Exception) {
-            Log.e("DeleteFile", "Gagal hapus file: ${history.filePath}", e)
+            Log.e("DeleteFile", "Gagal hapus file: ${history.savedUri}", e)
             false
         }
     }
@@ -169,8 +169,8 @@ class HistoryListFragment : Fragment() {
             val deletedData = mutableListOf<DownloadHistory>()
 
             data.forEach {
-                val exists = isFileExist(it.filePath)
-                Log.d("FileCheck", "filePath: ${it.filePath}, exists: $exists")
+                val exists = isFileExist(it.savedUri)
+                Log.d("FileCheck", "filePath: ${it.savedUri}, exists: $exists")
                 if (exists) {
                     validData.add(it)
                 } else {

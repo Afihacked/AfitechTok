@@ -54,7 +54,7 @@ class HistoryAdapter(
 
     override fun onBindViewHolder(holder: HistoryViewHolder, position: Int) {
         val history = historyList[position]
-        val uri = Uri.parse(history.filePath)
+        val uri = Uri.parse(history.savedUri)
 
         holder.fileName.text = history.fileName
         holder.fileType.text = history.fileType
@@ -68,7 +68,7 @@ class HistoryAdapter(
         if (fileExists) {
             when (history.fileType) {
                 "Video" -> {
-                    val filePath = getRealPathFromURI(context, uri) ?: history.filePath
+                    val filePath = getRealPathFromURI(context, uri) ?: history.savedUri
                     val bitmap: Bitmap? = try {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                             context.contentResolver.loadThumbnail(uri, Size(200, 200), null)
@@ -207,7 +207,7 @@ class HistoryAdapter(
         }
     }
     private fun showDetailDialog(history: DownloadHistory) {
-        val uri = Uri.parse(history.filePath)
+        val uri = Uri.parse(history.savedUri)
         val fileSizeReadable = getFileSizeReadable(uri)
         val dateFormatted = DateFormat.format("dd MMM yyyy, HH:mm", history.downloadDate).toString()
 

@@ -31,7 +31,7 @@ class HistoryListViewModel(private val repository: DownloadHistoryRepository) : 
 
     fun deleteMultiple(histories: List<DownloadHistory>, onFinish: (() -> Unit)? = null) {
         viewModelScope.launch {
-            val ids = histories.map { it.id }.filter { it != 0 }
+            val ids = histories.map { it.id }.filter { it.toInt() != 0 }
             repository.deleteMultipleById(ids)
             onFinish?.invoke()
         }

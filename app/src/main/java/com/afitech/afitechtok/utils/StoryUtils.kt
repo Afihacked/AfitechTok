@@ -5,65 +5,72 @@ import android.net.Uri
 import android.util.Log
 import androidx.documentfile.provider.DocumentFile
 import com.afitech.afitechtok.data.model.StoryItem
-import java.io.File
 
 object StoryUtils {
 
     private const val TAG = "StoryUtils"
 
-    // Fungsi untuk mengambil file .Statuses menggunakan SAF (untuk Android 11 ke atas)
-    fun getStoriesUsingSAFFromUri(context: Context, uri: Uri): List<StoryItem> {
+    /**
+     * Universal WhatsApp Status loader (SAF-only)
+     * Digunakan untuk Android 10+
+     */
+    fun getStoriesFromStatusesFolder(
+        context: Context,
+        treeUri: Uri
+    ): List<StoryItem> {
+
         val storyItems = mutableListOf<StoryItem>()
 
         try {
-            val treeUri = uri
-            val docFile = DocumentFile.fromTreeUri(context, treeUri)
-
-            // Pastikan dokumen itu valid
-            docFile?.let { rootFile ->
-                // Iterasi melalui file dalam folder .Statuses
-                val files = rootFile.listFiles()
-                files.forEach { file ->
-                    Log.d(TAG, "Found file: ${file.name}")
-
-                    // Memeriksa ekstensi file (gambar atau video)
-                    if (file.isFile && (file.name?.endsWith(".jpg") == true || file.name?.endsWith(".png") == true || file.name?.endsWith(".mp4") == true)) {
-                        val type = if (file.name?.endsWith(".mp4") == true) "video" else "image"
-                        storyItems.add(StoryItem(file.uri, type)) // Menggunakan file.uri untuk mendapatkan URI yang sesuai
-                        Log.d(TAG, "Added story: ${file.uri}")
-                    }
-                }
-            } ?: run {
-                Log.e(TAG, "Error: DocumentFile is null.")
+            val root = DocumentFile.fromTreeUri(context, treeUri)
+            if (root == null || !root.isDirectory) {
+                Log.e(TAG, "Invalid SAF treeUri or not a directory")
+                return emptyList()
             }
+
+            root.listFiles().forEach { file ->
+                val name = file.name ?: return@forEach
+
+                if (file.isFile && isSupportedStory(name)) {
+                    val type = if (name.endsWith(".mp4", true)) "video" else "image"
+                    storyItems.add(
+                        StoryItem(
+                            uri = file.uri,
+                            type = type,
+                            lastModified = file.lastModified() // 🔥 INI PENTING
+                        )
+                    )
+                }
+            }
+
         } catch (e: Exception) {
-            Log.e(TAG, "Error accessing .Statuses folder via SAF", e)
+            Log.e(TAG, "Error reading WhatsApp Status via SAF", e)
         }
 
-        Log.d(TAG, "Found ${storyItems.size} stories via SAF")
+        Log.d(TAG, "SAF: found ${storyItems.size} status items")
         return storyItems
     }
 
-    // Fungsi untuk Android 10 ke bawah (legacy path)
-    fun getStoriesLegacy(): List<StoryItem> {
-        val storyItems = mutableListOf<StoryItem>()
-        val storyFolder = File("/storage/emulated/0/WhatsApp/Media/.Statuses")
 
-        Log.d(TAG, "Fetching stories from legacy path: ${storyFolder.absolutePath}")
-
-        if (storyFolder.exists() && storyFolder.isDirectory) {
-            storyFolder.listFiles()?.forEach { file ->
-                Log.d(TAG, "Checking file: ${file.name}")
-                if (file.exists() && (file.name.endsWith(".jpg") || file.name.endsWith(".png") || file.name.endsWith(".mp4"))) {
-                    val type = if (file.name.endsWith(".mp4")) "video" else "image"
-                    storyItems.add(StoryItem(Uri.fromFile(file), type))
-                    Log.d(TAG, "Legacy story: ${file.name}")
-                }
-            }
-        } else {
-            Log.d(TAG, ".Statuses folder not found or is not a directory.")
+    // ===============================
+    // LAST MODIFIED (UNTUK SORTING)
+    // ===============================
+    fun getLastModified(context: Context, uri: Uri): Long {
+        return try {
+            val doc = DocumentFile.fromSingleUri(context, uri)
+            doc?.lastModified() ?: 0L
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed getLastModified: $uri", e)
+            0L
         }
+    }
 
-        return storyItems
+    // ===============================
+    // Helper
+    // ===============================
+    private fun isSupportedStory(name: String): Boolean {
+        return name.endsWith(".jpg", true)
+                || name.endsWith(".png", true)
+                || name.endsWith(".mp4", true)
     }
 }

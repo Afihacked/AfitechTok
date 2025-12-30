@@ -28,7 +28,6 @@ class ImageStoryFragment : Fragment() {
     private lateinit var storyViewModel: StoryViewModel
     private lateinit var prefs: SharedPreferences
 
-    // AdView reference (from layout)
     private var adView: AdView? = null
 
     override fun onCreateView(
@@ -37,20 +36,33 @@ class ImageStoryFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentImageStoryBinding.inflate(inflater, container, false)
-        prefs = requireContext().getSharedPreferences("TikDownloaderPrefs", Context.MODE_PRIVATE)
+        prefs = requireContext()
+            .getSharedPreferences("TikDownloaderPrefs", Context.MODE_PRIVATE)
 
         adapter = StoryAdapter(emptyList(), requireContext())
         binding.recyclerView.layoutManager = GridLayoutManager(requireContext(), 3)
         binding.recyclerView.adapter = adapter
 
         storyViewModel = ViewModelProvider(this)[StoryViewModel::class.java]
+
+        // 🔄 OBSERVER DATA
         storyViewModel.stories.observe(viewLifecycleOwner) { list ->
             adapter.updateList(list.filter { it.type == "image" })
+            binding.swipeRefresh.isRefreshing = false // stop loading
         }
 
-        // initialize MobileAds once
-        try { MobileAds.initialize(requireContext()) } catch (_: Throwable) {}
+        // 🔽 PULL TO REFRESH
+        binding.swipeRefresh.setOnRefreshListener {
+            val saved = prefs.getString("savedUri", "") ?: ""
+            if (saved.isNotEmpty()) {
+                storyViewModel.loadStoriesFromUri(Uri.parse(saved))
+            } else {
+                binding.swipeRefresh.isRefreshing = false
+            }
+        }
 
+        // ===== ADS =====
+        try { MobileAds.initialize(requireContext()) } catch (_: Throwable) {}
         adView = try { binding.adView } catch (_: Throwable) { null }
         setupAdView()
 
@@ -59,27 +71,24 @@ class ImageStoryFragment : Fragment() {
 
     private fun setupAdView() {
         if (adView == null || !requireContext().areAdsEnabled()) {
-            try {
-                binding.adContainer.visibility = View.GONE
-            } catch (_: Throwable) {}
+            binding.adContainer.visibility = View.GONE
             return
         }
 
-        // adaptive size (best-effort)
         try {
-            val displayMetrics = resources.displayMetrics
-            val density = displayMetrics.density
-            val adWidthPixels = displayMetrics.widthPixels
-            val adWidth = (adWidthPixels / density).toInt().coerceAtLeast(320)
-            val adSize = AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(requireContext(), adWidth)
+            val dm = resources.displayMetrics
+            val adWidth = (dm.widthPixels / dm.density).toInt().coerceAtLeast(320)
+            val adSize =
+                AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
+                    requireContext(), adWidth
+                )
             adView?.setAdSize(adSize)
-        } catch (_: Throwable) { /* ignore */ }
+        } catch (_: Throwable) {}
 
         try {
-            val request = AdRequest.Builder().build()
-            adView?.loadAd(request)
+            adView?.loadAd(AdRequest.Builder().build())
             binding.adContainer.visibility = View.VISIBLE
-        } catch (t: Throwable) {
+        } catch (_: Throwable) {
             binding.adContainer.visibility = View.GONE
         }
     }
@@ -87,6 +96,7 @@ class ImageStoryFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         try { adView?.resume() } catch (_: Throwable) {}
+
         val saved = prefs.getString("savedUri", "") ?: ""
         if (saved.isNotEmpty()) {
             storyViewModel.loadStoriesFromUri(Uri.parse(saved))
@@ -105,3 +115,4 @@ class ImageStoryFragment : Fragment() {
         super.onDestroyView()
     }
 }
+

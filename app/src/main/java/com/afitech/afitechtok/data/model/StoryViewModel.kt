@@ -2,7 +2,6 @@ package com.afitech.afitechtok.data.model
 
 import android.app.Application
 import android.net.Uri
-import android.os.Build
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
@@ -18,26 +17,68 @@ class StoryViewModel(application: Application) : AndroidViewModel(application) {
     private val _stories = MutableLiveData<List<StoryItem>>()
     val stories: LiveData<List<StoryItem>> get() = _stories
 
-    fun loadStoriesFromUri(uri: Uri) {
-        Log.d("StoryViewModel", "loadStoriesFromUri called with URI: $uri")
+    // =========================
+    // CACHE (RAM ONLY)
+    // =========================
+    private var cachedTreeUri: Uri? = null
+    private var cachedStories: List<StoryItem>? = null
 
-        // Run the loading process on a background thread to avoid blocking the main thread
+    /**
+     * Load WhatsApp Status via SAF
+     * Android 10+
+     */
+    fun loadStoriesFromUri(treeUri: Uri) {
+        Log.d("StoryViewModel", "loadStoriesFromUri: $treeUri")
+
+        // =========================
+        // 1️⃣ Pakai cache jika masih sama
+        // =========================
+        if (cachedTreeUri == treeUri && !cachedStories.isNullOrEmpty()) {
+            Log.d(
+                "StoryViewModel",
+                "Using cached stories: ${cachedStories!!.size}"
+            )
+            _stories.value = cachedStories!!
+            return
+        }
+
+        // =========================
+        // 2️⃣ Load ulang dari SAF
+        // =========================
         viewModelScope.launch {
             val context = getApplication<Application>().applicationContext
 
-            val storiesData = withContext(Dispatchers.IO) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    Log.d("StoryViewModel", "Using SAF for Android 11+")
-                    StoryUtils.getStoriesUsingSAFFromUri(context, uri)
-                } else {
-                    Log.d("StoryViewModel", "Using legacy method for Android 10 and below")
-                    StoryUtils.getStoriesLegacy()
-                }
+            val freshStories = withContext(Dispatchers.IO) {
+                StoryUtils
+                    .getStoriesFromStatusesFolder(
+                        context = context,
+                        treeUri = treeUri
+                    )
+                    // 🔥 TERBARU DI ATAS
+                    .sortedByDescending { it.lastModified }
             }
 
-            // Set the stories to the LiveData
-            _stories.value = storiesData
-            Log.d("StoryViewModel", "Loaded stories: ${storiesData.size} items")
+            // =========================
+            // 3️⃣ Simpan ke cache
+            // =========================
+            cachedTreeUri = treeUri
+            cachedStories = freshStories
+
+            _stories.value = freshStories
+
+            Log.d(
+                "StoryViewModel",
+                "Loaded ${freshStories.size} stories (fresh)"
+            )
         }
+    }
+
+    /**
+     * Optional: clear cache manual
+     */
+    fun clearCache() {
+        cachedTreeUri = null
+        cachedStories = null
+        Log.d("StoryViewModel", "Cache cleared")
     }
 }
