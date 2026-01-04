@@ -109,6 +109,11 @@ class VideoStoryFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         try { adView?.resume() } catch (_: Throwable) {}
+
+        val saved = prefs.getString("savedUri", "") ?: ""
+        if (saved.isNotEmpty()) {
+            storyViewModel.loadStoriesFromUri(Uri.parse(saved))
+        }
     }
 
     override fun onPause() {

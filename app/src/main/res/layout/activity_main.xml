@@ -47,7 +47,7 @@
                     android:id="@+id/tabLayout"
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
-                    android:background="@drawable/bg_header"
+                    android:background="@color/colorPrimary"
                     app:tabIndicator="@drawable/tab_indicator_full"
                     app:tabIndicatorFullWidth="true"
                     app:tabIndicatorGravity="bottom"

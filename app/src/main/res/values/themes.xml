@@ -5,16 +5,18 @@
         <item name="colorSurface">@color/colorSurface</item>
         <item name="colorOnSurface">@color/colorOnSurface</item>
 
-        <!-- pastikan sistem menggambar bar backgrounds -->
+        <!-- sistem menggambar system bar -->
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:windowTranslucentStatus">false</item>
 
-        <!-- set default status bar color agar tidak gampang di-reset -->
+        <!-- status bar FINAL sejak awal -->
         <item name="android:statusBarColor">@color/sttsbar</item>
+        <item name="android:windowLightStatusBar">true</item>
 
-        <!-- optional: agar nav bar konsisten (ganti sesuai kebutuhan) -->
+        <!-- optional -->
         <item name="android:navigationBarColor">@color/navigationBarColor</item>
     </style>
+
 
     <!-- Tema utama aplikasi (pakai Base.Theme.TikDownloader) -->
     <style name="Theme.TikDownloader" parent="Base.Theme.TikDownloader">

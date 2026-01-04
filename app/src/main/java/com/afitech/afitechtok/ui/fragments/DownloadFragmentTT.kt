@@ -132,9 +132,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         super.onViewCreated(view, savedInstanceState)
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
-        // jika fragment menempatkan toolbar yang menjulur ke statusbar, gunakan drawBehind = true
-        setStatusBarColorRes(R.color.white, isLightStatusBar = true, drawBehind = true)
-
         // inisialisasi analytics (non-ktx safe)
         firebaseAnalytics = FirebaseAnalytics.getInstance(requireContext())
         adsManager = AdsManager(requireContext())

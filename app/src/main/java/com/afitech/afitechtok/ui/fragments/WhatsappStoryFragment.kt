@@ -59,6 +59,7 @@ class WhatsappStoryFragment : Fragment() {
     private var isStoryUIShown = false
 
     private var pagerAdapter: StoryPagerAdapter? = null
+
     /**
      * ActivityResult untuk ACTION_OPEN_DOCUMENT_TREE (SAF).
      * Setelah user pilih folder, kita ambil URI persistable permission lalu:
@@ -118,6 +119,7 @@ class WhatsappStoryFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         // Inisialisasi DB/DAO dan hantarkan ke StorySaver
         val db = AppDatabase.getDatabase(requireContext())
         downloadHistoryDao = db.downloadHistoryDao()
@@ -340,17 +342,27 @@ class WhatsappStoryFragment : Fragment() {
 
     /** Buka SAF diarahkan ke Android/media sebagai starting hint */
     private fun requestStoragePermission() {
+        val initialUri = if (isAndroid11Plus()) {
+            // Android 11+ → Android/media
+            "content://com.android.externalstorage.documents/tree/primary%3AAndroid%2Fmedia"
+        } else {
+            // Android 10- → root storage
+            "content://com.android.externalstorage.documents/tree/primary%3A"
+        }
+
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-            // HINT: arahkan ke Android/media agar user tidak mulai di root storage (vendor bisa override)
+            addFlags(
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
             putExtra(
                 "android.provider.extra.INITIAL_URI",
-                Uri.parse("content://com.android.externalstorage.documents/tree/primary%3AAndroid%2Fmedia")
+                Uri.parse(initialUri)
             )
         }
+
         requestStorageAccessLauncher.launch(intent)
     }
-
     /**
      * Panduan SAF: sekarang menyebutkan kedua kemungkinan nama folder/package:
      * - com.whatsapp (WhatsApp standard)
@@ -358,19 +370,39 @@ class WhatsappStoryFragment : Fragment() {
      *
      * Instruksi yang jelas membantu pengguna awam ketika manager berangkat dari folder yang kurang spesifik.
      */
+    private fun isAndroid11Plus(): Boolean {
+        return android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R
+    }
+
     private fun showSAFTutorialDialog() {
+        val message = if (isAndroid11Plus()) {
+            // Android 11+
+            """
+Ikuti langkah berikut untuk memilih folder .Statuses (WhatsApp/Business):
+
+1. Masuk ke folder Android
+2. Pilih folder media (huruf kecil)
+3. Pilih folder com.whatsapp atau com.whatsapp.w4b
+4. Masuk ke folder WhatsApp
+5. Pilih folder Media (M huruf besar)
+6. Tekan titik tiga → aktifkan 'Tampilkan file/ folder tersembunyi'
+7. Pilih folder .Statuses lalu tekan 'Gunakan Folder Ini'
+        """.trimIndent()
+        } else {
+            // Android 10 ke bawah
+            """
+Ikuti langkah berikut untuk memilih folder .Statuses (WhatsApp/Business):
+
+1. Masuk ke folder WhatsApp
+2. Pilih folder Media
+3. Tekan titik tiga → aktifkan 'Tampilkan file/ folder tersembunyi'
+4. Pilih folder .Statuses lalu tekan 'Gunakan Folder Ini'
+        """.trimIndent()
+        }
+
         AlertDialog.Builder(requireContext())
             .setTitle("Panduan")
-            .setMessage(
-                "Ikuti langkah berikut untuk memilih folder .Statuses (WhatsApp/Business):\n\n" +
-                        "1. Masuk ke folder Android\n" +
-                        "2. Pilih folder media (huruf kecil)\n" +
-                        "3. Pilih folder com.whatsapp  atau com.whatsapp.w4b (jika Anda pakai WhatsApp Business)\n" +
-                        "4. Masuk ke folder WhatsApp\n" +
-                        "5. Pilih folder Media (M huruf besar)\n" +
-                        "6. Tekan titik tiga di pojok kanan atas → aktifkan 'Tampilkan file/ folder tersembunyi'\n" +
-                        "7. Pilih folder .Statuses lalu tekan 'Gunakan Folder Ini'"
-            )
+            .setMessage(message)
             .setPositiveButton("Mengerti") { d, _ ->
                 d.dismiss()
                 requestStoragePermission()
@@ -378,6 +410,7 @@ class WhatsappStoryFragment : Fragment() {
             .setCancelable(true)
             .show()
     }
+
 
     /**
      * Deteksi apakah DocumentFile menunjuk folder .Statuses (cek nama)
@@ -408,23 +441,56 @@ class WhatsappStoryFragment : Fragment() {
      * untuk pengguna WhatsApp Business maupun standar.
      */
     private fun showGuideDialogFor(doc: DocumentFile?) {
-        val guide = when {
-            doc == null -> "Folder tidak dapat dibaca. Silakan pilih ulang folder."
-            doc.name.equals("Android", ignoreCase = true) ->
-                "Anda memilih folder Android.\n\nLanjutkan dengan masuk ke folder 'media' (huruf kecil)."
-            doc.name == "media" ->
-                "Anda memilih folder 'media'.\n\nLanjutkan dengan pilih folder 'com.whatsapp' atau 'com.whatsapp.w4b' (jika Anda menggunakan WhatsApp Business)."
-            doc.name.equals("com.whatsapp", ignoreCase = true) || doc.name.equals("com.whatsapp.w4b", ignoreCase = true) ->
-                "Anda memilih folder package WhatsApp.\n\nLanjutkan dengan masuk ke folder 'WhatsApp'."
-            doc.name.equals("WhatsApp", ignoreCase = true) ->
-                "Anda memilih folder WhatsApp.\n\nLanjutkan dengan pilih folder 'Media' (M huruf besar)."
-            doc.name == "Media" ->
-                "Anda memilih folder 'Media'.\n\n📌 Lanjutkan dengan menampilkan folder tersembunyi:\n" +
-                        "1. Tekan ikon titik tiga di kanan atas\n" +
-                        "2. Aktifkan 'Tampilkan file/ folder tersembunyi'\n" +
-                        "3. Pilih folder '.Statuses'."
-            else ->
-                "Folder yang dipilih bukan lokasi yang benar.\n\nIkuti urutan:\nAndroid > media > com.whatsapp (atau com.whatsapp.w4b) > WhatsApp > Media > .Statuses"
+
+        val guide = if (isAndroid11Plus()) {
+            // ================= ANDROID 11+ =================
+            when {
+                doc == null ->
+                    "Folder tidak dapat dibaca. Silakan pilih ulang folder."
+
+                doc.name.equals("Android", ignoreCase = true) ->
+                    "Anda memilih folder Android.\n\nLanjutkan dengan masuk ke folder 'media' (huruf kecil)."
+
+                doc.name == "media" ->
+                    "Anda memilih folder 'media'.\n\nLanjutkan dengan pilih folder 'com.whatsapp' atau 'com.whatsapp.w4b' (jika Anda menggunakan WhatsApp Business)."
+
+                doc.name.equals("com.whatsapp", ignoreCase = true) ||
+                        doc.name.equals("com.whatsapp.w4b", ignoreCase = true) ->
+                    "Anda memilih folder package WhatsApp.\n\nLanjutkan dengan masuk ke folder 'WhatsApp'."
+
+                doc.name.equals("WhatsApp", ignoreCase = true) ->
+                    "Anda memilih folder WhatsApp.\n\nLanjutkan dengan pilih folder 'Media' (M huruf besar)."
+
+                doc.name == "Media" ->
+                    "Anda memilih folder 'Media'.\n\n📌 Langkah berikutnya:\n" +
+                            "1. Tekan ikon titik tiga di kanan atas\n" +
+                            "2. Aktifkan 'Tampilkan file/ folder tersembunyi'\n" +
+                            "3. Pilih folder '.Statuses'."
+
+                else ->
+                    "Folder yang dipilih bukan lokasi yang benar.\n\nIkuti urutan:\n" +
+                            "Android > media > com.whatsapp (atau com.whatsapp.w4b) > WhatsApp > Media > .Statuses"
+            }
+
+        } else {
+            // ================= ANDROID 10 KE BAWAH =================
+            when {
+                doc == null ->
+                    "Folder tidak dapat dibaca. Silakan pilih ulang folder."
+
+                doc.name.equals("WhatsApp", ignoreCase = true) ->
+                    "Anda memilih folder WhatsApp.\n\nLanjutkan dengan masuk ke folder 'Media'."
+
+                doc.name.equals("Media", ignoreCase = true) ->
+                    "Anda memilih folder Media.\n\n📌 Langkah berikutnya:\n" +
+                            "1. Tekan ikon titik tiga di kanan atas\n" +
+                            "2. Aktifkan 'Tampilkan file/ folder tersembunyi'\n" +
+                            "3. Pilih folder '.Statuses'."
+
+                else ->
+                    "Folder yang dipilih bukan lokasi yang benar.\n\nIkuti urutan:\n" +
+                            "WhatsApp > Media > .Statuses"
+            }
         }
 
         AlertDialog.Builder(requireContext())
@@ -432,7 +498,6 @@ class WhatsappStoryFragment : Fragment() {
             .setMessage(guide)
             .setPositiveButton("Mengerti") { d, _ ->
                 d.dismiss()
-                // langsung buka SAF lagi agar user tidak perlu tekan tombol izin lagi
                 requestStoragePermission()
             }
             .setCancelable(true)

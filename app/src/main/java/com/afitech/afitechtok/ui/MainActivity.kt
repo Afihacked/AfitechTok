@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
@@ -76,7 +77,6 @@ class MainActivity : AppCompatActivity() {
         sharedPref = getSharedPreferences("theme_pref", MODE_PRIVATE)
         ThemeHelper.applyTheme(this)
         super.onCreate(savedInstanceState)
-
         // 1) set layout
         setContentView(R.layout.activity_main)
 
@@ -128,15 +128,19 @@ class MainActivity : AppCompatActivity() {
             // fallback ~56dp
             (56 * resources.displayMetrics.density).toInt()
         }
-
         // toolbar styling and scrim color
         toolbar.setBackgroundColor(desiredColor)
         toolbar.elevation = 0f
         scrim?.setBackgroundColor(desiredColor)
 
         // set status bar icon contrast (true = dark icons)
+// ===== FINAL STATUS BAR OWNER =====
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        window.statusBarColor = ContextCompat.getColor(this, R.color.sttsbar)
+
         val controller = WindowInsetsControllerCompat(window, window.decorView)
-        controller.isAppearanceLightStatusBars = true // set according to sttsbar brightness
+        controller.isAppearanceLightStatusBars = true // karena sttsbar terang
 
         // Apply insets:
         //  - scrim height = statusBarHeight
@@ -191,6 +195,9 @@ class MainActivity : AppCompatActivity() {
         // Setup Tab + ViewPager
         viewPager = findViewById(R.id.viewPager)
         tabLayout = findViewById(R.id.tabLayout)
+
+        viewPager.adapter = MainPagerAdapter(this)
+        viewPager.offscreenPageLimit = 3
 
         // pastikan mode/gravity sudah benar
         tabLayout.tabMode = TabLayout.MODE_FIXED
@@ -425,6 +432,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        Log.d(
+            "STATUSBAR",
+            "color=#${Integer.toHexString(window.statusBarColor)}"
+        )
+
         // optional debug
         android.util.Log.d("DBG_STATUSBAR", "onResume (scrim) window.statusBarColor=#${Integer.toHexString(window.statusBarColor)}")
     }
