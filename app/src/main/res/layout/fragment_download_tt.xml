@@ -1,169 +1,133 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
-    android:fitsSystemWindows="false">
+    android:background="@color/white">
 
-    <!-- Konten Scroll -->
+    <!-- ================= SCROLL CONTENT ================= -->
     <androidx.core.widget.NestedScrollView
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/adContainer">
+        app:layout_constraintBottom_toTopOf="@id/adContainer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="10dp"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:padding="12dp">
 
-            <!-- Input Link -->
+            <!-- ================= INPUT LINK ================= -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/inputLayout"
                 style="@style/EditTextTheme"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:backgroundTint="@color/colorOnSurface"
                 android:hint="@string/tempel_link_tiktok_disini"
-                android:textColor="@color/colorOnSurface"
-                android:textColorHint="@color/colorHint"
-                app:boxCornerRadiusBottomEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
                 app:boxCornerRadiusTopStart="12dp"
-                app:boxStrokeWidthFocused="2dp"
-                app:endIconMode="clear_text"
-                app:hintAnimationEnabled="true"
-                app:hintEnabled="true"
-                app:hintTextColor="@color/colorPrimary">
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:endIconMode="clear_text">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/inputLink"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:layout_gravity="center"
-                    android:inputType="textUri"
-                    android:padding="15dp"
-                    android:textSize="14sp"
-                    app:boxStrokeColor="@color/colorPrimary"
-                    app:boxStrokeErrorColor="@color/colorOutline" />
-                <!-- Dikeluarkan dari TextInputLayout -->
-
-                <LinearLayout
-                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingHorizontal="8dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:gravity="start"
-                        android:text="@string/copyright"
-                        android:textColor="@color/light_gray"
-                        android:textSize="12sp"
-                        android:layout_marginTop="2dp"/>
-
-                    <TextView
-                        android:id="@+id/textCount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:gravity="end"
-                        android:text="@string/count_text"
-                        android:textColor="@android:color/darker_gray"
-                        android:textSize="14sp"
-                        android:layout_marginTop="2dp"/>
-                </LinearLayout>
-
-
+                    android:minHeight="48dp"
+                    android:padding="14dp"
+                    android:inputType="textUri"
+                    android:textSize="14sp"/>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Bar Tombol -->
+            <!-- Counter -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="center">
+                android:paddingHorizontal="8dp"
+                android:paddingTop="4dp">
 
-                <!-- Paste icon + small label below it -->
-                <LinearLayout
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/copyright"
+                    android:textSize="12sp"
+                    android:textColor="@color/light_gray"/>
+
+                <TextView
+                    android:id="@+id/textCount"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="center"
-                    android:paddingTop="20dp"
-                    android:layout_margin="6dp">
+                    android:text="@string/count_text"
+                    android:textSize="13sp"
+                    android:textColor="@android:color/darker_gray"/>
+            </LinearLayout>
 
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="45dp"
-                        android:layout_height="45dp"
-                        app:cardCornerRadius="12dp"
-                        app:cardElevation="4dp"
-                        app:cardBackgroundColor="@color/colorPrimary">
+            <!-- ================= BUTTON BAR ================= -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp">
 
-                        <androidx.appcompat.widget.AppCompatImageView
-                            android:id="@+id/iconPaste"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:contentDescription="paste_icon"
-                            android:padding="10dp"
-                            android:src="@drawable/ic_add"
-                            android:tint="@android:color/white" />
-                    </com.google.android.material.card.MaterialCardView>
+                <!-- Paste Button -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/iconPasteCard"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="@color/colorPrimary"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
 
-                    <!-- label kecil di bawah ikon -->
-                    <TextView
-                        android:id="@+id/iconPasteLabel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:ellipsize="end"
-                        android:gravity="center"
-                        android:includeFontPadding="false"
-                        android:maxLines="1"
-                        android:text="Tempel"
-                        android:textColor="@android:color/black"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:id="@+id/iconPaste"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:padding="10dp"
+                        android:src="@drawable/ic_add"
+                        android:tint="@android:color/white"/>
+                </com.google.android.material.card.MaterialCardView>
 
-
-                <!-- Tombol Unduh -->
+                <!-- Download Button -->
                 <androidx.cardview.widget.CardView
                     android:layout_width="0dp"
-                    android:layout_weight="2"
                     android:layout_height="wrap_content"
                     app:cardCornerRadius="12dp"
-                    app:cardElevation="0dp">
+                    app:cardElevation="0dp"
+                    app:layout_constraintStart_toEndOf="@id/iconPasteCard"
+                    app:layout_constraintEnd_toStartOf="@id/btnOpenTiktokCard"
+                    app:layout_constraintTop_toTopOf="parent"
+                    android:layout_marginHorizontal="8dp">
 
                     <FrameLayout
                         android:layout_width="match_parent"
-                        android:layout_height="45dp">
+                        android:layout_height="wrap_content">
 
                         <ProgressBar
                             android:id="@+id/progressDownload"
                             style="?android:attr/progressBarStyleHorizontal"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:indeterminate="false"
-                            android:max="100"
-                            android:progressDrawable="@drawable/progress_full"
-                            android:visibility="gone" />
+                            android:visibility="gone"
+                            android:max="100"/>
 
                         <LinearLayout
                             android:id="@+id/btnDownload"
                             android:layout_width="match_parent"
-                            android:layout_height="45dp"
-                            android:background="@color/colorPrimary"
-                            android:backgroundTint="@color/colorPrimary"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:gravity="center_vertical"
+                            android:layout_height="wrap_content"
+                            android:minHeight="48dp"
+                            android:gravity="center"
                             android:orientation="horizontal"
-                            android:paddingHorizontal="8dp">
+                            android:paddingVertical="10dp"
+                            android:paddingHorizontal="12dp"
+                            android:background="@color/colorPrimary">
 
                             <TextView
                                 android:id="@+id/unduhtext"
@@ -171,61 +135,65 @@
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:gravity="center"
+                                android:maxLines="1"
+                                android:ellipsize="end"
                                 android:text="@string/download"
-                                android:textColor="@android:color/white"
-                                android:textSize="18sp" />
+                                android:textSize="16sp"
+                                android:textColor="@android:color/white"/>
 
                             <TextView
                                 android:id="@+id/textProgress"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
+                                android:layout_marginStart="6dp"
                                 android:text="@string/persen"
+                                android:textSize="14sp"
                                 android:textColor="@android:color/white"
-                                android:textSize="16sp"
-                                android:visibility="gone" />
+                                android:visibility="gone"/>
 
                             <androidx.appcompat.widget.AppCompatImageView
                                 android:id="@+id/arrowIcon"
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:layout_marginStart="8dp"
-                                android:contentDescription="@string/dropdown_arrow"
-                                android:src="@drawable/ic_arrow_down" />
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginStart="6dp"
+                                android:src="@drawable/ic_arrow_down"/>
                         </LinearLayout>
                     </FrameLayout>
                 </androidx.cardview.widget.CardView>
 
-                <!-- Tombol TikTok -->
+                <!-- TikTok Button -->
                 <androidx.cardview.widget.CardView
+                    android:id="@+id/btnOpenTiktokCard"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
-                    android:layout_marginStart="8dp"
                     app:cardCornerRadius="18dp"
-                    android:background="#00780000"
-                    app:cardElevation="0dp">
+                    app:cardElevation="0dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
 
                     <androidx.appcompat.widget.AppCompatImageView
                         android:id="@+id/btnOpenTiktok"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_gravity="center"
-                        android:contentDescription="TikTok"
-                        android:src="@drawable/ic_tiktok" />
+                        android:src="@drawable/ic_tiktok"/>
                 </androidx.cardview.widget.CardView>
-            </LinearLayout>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Container Iklan -->
+    <!-- ================= ADS ================= -->
     <LinearLayout
         android:id="@+id/adContainer"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="8dp"
         android:gravity="center"
-        app:layout_constraintBottom_toBottomOf="parent">
+        android:padding="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <com.google.android.gms.ads.AdView
             android:id="@+id/adView"
@@ -239,4 +207,5 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
     </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

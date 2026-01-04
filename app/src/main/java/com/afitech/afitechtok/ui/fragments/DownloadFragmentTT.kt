@@ -71,27 +71,33 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     private val viewModel: TiktokViewModel by viewModels()
 
     // === Broadcast Receiver ===
+    // === Broadcast Receiver (SYNC WITH STATUS) ===
     private val downloadReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
+
                 DownloadServiceTT.ACTION_PROGRESS -> {
                     val progress = intent.getIntExtra(DownloadServiceTT.EXTRA_PROGRESS, 0)
-                    if (isAdded) {
-                        unduhtext.text = "Mengunduh...$progress%"
-                        progressDownload.visibility = View.VISIBLE
-                        progressDownload.progress = progress
-                        arrowIcon.visibility = View.GONE
+                    val status = intent.getStringExtra(DownloadServiceTT.EXTRA_STATUS)
+
+                    progressDownload.visibility = View.VISIBLE
+                    progressDownload.progress = progress
+                    arrowIcon.visibility = View.GONE
+
+                    // ✅ SEKARANG SEMUA STATUS MASUK KE TOMBOL
+                    if (!status.isNullOrEmpty()) {
+                        unduhtext.text = status
                     }
                 }
+
+
                 DownloadServiceTT.ACTION_COMPLETE -> {
+                    if (!isAdded) return
+
                     val success = intent.getBooleanExtra(
                         DownloadServiceTT.EXTRA_SUCCESS,
                         false
                     )
-                    val successCount = intent.getIntExtra("success_count", -1)
-                    val totalCount = intent.getIntExtra("total_count", -1)
-
-                    if (!isAdded) return
 
                     // ===== RESET UI STATE =====
                     progressDownload.visibility = View.GONE
@@ -99,32 +105,24 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                     arrowIcon.visibility = View.VISIBLE
                     downloadButton.isEnabled = true
 
-                    // ===== RESET LOGIC STATE (INI YANG KRUSIAL) =====
+                    // ===== RESET LOGIC =====
                     isAdShowing = false
 
-                    // ===== TEXT BUTTON =====
+                    // ===== BUTTON TEXT =====
                     unduhtext.text = if (success) "Unduh Lagi?" else "Coba Lagi"
 
-                    // ===== PESAN TOAST =====
-                    val message = when {
-                        successCount >= 0 && totalCount > 0 -> {
-                            if (successCount == totalCount)
-                                "Berhasil mengunduh semua gambar ($totalCount)"
-                            else
-                                "Berhasil $successCount dari $totalCount gambar"
-                        }
-                        else -> {
-                            if (success) "Unduh TikTok selesai!"
-                            else "Unduhan TikTok gagal!"
-                        }
-                    }
-
-                    requireContext().showToastSafe(message)
+                    // ===== TOAST =====
+                    requireContext().showToastSafe(
+                        if (success)
+                            "Unduhan TikTok selesai"
+                        else
+                            "Unduhan TikTok gagal"
+                    )
                 }
-
             }
         }
     }
+
 
     // === Lifecycle ===
     @SuppressLint("SourceLockedOrientationActivity")
@@ -440,72 +438,69 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     }
 
     // === Download & Ads ===
-    private fun startDownloadWithNotification(videoUrl: String, format: String) {
-        if (!isAdded) return
-
-        val unduhText = downloadButton.findViewById<TextView>(R.id.unduhtext)
-
-        // ===== UI LANGSUNG UPDATE =====
-        downloadButton.setDownloadState(unduhText, false, "Menunggu...")
-
-        // ===== COBA IKLAN (TIDAK MEMBLOCK DOWNLOAD) =====
-        if (!isAdShowing && requireContext().areAdsEnabled()) {
-            isAdShowing = true
-
-            viewLifecycleOwner.lifecycleScope.launch {
-                val rewardedReady = withContext(Dispatchers.IO) {
-                    waitForRewardedReady(timeoutMillis = 1500L)
-                }
-
-                if (rewardedReady) {
-                    adsManager.showRewardedAd(
-                        onResult = { /* reward atau tidak, download tetap jalan */ },
-                        allowFallback = true,
-                        onNotShown = null
-                    )
-                }
-
-                // ⚠️ PENTING: reset di sini, jangan nunggu callback
-                isAdShowing = false
-            }
-        }
-
-        // ===== DOWNLOAD JALAN TANPA NUNGGU IKLAN =====
-        startDownloadService(videoUrl, format, unduhText)
-    }
 
     private fun startDownloadService(
         videoUrl: String,
         format: String,
         unduhText: TextView
     ) {
+        unduhText.text = "Mengunduh..."
         val intent = Intent(requireContext(), DownloadServiceTT::class.java).apply {
             putExtra(DownloadServiceTT.EXTRA_VIDEO_URL, videoUrl)
             putExtra(DownloadServiceTT.EXTRA_FORMAT, format)
         }
-
         ContextCompat.startForegroundService(requireContext(), intent)
+    }
 
-        DownloadServiceTT.setDoneCallback { isSuccess ->
-            if (!isAdded) return@setDoneCallback
+    private fun requestDownloadWithAdGate(
+        url: String,
+        format: String,
+        unduhText: TextView
+    ) {
+        viewLifecycleOwner.lifecycleScope.launch {
 
-            requireActivity().runOnUiThread {
-                downloadButton.setDownloadState(
-                    unduhText,
-                    true,
-                    if (isSuccess) "Unduh Lagi?" else "Coba Lagi"
+            val fileType = when (format) {
+                "Videos" -> "Video"
+                "Music" -> "Audio"
+                "Gambar" -> "Image"
+                else -> "Other"
+            }
+
+            val count = withContext(Dispatchers.IO) {
+                downloadHistoryDao.countByFileType(fileType)
+            }
+
+            if (count < 3 || !requireContext().areAdsEnabled()) {
+                startDownloadService(url, format, unduhText)
+                return@launch
+            }
+
+            unduhText.text = "Menunggu iklan..."
+            downloadButton.isEnabled = false
+            isAdShowing = true
+
+            val rewardedReady = withContext(Dispatchers.IO) {
+                waitForRewardedReady(timeoutMillis = 2000L)
+            }
+
+            if (rewardedReady) {
+                adsManager.showRewardedAd(
+                    onResult = {
+                        isAdShowing = false
+                        startDownloadService(url, format, unduhText)
+                    },
+                    allowFallback = false,
+                    onNotShown = {
+                        isAdShowing = false
+                        startDownloadService(url, format, unduhText)
+                    }
                 )
-
-                if (!isSuccess) {
-                    showError("Gagal mengunduh $format!")
-                }
-
+            } else {
                 isAdShowing = false
-                DownloadServiceTT.setDoneCallback(null)
+                startDownloadService(url, format, unduhText)
             }
         }
     }
-
 
 //    private fun startDownloadAfterAd(videoUrl: String, format: String, unduhText: TextView) {
 //        requireActivity().runOnUiThread {
@@ -624,8 +619,15 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         isSlide: Boolean,
         buttonLayout: LinearLayout,
     ) {
-        val popupMenu = PopupMenu(ContextThemeWrapper(requireContext(), R.style.PopupMenuStyle), anchor, Gravity.END)
-        formats.forEachIndexed { index, format -> popupMenu.menu.add(0, index, index, format) }
+        val popupMenu = PopupMenu(
+            ContextThemeWrapper(requireContext(), R.style.PopupMenuStyle),
+            anchor,
+            Gravity.END
+        )
+
+        formats.forEachIndexed { index, format ->
+            popupMenu.menu.add(0, index, index, format)
+        }
 
         popupMenu.setOnMenuItemClickListener { item ->
             val selectedFormat = formats[item.itemId]
@@ -633,15 +635,24 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             if (selectedFormat == "Gambar" && isSlide) {
                 showSlideSelectionPopup(url, buttonLayout)
             } else {
-                startDownloadWithNotification(url, selectedFormat)
-                buttonLayout.findViewById<TextView>(R.id.unduhtext).text = "Menunggu..."
+                // ✅ AMBIL TEXTVIEW DARI BUTTON (INI YANG BENAR)
+                val unduhText = buttonLayout.findViewById<TextView>(R.id.unduhtext)
+
+                unduhText.text = "Menunggu..."
                 buttonLayout.isEnabled = false
+
+                requestDownloadWithAdGate(
+                    url = url,
+                    format = selectedFormat,
+                    unduhText = unduhText
+                )
             }
             true
         }
 
         popupMenu.show()
     }
+
 
     private fun showSlideSelectionPopup(url: String, buttonLayout: LinearLayout) {
         showSpinnerLoading(true)
@@ -898,4 +909,5 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             isAdShowing = false
         }
     }
+
 }

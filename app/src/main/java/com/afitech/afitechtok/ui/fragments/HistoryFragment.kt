@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
 import android.graphics.Typeface
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.Gravity.CENTER
 import android.view.LayoutInflater
 import android.view.View
@@ -16,6 +17,8 @@ import com.afitech.afitechtok.databinding.FragmentHistoryBinding
 import com.afitech.afitechtok.ui.adapters.HistoryPagerAdapter
 import com.afitech.afitechtok.utils.setStatusBarColorRes
 import com.google.android.material.tabs.TabLayoutMediator
+import kotlin.math.max
+import kotlin.math.min
 
 class HistoryFragment : Fragment() {
 
@@ -23,7 +26,6 @@ class HistoryFragment : Fragment() {
     private val binding get() = _binding!!
 
     override fun onCreateView(
-
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -38,15 +40,37 @@ class HistoryFragment : Fragment() {
 
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
-        // Set adapter untuk ViewPager2
+        // Adapter ViewPager2
         binding.viewPager.adapter = HistoryPagerAdapter(this)
 
-        // jika fragment menempatkan toolbar yang menjulur ke statusbar, gunakan drawBehind = true
-        setStatusBarColorRes(R.color.white, isLightStatusBar = true, drawBehind = true)
+        // Status bar
+        setStatusBarColorRes(
+            R.color.white,
+            isLightStatusBar = true,
+            drawBehind = true
+        )
 
-        // Hubungkan TabLayout dengan ViewPager2
-        // Hubungkan TabLayout dengan ViewPager2
+        // ===== FONT SCALE AWARE =====
+        val fontScale = resources.configuration.fontScale
+
+        // Ukuran dasar tab text (sp)
+        val baseTextSizeSp = 14f
+
+        // Hitung ukuran final:
+        // - jangan terlalu kecil
+        // - jangan terlalu besar walau font user besar
+        val finalTextSizeSp = when {
+            fontScale <= 1.0f -> baseTextSizeSp
+            fontScale <= 1.2f -> baseTextSizeSp * 1.05f
+            fontScale <= 1.4f -> baseTextSizeSp * 1.1f
+            else -> baseTextSizeSp * 1.15f // MAX LIMIT
+        }.let { size ->
+            max(12f, min(size, 16f)) // clamp aman
+        }
+
+        // Hubungkan TabLayout + ViewPager2
         TabLayoutMediator(binding.tabLayoutHistory, binding.viewPager) { tab, position ->
+
             tab.text = when (position) {
                 0 -> "Semua"
                 1 -> "Video"
@@ -55,16 +79,22 @@ class HistoryFragment : Fragment() {
                 else -> "Lainnya"
             }
 
-            // Warna teks selalu putih
-            val textColor = ContextCompat.getColor(tab.view.context, android.R.color.white)
+            val textColor = ContextCompat.getColor(
+                tab.view.context,
+                android.R.color.white
+            )
 
-            // Buat custom view untuk tab
+            // ===== CUSTOM VIEW RESPONSIF =====
             val textView = TextView(tab.view.context).apply {
                 text = tab.text
                 setTextColor(textColor)
-                textSize = 14f
-                setTypeface(null, Typeface.BOLD) // Set teks tebal (bold)
-                gravity = CENTER // Pusatkan teks
+                setTypeface(null, Typeface.BOLD)
+                gravity = CENTER
+                includeFontPadding = false
+
+                // SET TEXT SIZE RESPONSIF
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, finalTextSizeSp)
+
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
@@ -72,14 +102,12 @@ class HistoryFragment : Fragment() {
             }
 
             tab.customView = textView
+
         }.attach()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-    override fun onResume() {
-        super.onResume()
     }
 }

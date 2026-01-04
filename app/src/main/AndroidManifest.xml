@@ -87,11 +87,6 @@
             android:foregroundServiceType="mediaProcessing|dataSync|mediaPlayback"
             android:exported="false"/>
 
-        <service
-            android:name=".ui.services.DownloadService"
-            android:foregroundServiceType="mediaPlayback|dataSync"
-            android:exported="false" />
-
         <receiver
             android:name=".ui.helpers.RestartReceiver"
             android:exported="true" />

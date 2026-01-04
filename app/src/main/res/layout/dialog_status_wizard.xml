@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_wizard_dialog">
+
+    <!-- SCROLL AREA -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <!-- TITLE -->
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Panduan Akses Status WhatsApp"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:textColor="@color/colorOnSurface"
+                android:layout_marginBottom="8dp"/>
+
+            <!-- SUBTITLE -->
+            <TextView
+                android:id="@+id/tvSubtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Ikuti langkah berikut agar story dapat terbaca"
+                android:textSize="14sp"
+                android:textColor="@color/colorOnSurface"
+                android:alpha="0.7"
+                android:layout_marginBottom="8dp"/>
+
+            <!-- STEP COUNTER -->
+            <TextView
+                android:id="@+id/tvStepCounter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Langkah 1 dari 6"
+                android:textSize="13sp"
+                android:textColor="@color/colorOnSurface"
+                android:alpha="0.6"
+                android:layout_marginBottom="20dp"/>
+
+            <!-- STEP LIST -->
+            <LinearLayout
+                android:id="@+id/stepContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"/>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- ACTION BUTTON (FIXED) -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnContinue"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Buka Folder"
+        android:textAllCaps="false"
+        android:layout_margin="16dp"
+        app:cornerRadius="12dp"
+        style="?attr/materialButtonOutlinedStyle"/>
+
+</LinearLayout>

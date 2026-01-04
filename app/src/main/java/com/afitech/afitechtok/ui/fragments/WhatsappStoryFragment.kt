@@ -21,6 +21,8 @@ import com.afitech.afitechtok.data.database.AppDatabase
 import com.afitech.afitechtok.data.database.DownloadHistoryDao
 import com.afitech.afitechtok.databinding.FragmentWhatsappStoryBinding
 import com.afitech.afitechtok.ui.adapters.StoryPagerAdapter
+import com.afitech.afitechtok.ui.helpers.StepType
+import com.afitech.afitechtok.ui.helpers.WizardStep
 import com.afitech.afitechtok.utils.AdsManager
 import com.afitech.afitechtok.utils.setStatusBarColorRes
 import com.google.android.gms.ads.AdView
@@ -417,7 +419,7 @@ Ikuti langkah berikut untuk memilih folder .Statuses (WhatsApp/Business):
      * - tidak menampilkan dialog di sini; hanya pengecekan boolean
      */
     private fun isStatusesFolderDoc(doc: DocumentFile): Boolean {
-        return doc.name?.contains(".Statuses", ignoreCase = true) == true
+        return resolveStepType(doc) == StepType.STATUSES_DIR
     }
 
     /**
@@ -440,69 +442,113 @@ Ikuti langkah berikut untuk memilih folder .Statuses (WhatsApp/Business):
      * Pesan step di sini juga menyebutkan com.whatsapp / com.whatsapp.w4b sehingga panduan berlaku
      * untuk pengguna WhatsApp Business maupun standar.
      */
+
+    private fun resolveStepType(doc: DocumentFile?): StepType {
+        if (doc == null) return StepType.UNKNOWN
+
+        val name = doc.name ?: return StepType.UNKNOWN
+
+        return when {
+            name.equals(".Statuses", ignoreCase = true) ->
+                StepType.STATUSES_DIR
+
+            name.equals("Android", ignoreCase = true) ->
+                StepType.ANDROID_DIR
+
+            name == "media" ->
+                StepType.MEDIA_DIR_LOWER
+
+            name.equals("com.whatsapp", ignoreCase = true) ||
+                    name.equals("com.whatsapp.w4b", ignoreCase = true) ->
+                StepType.WHATSAPP_PACKAGE
+
+            name.equals("WhatsApp", ignoreCase = true) ->
+                StepType.WHATSAPP_DIR
+
+            name.equals("Media", ignoreCase = true) ->
+                StepType.MEDIA_DIR_CAPITAL
+
+            else -> StepType.UNKNOWN
+        }
+    }
+
     private fun showGuideDialogFor(doc: DocumentFile?) {
-
-        val guide = if (isAndroid11Plus()) {
-            // ================= ANDROID 11+ =================
-            when {
-                doc == null ->
-                    "Folder tidak dapat dibaca. Silakan pilih ulang folder."
-
-                doc.name.equals("Android", ignoreCase = true) ->
-                    "Anda memilih folder Android.\n\nLanjutkan dengan masuk ke folder 'media' (huruf kecil)."
-
-                doc.name == "media" ->
-                    "Anda memilih folder 'media'.\n\nLanjutkan dengan pilih folder 'com.whatsapp' atau 'com.whatsapp.w4b' (jika Anda menggunakan WhatsApp Business)."
-
-                doc.name.equals("com.whatsapp", ignoreCase = true) ||
-                        doc.name.equals("com.whatsapp.w4b", ignoreCase = true) ->
-                    "Anda memilih folder package WhatsApp.\n\nLanjutkan dengan masuk ke folder 'WhatsApp'."
-
-                doc.name.equals("WhatsApp", ignoreCase = true) ->
-                    "Anda memilih folder WhatsApp.\n\nLanjutkan dengan pilih folder 'Media' (M huruf besar)."
-
-                doc.name == "Media" ->
-                    "Anda memilih folder 'Media'.\n\n📌 Langkah berikutnya:\n" +
-                            "1. Tekan ikon titik tiga di kanan atas\n" +
-                            "2. Aktifkan 'Tampilkan file/ folder tersembunyi'\n" +
-                            "3. Pilih folder '.Statuses'."
-
-                else ->
-                    "Folder yang dipilih bukan lokasi yang benar.\n\nIkuti urutan:\n" +
-                            "Android > media > com.whatsapp (atau com.whatsapp.w4b) > WhatsApp > Media > .Statuses"
-            }
-
-        } else {
-            // ================= ANDROID 10 KE BAWAH =================
-            when {
-                doc == null ->
-                    "Folder tidak dapat dibaca. Silakan pilih ulang folder."
-
-                doc.name.equals("WhatsApp", ignoreCase = true) ->
-                    "Anda memilih folder WhatsApp.\n\nLanjutkan dengan masuk ke folder 'Media'."
-
-                doc.name.equals("Media", ignoreCase = true) ->
-                    "Anda memilih folder Media.\n\n📌 Langkah berikutnya:\n" +
-                            "1. Tekan ikon titik tiga di kanan atas\n" +
-                            "2. Aktifkan 'Tampilkan file/ folder tersembunyi'\n" +
-                            "3. Pilih folder '.Statuses'."
-
-                else ->
-                    "Folder yang dipilih bukan lokasi yang benar.\n\nIkuti urutan:\n" +
-                            "WhatsApp > Media > .Statuses"
-            }
+        val step = resolveStepType(doc)
+        val wizard = StatusWizardDialogFragment(
+            steps = getWizardSteps(),
+            currentStep = step
+        ) {
+            requestStoragePermission()
         }
 
-        AlertDialog.Builder(requireContext())
-            .setTitle("Panduan")
-            .setMessage(guide)
-            .setPositiveButton("Mengerti") { d, _ ->
-                d.dismiss()
-                requestStoragePermission()
-            }
-            .setCancelable(true)
-            .show()
+        wizard.show(parentFragmentManager, "wizard")
     }
+
+
+    private fun getWizardSteps(): List<WizardStep> {
+        return if (isAndroid11Plus()) {
+            listOf(
+                WizardStep(
+                    StepType.ANDROID_DIR,
+                    "Masuk Folder Android",
+                    "Buka folder Android di penyimpanan internal.",
+                    R.drawable.ic_folder_android
+                ),
+                WizardStep(
+                    StepType.MEDIA_DIR_LOWER,
+                    "Buka Folder media",
+                    "Masuk ke folder media (huruf kecil).",
+                    R.drawable.ic_folder
+                ),
+                WizardStep(
+                    StepType.WHATSAPP_PACKAGE,
+                    "Pilih Package WhatsApp",
+                    "Pilih com.whatsapp atau com.whatsapp.w4b.",
+                    R.drawable.ic_wa
+                ),
+                WizardStep(
+                    StepType.WHATSAPP_DIR,
+                    "Masuk Folder WhatsApp",
+                    "Buka folder WhatsApp.",
+                    R.drawable.ic_folder
+                ),
+                WizardStep(
+                    StepType.MEDIA_DIR_CAPITAL,
+                    "Buka Folder Media",
+                    "Masuk ke folder Media (M besar).",
+                    R.drawable.ic_folder
+                ),
+                WizardStep(
+                    StepType.STATUSES_DIR,
+                    "Pilih .Statuses",
+                    "Aktifkan file tersembunyi lalu pilih .Statuses.",
+                    R.drawable.ic_hidden_folder
+                )
+            )
+        } else {
+            listOf(
+                WizardStep(
+                    StepType.WHATSAPP_DIR,
+                    "Masuk Folder WhatsApp",
+                    "Buka folder WhatsApp di penyimpanan.",
+                    R.drawable.ic_wa
+                ),
+                WizardStep(
+                    StepType.MEDIA_DIR_CAPITAL,
+                    "Masuk Folder Media",
+                    "Buka folder Media.",
+                    R.drawable.ic_folder
+                ),
+                WizardStep(
+                    StepType.STATUSES_DIR,
+                    "Pilih .Statuses",
+                    "Aktifkan file tersembunyi lalu pilih .Statuses.",
+                    R.drawable.ic_hidden_folder
+                )
+            )
+        }
+    }
+
 
     /** Overlay loading */
     private fun showLoading(message: String = "Memeriksa folder...") {

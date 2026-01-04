@@ -37,4 +37,8 @@ interface DownloadHistoryDao {
 """)
     suspend fun getAllDownloadedOriginalUrls(source: String): List<String>
 
+    @Query("SELECT COUNT(*) FROM download_history WHERE fileType = :type")
+    suspend fun countByFileType(type: String): Int
+
+
 }
