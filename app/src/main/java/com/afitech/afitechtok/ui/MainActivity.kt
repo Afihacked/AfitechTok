@@ -34,11 +34,8 @@ import com.afitech.afitechtok.R
 import com.afitech.afitechtok.ui.adapters.MainPagerAdapter
 import com.afitech.afitechtok.ui.fragments.*
 import com.afitech.afitechtok.ui.helpers.RemoteConfigHelper
-import com.afitech.afitechtok.ui.helpers.ThemeHelper
 import com.afitech.afitechtok.ui.services.DownloadServiceTT
 import com.afitech.afitechtok.ui.services.DownloadSession
-import com.afitech.afitechtok.utils.setStatusBarColorInt
-import com.afitech.afitechtok.utils.setStatusBarColorRes
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.navigation.NavigationView
@@ -77,7 +74,7 @@ class MainActivity : AppCompatActivity() {
         RemoteConfigHelper.init(this)
 
         sharedPref = getSharedPreferences("theme_pref", MODE_PRIVATE)
-        ThemeHelper.applyTheme(this)
+//        ThemeHelper.applyTheme(this)
         super.onCreate(savedInstanceState)
         // 1) set layout
         setContentView(R.layout.activity_main)
@@ -134,10 +131,6 @@ class MainActivity : AppCompatActivity() {
         toolbar.setBackgroundColor(desiredColor)
         toolbar.elevation = 0f
         scrim?.setBackgroundColor(desiredColor)
-
-        // set status bar icon contrast (true = dark icons)
-// ===== FINAL STATUS BAR OWNER =====
-        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         window.statusBarColor = ContextCompat.getColor(this, R.color.sttsbar)
 
@@ -197,8 +190,6 @@ class MainActivity : AppCompatActivity() {
         // Setup Tab + ViewPager
         viewPager = findViewById(R.id.viewPager)
         tabLayout = findViewById(R.id.tabLayout)
-
-        viewPager.adapter = MainPagerAdapter(this)
         viewPager.offscreenPageLimit = 3
 
         // pastikan mode/gravity sudah benar

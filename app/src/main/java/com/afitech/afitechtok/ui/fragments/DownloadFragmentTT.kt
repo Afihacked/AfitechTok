@@ -252,7 +252,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         }
         checkClipboardOnStart()
         syncButtonState()
-        }
+    }
 
     // === Inisialisasi ===
     private fun initViews(view: View) {

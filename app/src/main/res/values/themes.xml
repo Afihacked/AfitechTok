@@ -1,50 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Base Theme: tambahkan windowDrawsSystemBarBackgrounds dan statusBarColor -->
-    <style name="Base.Theme.TikDownloader" parent="Theme.Material3.Light.NoActionBar">
+
+    <!-- ================= BASE THEME (APP-WIDE) ================= -->
+    <style name="Base.Theme.TikDownloader"
+        parent="Theme.Material3.Light.NoActionBar">
+
+        <!-- Core colors -->
         <item name="colorSurface">@color/colorSurface</item>
         <item name="colorOnSurface">@color/colorOnSurface</item>
 
-        <!-- sistem menggambar system bar -->
+        <!-- System Bars -->
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
-        <item name="android:windowTranslucentStatus">false</item>
-
-        <!-- status bar FINAL sejak awal -->
         <item name="android:statusBarColor">@color/sttsbar</item>
         <item name="android:windowLightStatusBar">true</item>
 
-        <!-- optional -->
         <item name="android:navigationBarColor">@color/navigationBarColor</item>
+        <item name="android:windowLightNavigationBar">true</item>
+
     </style>
 
+    <!-- ================= APP THEME ================= -->
+    <style name="Theme.TikDownloader"
+        parent="Base.Theme.TikDownloader" />
 
-    <!-- Tema utama aplikasi (pakai Base.Theme.TikDownloader) -->
-    <style name="Theme.TikDownloader" parent="Base.Theme.TikDownloader">
-        <!-- override theme-wide Material attributes di sini jika perlu -->
-    </style>
+    <!-- ================= SPLASH THEME (MATERIAL 3) ================= -->
+    <style name="Theme.Splash"
+        parent="Theme.Material3.Light.NoActionBar">
 
-    <!-- Tema Splash (tetap boleh ada) -->
-    <style name="Theme.Splash" parent="Theme.MaterialComponents.Light.NoActionBar">
         <item name="android:windowBackground">@drawable/splash_background</item>
         <item name="android:statusBarColor">@color/sttsbar</item>
-        <item name="android:windowTranslucentStatus">false</item>
+
     </style>
 
-    <!-- Tema Popup Menu -->
-    <style name="PopupMenuStyle" parent="Widget.Material3.PopupMenu">
+    <!-- ================= POPUP MENU ================= -->
+    <style name="PopupMenuStyle"
+        parent="Widget.Material3.PopupMenu">
+
         <item name="android:popupBackground">@color/colorSurface</item>
         <item name="android:textColor">@color/colorOnSurface</item>
+
     </style>
 
-    <!-- Tema EditText -->
-    <style name="EditTextTheme" parent="Widget.Material3.TextInputEditText.OutlinedBox">
-        <item name="android:backgroundTint">@color/colorOnSurface</item>
+    <!-- ================= TEXTINPUT / EDITTEXT STYLE ================= -->
+    <!-- Pakai sebagai style, bukan theme -->
+    <style name="EditTextTheme"
+        parent="Widget.Material3.TextInputEditText.OutlinedBox">
+
         <item name="android:textColor">@color/colorOnSurface</item>
         <item name="android:textColorHint">@color/colorHint</item>
+        <item name="android:backgroundTint">@color/colorOnSurface</item>
         <item name="boxStrokeColor">@drawable/edit_text_border</item>
+
     </style>
+
+
+    <!-- ================= DIALOG ================= -->
     <style name="ThemeOverlay.TikDownloader.MaterialAlertDialog"
-        parent="ThemeOverlay.Material3.MaterialAlertDialog">
-    </style>
+        parent="ThemeOverlay.Material3.MaterialAlertDialog" />
 
 </resources>
