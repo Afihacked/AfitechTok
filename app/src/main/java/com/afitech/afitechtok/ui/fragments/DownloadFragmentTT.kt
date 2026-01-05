@@ -79,6 +79,8 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     private var slideFailed = false
     private var isSlideDownload = false
 
+    private var hasShownNoInternetToast = false
+
     // === Broadcast Receiver ===
     // === Broadcast Receiver (SYNC WITH STATUS) ===
     private val downloadReceiver = object : BroadcastReceiver() {
@@ -96,16 +98,15 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
                     progressDownload.visibility = View.VISIBLE
                     arrowIcon.visibility = View.GONE
-
                     progressDownload.progress = progress
 
-                    // 🔥 INI YANG HILANG
                     unduhtext.text = "Mengunduh… $progress%"
 
                     DownloadSession.isDownloading = true
                 }
+
                 // ===============================
-                // COMPLETE (GROUPING DI SINI)
+                // COMPLETE (SEMUA SELESAI)
                 // ===============================
                 DownloadServiceTT.ACTION_COMPLETE -> {
                     if (!isAdded) return
@@ -114,26 +115,28 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                         DownloadServiceTT.EXTRA_SUCCESS,
                         false
                     )
+                    val errorReason = intent.getStringExtra(
+                        DownloadServiceTT.EXTRA_ERROR_REASON
+                    )
 
-                    // =================================================
+                    // ===============================
                     // 🔥 MODE SLIDE (BANYAK GAMBAR)
-                    // =================================================
+                    // ===============================
                     if (isSlideDownload) {
                         slideFinished++
                         if (!success) slideFailed = true
 
-                        // ❗ BELUM SEMUA → JANGAN RESET / JANGAN TOAST
+                        // belum semua → tunggu
                         if (slideFinished < slideTotal) return
 
                         // ===== SEMUA GAMBAR SELESAI =====
                         isSlideDownload = false
-
-                        textProgress.visibility = View.GONE
                         DownloadSession.isDownloading = false
                         DownloadSession.lastDownloadFinished = success
-                        syncButtonState()
-
                         isAdShowing = false
+
+                        textProgress.visibility = View.GONE
+                        syncButtonState()
 
                         requireContext().showToastSafe(
                             if (slideFailed)
@@ -141,29 +144,48 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                             else
                                 "Semua gambar berhasil diunduh"
                         )
+
+                        // ✅ reset flag di akhir SLIDE
+                        hasShownNoInternetToast = false
                         return
                     }
 
-                    // =================================================
+                    // ===============================
                     // 🔹 MODE NORMAL (VIDEO / MUSIC)
-                    // =================================================
+                    // ===============================
                     DownloadSession.isDownloading = false
                     DownloadSession.lastDownloadFinished = success
                     isAdShowing = false
 
                     syncButtonState()
 
-                    requireContext().showToastSafe(
-                        if (success)
-                            "Unduhan TikTok selesai"
-                        else
-                            "Unduhan TikTok gagal"
-                    )
-                    DownloadSession.isDownloading = false
+                    when {
+                        errorReason == DownloadServiceTT.ERROR_NO_INTERNET -> {
+                            requireContext().showToastSafe(
+                                "Unduh gagal, internet tidak tersedia"
+                            )
+                        }
+
+                        success -> {
+                            requireContext().showToastSafe(
+                                "Unduhan TikTok selesai"
+                            )
+                        }
+
+                        else -> {
+                            requireContext().showToastSafe(
+                                "Unduhan TikTok gagal"
+                            )
+                        }
+                    }
+
+                    // ✅ reset flag di akhir NORMAL
+                    hasShownNoInternetToast = false
                 }
             }
         }
     }
+
 
 
 
@@ -220,9 +242,12 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
     override fun onResume() {
         super.onResume()
-        if (DownloadSession.isDownloading &&
-            !NetworkHelper.isInternetAvailable(requireContext())
+        if (
+            DownloadSession.isDownloading &&
+            !NetworkHelper.isInternetAvailable(requireContext()) &&
+            !hasShownNoInternetToast
         ) {
+            hasShownNoInternetToast = true
             showToastSafe("Koneksi internet terputus")
         }
         checkClipboardOnStart()
@@ -1006,9 +1031,10 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                 // teks akan diupdate oleh ACTION_PROGRESS
                 val p = DownloadSession.lastProgress
                 if (p > 0) {
-                    unduhtext.text = "Menghubungkan..."
                     unduhtext.text = "Mengunduh… $p%"
                     progressDownload.progress = p
+                }else {
+                    unduhtext.text = "Menghubungkan..."
                 }
             }
 

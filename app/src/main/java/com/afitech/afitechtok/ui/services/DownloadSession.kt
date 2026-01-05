@@ -15,5 +15,7 @@ object DownloadSession {
     var lastDownloadFinished: Boolean = false
 
     @Volatile var lastProgress: Int = 0   // 🔥 INI
+
+
 }
 

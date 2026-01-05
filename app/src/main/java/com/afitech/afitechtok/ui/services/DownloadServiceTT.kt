@@ -42,6 +42,9 @@ class DownloadServiceTT : Service() {
 
         const val NOTIF_CHANNEL_ID = "tiktok_download_channel"
         const val NOTIF_ID = 2
+        const val EXTRA_ERROR_REASON = "error_reason"
+        const val ERROR_NO_INTERNET = "no_internet"
+
     }
 
     private lateinit var notificationManager: NotificationManager
@@ -124,7 +127,7 @@ class DownloadServiceTT : Service() {
                 }
 
                 if (!downloadOk) {
-                    broadcastResult(false)
+//                    broadcastResult(false)
                     return@launch
                 }
 
@@ -207,8 +210,19 @@ class DownloadServiceTT : Service() {
             var read: Int
 
             while (input.read(buffer).also { read = it } != -1) {
+                if (!NetworkHelper.isInternetAvailable(this@DownloadServiceTT)) {
+                    // 🔥 TUTUP STREAM SEBELUM THROW
+                    try {
+                        input.close()
+                        output.close()
+                    } catch (_: Exception) {}
+
+                    throw IOException("NO_INTERNET")
+                }
+
                 output.write(buffer, 0, read)
                 downloaded += read
+
                 if (total > 0) {
                     onProgress(((downloaded * 100) / total).toInt(), downloaded, total)
                 }
@@ -220,7 +234,28 @@ class DownloadServiceTT : Service() {
             true
 
         } catch (e: Exception) {
-            Log.e("DownloadServiceTT", "downloadToFile error: ${e.message}", e)
+
+            if (e.message == "NO_INTERNET") {
+                Log.e("DownloadServiceTT", "Internet terputus saat download")
+
+                // 🔔 Notifikasi sekali saja
+                showNoInternetNotification(format)
+
+                // 🔥 Broadcast sekali saja
+                broadcastResult(
+                    success = false,
+                    errorReason = ERROR_NO_INTERNET
+                )
+            } else {
+                Log.e(
+                    "DownloadServiceTT",
+                    "downloadToFile error: ${e.message}",
+                    e
+                )
+
+                broadcastResult(success = false)
+            }
+
             false
         } finally {
             conn?.disconnect()
@@ -373,19 +408,47 @@ class DownloadServiceTT : Service() {
         )
     }
 
-    private fun broadcastResult(success: Boolean) {
-        // update SESSION DULU
+    private fun broadcastResult(
+        success: Boolean,
+        errorReason: String? = null
+    ) {
         DownloadSession.isDownloading = false
         DownloadSession.lastDownloadFinished = success
+        DownloadSession.lastProgress = 0
 
-        // baru broadcast
         LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(
-            Intent(ACTION_COMPLETE).putExtra(EXTRA_SUCCESS, success)
+            Intent(ACTION_COMPLETE).apply {
+                putExtra(EXTRA_SUCCESS, success)
+                errorReason?.let {
+                    putExtra(EXTRA_ERROR_REASON, it)
+                }
+            }
         )
 
         stopForeground(STOP_FOREGROUND_DETACH)
         stopSelf()
     }
+
+    private fun showNoInternetNotification(format: String) {
+
+        // 🔥 KELUAR DARI FOREGROUND MODE (INI KUNCI)
+        stopForeground(true)
+
+        val errorNotif = NotificationCompat.Builder(this, NOTIF_CHANNEL_ID)
+            .setContentTitle(getNotifTitleByFormat(format))
+            .setContentText("Koneksi terputus")
+            .setSmallIcon(R.drawable.ic_download)
+            .setOngoing(false)
+            .setAutoCancel(true)
+            .setOnlyAlertOnce(false)
+            .setContentIntent(createNotificationIntent())
+            .build()
+
+        // 🔔 PASANG NOTIF BARU (BUKAN FOREGROUND)
+        notificationManager.notify(NOTIF_ID, errorNotif)
+    }
+
+
 
     private fun createNotificationIntent(): PendingIntent {
         val intent = Intent(this, MainActivity::class.java).apply {
