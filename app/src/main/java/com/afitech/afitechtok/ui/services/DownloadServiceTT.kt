@@ -1,9 +1,11 @@
 package com.afitech.afitechtok.ui.services
 
 import android.app.*
+import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.pm.ServiceInfo
 import android.net.Uri
 import android.os.Build
@@ -16,8 +18,7 @@ import com.afitech.afitechtok.R
 import com.afitech.afitechtok.data.database.AppDatabase
 import com.afitech.afitechtok.data.model.DownloadHistory
 import com.afitech.afitechtok.network.TikTokDownloader
-import com.afitech.afitechtok.ui.helpers.AnalyticsLogger
-import com.google.firebase.analytics.FirebaseAnalytics
+import com.afitech.afitechtok.ui.MainActivity
 import kotlinx.coroutines.*
 import java.io.*
 import java.net.HttpURLConnection
@@ -37,15 +38,9 @@ class DownloadServiceTT : Service() {
 
         const val EXTRA_VIDEO_URL = "video_url"
         const val EXTRA_FORMAT = "format"
-        const val EXTRA_IS_SLIDE = "is_slide_download"
-        const val EXTRA_IMAGE_URLS = "image_urls"
 
         const val NOTIF_CHANNEL_ID = "tiktok_download_channel"
         const val NOTIF_ID = 2
-        private var doneCallback: ((Boolean) -> Unit)? = null
-        fun setDoneCallback(callback: ((Boolean) -> Unit)?) {
-            doneCallback = callback
-        }
     }
 
     private lateinit var notificationManager: NotificationManager
@@ -56,58 +51,71 @@ class DownloadServiceTT : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
+        val videoUrl = intent?.getStringExtra(EXTRA_VIDEO_URL)
+            ?: return START_NOT_STICKY
+        val format = intent.getStringExtra(EXTRA_FORMAT) ?: "Videos"
+
+        // ===============================
+        // 🔥 DOWNLOAD SESSION
+        // ===============================
+        DownloadSession.lastVideoUrl = videoUrl
+        DownloadSession.lastFormat = format
+        DownloadSession.isDownloading = true
+        DownloadSession.lastDownloadFinished = false
+        DownloadSession.lastProgress = 0
+
         notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannel()
 
-        val videoUrl = intent?.getStringExtra(EXTRA_VIDEO_URL)
-            ?: return START_NOT_STICKY
+        // 🔥 title sesuai format
+        val notifTitle = getNotifTitleByFormat(format)
 
-        val format = intent.getStringExtra(EXTRA_FORMAT) ?: "Videos"
-        val analytics = FirebaseAnalytics.getInstance(applicationContext)
-
-        ensureForegroundStarted("Unduhan TikTok")
+        ensureForegroundStarted(notifTitle)
 
         serviceScope.launch {
             try {
-
-                val notifTitle = "Unduhan TikTok"
-
-                // ===============================
-                // 1️⃣ HUBUNGKAN (NOTIF SAJA)
-                // ===============================
                 updateNotification(notifTitle, 0, "Menghubungkan ke TikTok…")
 
-                val info = TikTokDownloader.getDownloadInfo(videoUrl, format)
-                    ?: throw Exception("Download info null")
+                val info = if (format == "Gambar" && videoUrl.startsWith("http")) {
+                    val meta = TikTokDownloader.probeRemote(videoUrl)
+                    val (ext, mime) = TikTokDownloader.run {
+                        val ct = meta.contentType
+                        when {
+                            ct?.startsWith("image/") == true -> {
+                                if (ct.contains("png")) ".png" to "image/png"
+                                else ".jpg" to "image/jpeg"
+                            }
+                            else -> throw IllegalStateException("Bukan image CDN")
+                        }
+                    }
+                    TikTokDownloader.DownloadInfo(videoUrl, ext, mime)
+                } else {
+                    TikTokDownloader.getDownloadInfo(videoUrl, format)
+                        ?: throw Exception("Download info null")
+                }
 
-                val fileName = generateFileName(videoUrl, info.ext)
+                val fileName = generateFileName(info.ext)
                 val dao = AppDatabase.getDatabase(applicationContext).downloadHistoryDao()
+                val tmpFile = File.createTempFile("afitech_tmp_", info.ext, cacheDir)
 
-                val tmpExt = if (info.ext.startsWith(".")) info.ext else ".${info.ext}"
-                val tmpFile = File.createTempFile("afitech_tmp_", tmpExt, cacheDir)
-
-                // ===============================
-                // 2️⃣ DOWNLOAD
-                // ===============================
-                val downloadOk = downloadToFile(info.url, tmpFile) { percent, downloaded, total ->
-
+                val downloadOk = downloadToFile(
+                    info.url,
+                    format,
+                    tmpFile
+                ) { percent, downloaded, total ->
                     val pct = percent.coerceIn(0, 100)
 
-                    // 👉 STATUS UNTUK TOMBOL (TANPA SIZE)
-                    val buttonStatus =
-                        if (pct < 100) "Mengunduh… $pct%"
-                        else "Memproses file…"
+                    // 🔑 SIMPAN PROGRESS TERAKHIR
+                    DownloadSession.lastProgress = pct
 
-                    // 👉 STATUS UNTUK NOTIF (PAKAI SIZE)
-                    val notifStatus =
-                        if (pct < 100)
-                            "Mengunduh… $pct% (${formatBytes(downloaded)} / ${formatBytes(total)})"
-                        else
-                            "Memproses file…"
+                    sendProgress(pct, "Mengunduh… $pct%")
 
-                    sendProgress(pct, buttonStatus)
-                    updateNotification(notifTitle, pct, notifStatus)
+                    updateNotification(
+                        notifTitle,
+                        pct,
+                        "Mengunduh… $pct% (${formatBytes(downloaded)} / ${formatBytes(total)})"
+                    )
                 }
 
                 if (!downloadOk) {
@@ -115,51 +123,36 @@ class DownloadServiceTT : Service() {
                     return@launch
                 }
 
-                // ===============================
-                // 3️⃣ SIMPAN
-                // ===============================
-                sendProgress(100, "Proses File")
-                updateNotification(notifTitle, 100, "Proses File")
-
                 val savedUri = saveFileToMediaStore(
                     applicationContext,
                     tmpFile,
                     fileName,
                     info.mime
-                )
-
-                if (savedUri == null) {
+                ) ?: run {
                     broadcastResult(false)
                     return@launch
                 }
 
-                // ===============================
-                // 4️⃣ HISTORY
-                // ===============================
                 dao.insertDownload(
                     DownloadHistory(
-                        id = 0L,
-                        fileName = fileName,
-                        savedUri = savedUri.toString(),
-                        originalUrl = info.url,
-                        mimeType = info.mime,
-                        ext = info.ext,
-                        fileType = "Video",
-                        fileSize = tmpFile.length(),
-                        durationMs = null,
-                        isRemuxed = false,
-                        downloadDate = System.currentTimeMillis(),
-                        source = "tiktok"
+                        0L,
+                        fileName,
+                        savedUri.toString(),
+                        info.url,
+                        info.mime,
+                        info.ext,
+                        if (info.mime.startsWith("audio/")) "Audio"
+                        else if (info.mime.startsWith("image/")) "Image"
+                        else "Video",
+                        tmpFile.length(),
+                        null,
+                        false,
+                        System.currentTimeMillis(),
+                        "tiktok"
                     )
                 )
 
-                // ===============================
-                // 5️⃣ SELESAI
-                // ===============================
-                sendProgress(100, "Unduhan selesai")
                 updateNotification(notifTitle, 100, "Unduhan selesai")
-
-                AnalyticsLogger.logDownloadCompleted(analytics, "tiktok", format)
                 broadcastResult(true)
 
             } catch (e: Exception) {
@@ -172,7 +165,199 @@ class DownloadServiceTT : Service() {
     }
 
     // =====================================================
-    // PROGRESS
+    // DOWNLOAD + VALIDASI STREAM (INI FIX UTAMA)
+    // =====================================================
+    private suspend fun downloadToFile(
+        urlStr: String,
+        format: String,
+        outFile: File,
+        onProgress: (Int, Long, Long) -> Unit
+    ): Boolean = withContext(Dispatchers.IO) {
+
+        var conn: HttpURLConnection? = null
+        try {
+            conn = URL(urlStr).openConnection() as HttpURLConnection
+            conn.connect()
+
+            val contentType = conn.contentType ?: ""
+
+            // 🔧 FIX: pastikan isi FILE SESUAI FORMAT (API-driven)
+            when (format) {
+                "Music" -> if (!contentType.startsWith("audio/"))
+                    throw IllegalStateException("Bukan audio asli: $contentType")
+
+                "Gambar" -> if (!contentType.startsWith("image/"))
+                    throw IllegalStateException("Bukan image asli: $contentType")
+
+                "Videos" -> if (!contentType.startsWith("video/"))
+                    throw IllegalStateException("Bukan video asli: $contentType")
+            }
+
+            val total = conn.contentLengthLong
+            val input = conn.inputStream
+            val output = outFile.outputStream()
+
+            val buffer = ByteArray(8192)
+            var downloaded = 0L
+            var read: Int
+
+            while (input.read(buffer).also { read = it } != -1) {
+                output.write(buffer, 0, read)
+                downloaded += read
+                if (total > 0) {
+                    onProgress(((downloaded * 100) / total).toInt(), downloaded, total)
+                }
+            }
+
+            output.flush()
+            input.close()
+            output.close()
+            true
+
+        } catch (e: Exception) {
+            Log.e("DownloadServiceTT", "downloadToFile error: ${e.message}", e)
+            false
+        } finally {
+            conn?.disconnect()
+        }
+    }
+
+    // =====================================================
+    // MEDIASTORE (ASLI, TIDAK DIPAKSA)
+    // =====================================================
+    private fun saveFileToMediaStore(
+        context: Context,
+        srcFile: File,
+        displayName: String,
+        mime: String
+    ): Uri? {
+        return try {
+            val resolver = context.contentResolver
+
+            // 🔹 Tentukan koleksi MediaStore
+            val collection = when {
+                mime.startsWith("video/") ->
+                    MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                mime.startsWith("audio/") ->
+                    MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                mime.startsWith("image/") ->
+                    MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                else ->
+                    MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+            }
+
+            // 🔹 Pastikan nama file UNIK (support download dobel)
+            val finalName = generateUniqueDisplayName(
+                resolver,
+                collection,
+                displayName
+            )
+
+            val values = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, finalName)
+                put(MediaStore.MediaColumns.MIME_TYPE, mime)
+
+                when {
+                    mime.startsWith("video/") ->
+                        put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/AfitechTok")
+                    mime.startsWith("audio/") ->
+                        put(MediaStore.Audio.Media.RELATIVE_PATH, "Music/AfitechTok")
+                    mime.startsWith("image/") ->
+                        put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/AfitechTok")
+                    else ->
+                        put(MediaStore.MediaColumns.RELATIVE_PATH, "Download/AfitechTok")
+                }
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    put(MediaStore.MediaColumns.IS_PENDING, 1)
+                }
+            }
+
+            val uri = insertWithRetry(resolver, collection, values) ?: return null
+
+            resolver.openOutputStream(uri)?.use { out ->
+                srcFile.inputStream().use { input ->
+                    input.copyTo(out)
+                }
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                values.clear()
+                values.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                resolver.update(uri, values, null, null)
+            }
+
+            uri
+        } catch (e: Exception) {
+            Log.e("DownloadServiceTT", "saveFileToMediaStore error: ${e.message}", e)
+            null
+        }
+    }
+
+    private fun insertWithRetry(
+        resolver: ContentResolver,
+        collection: Uri,
+        values: ContentValues,
+        maxRetry: Int = 3
+    ): Uri? {
+        repeat(maxRetry) { attempt ->
+            try {
+                return resolver.insert(collection, values)
+            } catch (e: Exception) {
+                Log.w(
+                    "DownloadServiceTT",
+                    "Insert MediaStore gagal, retry ke-${attempt + 1}: ${e.message}"
+                )
+
+                // 🔧 ganti nama file agar path berubah
+                val name = values.getAsString(MediaStore.MediaColumns.DISPLAY_NAME)
+                val dot = name.lastIndexOf('.')
+                val base = if (dot > 0) name.substring(0, dot) else name
+                val ext = if (dot > 0) name.substring(dot) else ""
+
+                values.put(
+                    MediaStore.MediaColumns.DISPLAY_NAME,
+                    "${base}_${System.nanoTime()}$ext"
+                )
+            }
+        }
+        return null
+    }
+
+    private fun generateUniqueDisplayName(
+        resolver: ContentResolver,
+        collection: Uri,
+        originalName: String
+    ): String {
+        val dotIndex = originalName.lastIndexOf('.')
+        val baseName = if (dotIndex > 0) originalName.substring(0, dotIndex) else originalName
+        val ext = if (dotIndex > 0) originalName.substring(dotIndex) else ""
+
+        var name = originalName
+        var index = 1
+
+        while (true) {
+            val cursor = resolver.query(
+                collection,
+                arrayOf(MediaStore.MediaColumns._ID),
+                "${MediaStore.MediaColumns.DISPLAY_NAME}=?",
+                arrayOf(name),
+                null
+            )
+
+            val exists = cursor?.use { it.moveToFirst() } ?: false
+            if (!exists) break
+
+            name = "$baseName ($index)$ext"
+            index++
+        }
+
+        return name
+    }
+
+
+    // =====================================================
+    // UTIL
     // =====================================================
     private fun sendProgress(progress: Int, status: String) {
         LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(
@@ -183,9 +368,36 @@ class DownloadServiceTT : Service() {
         )
     }
 
-    // =====================================================
-    // NOTIFICATION
-    // =====================================================
+    private fun broadcastResult(success: Boolean) {
+        // update SESSION DULU
+        DownloadSession.isDownloading = false
+        DownloadSession.lastDownloadFinished = success
+
+        // baru broadcast
+        LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(
+            Intent(ACTION_COMPLETE).putExtra(EXTRA_SUCCESS, success)
+        )
+
+        stopForeground(STOP_FOREGROUND_DETACH)
+        stopSelf()
+    }
+
+    private fun createNotificationIntent(): PendingIntent {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            action = "OPEN_DOWNLOAD_TT"
+            flags = FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+
+        return PendingIntent.getActivity(
+            this,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
     private fun ensureForegroundStarted(title: String) {
         if (isForegroundStarted) return
 
@@ -194,6 +406,7 @@ class DownloadServiceTT : Service() {
             .setContentText("Menyiapkan…")
             .setSmallIcon(R.drawable.ic_download)
             .setProgress(100, 0, true)
+            .setContentIntent(createNotificationIntent())
             .setOngoing(true)
             .build()
 
@@ -218,133 +431,24 @@ class DownloadServiceTT : Service() {
             .setProgress(100, progress, false)
             .setOngoing(progress < 100)
             .setAutoCancel(progress >= 100)
+            .setOnlyAlertOnce(true)
+            .setContentIntent(createNotificationIntent())
             .build()
 
         notificationManager.notify(NOTIF_ID, notif)
     }
 
-    private fun broadcastResult(success: Boolean) {
-        LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(
-            Intent(ACTION_COMPLETE).putExtra(EXTRA_SUCCESS, success)
-        )
+    private fun generateFileName(ext: String): String {
+        val timestamp = SimpleDateFormat(
+            "dd-MM-yyyy_HH-mm-ss_SSS",
+            Locale.getDefault()
+        ).format(Date())
 
-        stopForeground(STOP_FOREGROUND_DETACH)
-        stopSelf()
-    }
+        val random = UUID.randomUUID()
+            .toString()
+            .substring(0, 4) // pendek tapi aman
 
-    // =====================================================
-    // HELPERS (ASLI)
-    // =====================================================
-    private suspend fun downloadToFile(
-        urlStr: String,
-        outFile: File,
-        onProgress: (Int, Long, Long) -> Unit
-    ): Boolean {
-        return withContext(Dispatchers.IO) {
-            var conn: HttpURLConnection? = null
-            try {
-                conn = URL(urlStr).openConnection() as HttpURLConnection
-                conn.connect()
-
-                val total = conn.contentLengthLong
-                val input = conn.inputStream
-                val output = outFile.outputStream()
-
-                val buffer = ByteArray(8192)
-                var downloaded = 0L
-                var read: Int
-
-                while (input.read(buffer).also { read = it } != -1) {
-                    output.write(buffer, 0, read)
-                    downloaded += read
-                    if (total > 0) {
-                        onProgress(((downloaded * 100) / total).toInt(), downloaded, total)
-                    }
-                }
-
-                output.flush()
-                input.close()
-                output.close()
-                true
-            } catch (e: Exception) {
-                false
-            } finally {
-                conn?.disconnect()
-            }
-        }
-    }
-
-    private fun saveFileToMediaStore(
-        context: Context,
-        srcFile: File,
-        displayName: String,
-        mime: String
-    ): Uri? {
-        return try {
-            val values = ContentValues().apply {
-                put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
-                put(MediaStore.MediaColumns.MIME_TYPE, mime)
-
-                when {
-                    mime.startsWith("video/") ->
-                        put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/AfitechTok")
-
-                    mime.startsWith("audio/") ->
-                        put(MediaStore.Audio.Media.RELATIVE_PATH, "Music/AfitechTok")
-
-                    mime.startsWith("image/") ->
-                        put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/AfitechTok")
-
-                    else ->
-                        put(MediaStore.MediaColumns.RELATIVE_PATH, "Download/AfitechTok")
-                }
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    put(MediaStore.MediaColumns.IS_PENDING, 1)
-                }
-            }
-
-            val collection = when {
-                mime.startsWith("video/") ->
-                    MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-
-                mime.startsWith("audio/") ->
-                    MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-
-                mime.startsWith("image/") ->
-                    MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-
-                else ->
-                    MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-            }
-
-            val resolver = context.contentResolver
-            val uri = resolver.insert(collection, values) ?: return null
-
-            resolver.openOutputStream(uri)?.use { out ->
-                srcFile.inputStream().use { input ->
-                    input.copyTo(out)
-                }
-            }
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                values.clear()
-                values.put(MediaStore.MediaColumns.IS_PENDING, 0)
-                resolver.update(uri, values, null, null)
-            }
-
-            uri
-        } catch (e: Exception) {
-            Log.e("DownloadServiceTT", "saveFileToMediaStore error: ${e.message}", e)
-            null
-        }
-    }
-
-
-    private fun generateFileName(url: String, ext: String): String {
-        val date =
-            SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(Date())
-        return "TikTok_$date$ext"
+        return "TikTok_${timestamp}_$random$ext"
     }
 
     private fun formatBytes(bytes: Long): String {
@@ -352,8 +456,11 @@ class DownloadServiceTT : Service() {
         if (bytes < unit) return "$bytes B"
         val exp = (Math.log(bytes.toDouble()) / Math.log(unit.toDouble())).toInt()
         val pre = "KMGTPE"[exp - 1]
-        return String.format("%.1f %sB",
-            bytes / Math.pow(unit.toDouble(), exp.toDouble()), pre)
+        return String.format(
+            "%.1f %sB",
+            bytes / Math.pow(unit.toDouble(), exp.toDouble()),
+            pre
+        )
     }
 
     private fun createNotificationChannel() {
@@ -369,6 +476,16 @@ class DownloadServiceTT : Service() {
             }
         }
     }
+
+    private fun getNotifTitleByFormat(format: String): String {
+        return when (format) {
+            "Videos" -> "Video TikTok"
+            "Music" -> "Music TikTok"
+            "Gambar" -> "Gambar TikTok"
+            else -> "Unduhan TikTok"
+        }
+    }
+
 
     override fun onBind(intent: Intent?): IBinder? = null
 }

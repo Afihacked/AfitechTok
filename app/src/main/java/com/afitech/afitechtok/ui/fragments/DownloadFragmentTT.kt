@@ -2,10 +2,12 @@ package com.afitech.afitechtok.ui.fragments
 
 import android.annotation.SuppressLint
 import android.content.*
+import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.pm.ActivityInfo
 import android.content.res.ColorStateList
 import android.graphics.Outline
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -32,6 +34,7 @@ import com.afitech.afitechtok.R
 import com.afitech.afitechtok.data.database.AppDatabase
 import com.afitech.afitechtok.data.database.DownloadHistoryDao
 import com.afitech.afitechtok.ui.services.DownloadServiceTT
+import com.afitech.afitechtok.ui.services.DownloadSession
 import com.afitech.afitechtok.ui.viewmodel.TiktokViewModel
 import com.afitech.afitechtok.utils.*
 import com.bumptech.glide.Glide
@@ -70,27 +73,39 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
     private val viewModel: TiktokViewModel by viewModels()
 
+    private var slideTotal = 0
+    private var slideFinished = 0
+    private var slideFailed = false
+    private var isSlideDownload = false
+
     // === Broadcast Receiver ===
     // === Broadcast Receiver (SYNC WITH STATUS) ===
     private val downloadReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
 
+                // ===============================
+                // PROGRESS (PERSENTASE SAJA)
+                // ===============================
                 DownloadServiceTT.ACTION_PROGRESS -> {
-                    val progress = intent.getIntExtra(DownloadServiceTT.EXTRA_PROGRESS, 0)
-                    val status = intent.getStringExtra(DownloadServiceTT.EXTRA_STATUS)
+                    val progress = intent.getIntExtra(
+                        DownloadServiceTT.EXTRA_PROGRESS,
+                        0
+                    )
 
                     progressDownload.visibility = View.VISIBLE
-                    progressDownload.progress = progress
                     arrowIcon.visibility = View.GONE
 
-                    // ✅ SEKARANG SEMUA STATUS MASUK KE TOMBOL
-                    if (!status.isNullOrEmpty()) {
-                        unduhtext.text = status
-                    }
+                    progressDownload.progress = progress
+
+                    // 🔥 INI YANG HILANG
+                    unduhtext.text = "Mengunduh… $progress%"
+
+                    DownloadSession.isDownloading = true
                 }
-
-
+                // ===============================
+                // COMPLETE (GROUPING DI SINI)
+                // ===============================
                 DownloadServiceTT.ACTION_COMPLETE -> {
                     if (!isAdded) return
 
@@ -99,29 +114,56 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                         false
                     )
 
-                    // ===== RESET UI STATE =====
-                    progressDownload.visibility = View.GONE
-                    textProgress.visibility = View.GONE
-                    arrowIcon.visibility = View.VISIBLE
-                    downloadButton.isEnabled = true
+                    // =================================================
+                    // 🔥 MODE SLIDE (BANYAK GAMBAR)
+                    // =================================================
+                    if (isSlideDownload) {
+                        slideFinished++
+                        if (!success) slideFailed = true
 
-                    // ===== RESET LOGIC =====
+                        // ❗ BELUM SEMUA → JANGAN RESET / JANGAN TOAST
+                        if (slideFinished < slideTotal) return
+
+                        // ===== SEMUA GAMBAR SELESAI =====
+                        isSlideDownload = false
+
+                        textProgress.visibility = View.GONE
+                        DownloadSession.isDownloading = false
+                        DownloadSession.lastDownloadFinished = success
+                        syncButtonState()
+
+                        isAdShowing = false
+
+                        requireContext().showToastSafe(
+                            if (slideFailed)
+                                "Sebagian gambar gagal diunduh"
+                            else
+                                "Semua gambar berhasil diunduh"
+                        )
+                        return
+                    }
+
+                    // =================================================
+                    // 🔹 MODE NORMAL (VIDEO / MUSIC)
+                    // =================================================
+                    DownloadSession.isDownloading = false
+                    DownloadSession.lastDownloadFinished = success
                     isAdShowing = false
 
-                    // ===== BUTTON TEXT =====
-                    unduhtext.text = if (success) "Unduh Lagi?" else "Coba Lagi"
+                    syncButtonState()
 
-                    // ===== TOAST =====
                     requireContext().showToastSafe(
                         if (success)
                             "Unduhan TikTok selesai"
                         else
                             "Unduhan TikTok gagal"
                     )
+                    DownloadSession.isDownloading = false
                 }
             }
         }
     }
+
 
 
     // === Lifecycle ===
@@ -129,6 +171,13 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+
+        arguments?.getString("video_url")?.let { url ->
+            if (editText.text.isNullOrBlank()) {
+                editText.setText(url)
+                editText.setSelection(url.length)
+            }
+        }
 
         // inisialisasi analytics (non-ktx safe)
         firebaseAnalytics = FirebaseAnalytics.getInstance(requireContext())
@@ -140,6 +189,9 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         initClipboard()
         initTextWatcher()
         initDownloadButton()
+
+        syncButtonState()
+
     }
 
     override fun onStart() {
@@ -162,13 +214,14 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         super.onDestroyView()
         isAdShowing = false
         try { adsManager.destroyBanner(adView) } catch (_: Throwable) {}
-        DownloadServiceTT.setDoneCallback(null)
         try { clipboardManager.removePrimaryClipChangedListener(clipboardListener) } catch (_: Throwable) {}
     }
 
     override fun onResume() {
         super.onResume()
         checkClipboardOnStart()
+        syncButtonState()
+
     }
 
     // === Inisialisasi ===
@@ -445,12 +498,21 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         unduhText: TextView
     ) {
         unduhText.text = "Mengunduh..."
+
         val intent = Intent(requireContext(), DownloadServiceTT::class.java).apply {
             putExtra(DownloadServiceTT.EXTRA_VIDEO_URL, videoUrl)
             putExtra(DownloadServiceTT.EXTRA_FORMAT, format)
         }
-        ContextCompat.startForegroundService(requireContext(), intent)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && format != "Gambar") {
+            // 🔥 VIDEO / MUSIC → FOREGROUND SERVICE
+            ContextCompat.startForegroundService(requireContext(), intent)
+        } else {
+            // 🔥 GAMBAR → NORMAL SERVICE
+            requireContext().startService(intent)
+        }
     }
+
 
     private fun requestDownloadWithAdGate(
         url: String,
@@ -818,9 +880,8 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                             // gunakan helper untuk memastikan prioritas AdMob sebelum fallback
                             showInterstitialThen {
                                 isAdShowing = false
-                                downloadSelectedImagesWithService(
+                                downloadSelectedImages(
                                     selectedImages.toList(),
-                                    originalUrl,
                                     buttonLayout
                                 )
                             }
@@ -865,36 +926,39 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         }
     }
 
-    private fun downloadSelectedImagesWithService(
+    private fun downloadSelectedImages(
         images: List<String>,
-        originalUrl: String,
-        buttonLayout: LinearLayout,
+        buttonLayout: LinearLayout
     ) {
-        val intent = Intent(requireContext(), DownloadServiceTT::class.java).apply {
-            putExtra(DownloadServiceTT.EXTRA_VIDEO_URL, originalUrl)
-            putExtra(DownloadServiceTT.EXTRA_FORMAT, "Gambar")
-            putExtra(DownloadServiceTT.EXTRA_IS_SLIDE, true)
-            putStringArrayListExtra(DownloadServiceTT.EXTRA_IMAGE_URLS, ArrayList(images))
-        }
+        // ===== UI STATE =====
+        val unduhText = buttonLayout.findViewById<TextView>(R.id.unduhtext)
+        unduhText.text = "Mengunduh gambar..."
+        buttonLayout.isEnabled = false
 
-        ContextCompat.startForegroundService(requireContext(), intent)
+        progressDownload.visibility = View.VISIBLE
+        arrowIcon.visibility = View.GONE
 
-        DownloadServiceTT.setDoneCallback { success ->
-            if (!isAdded) return@setDoneCallback
+        // ===== LOGIC STATE (PENTING UNTUK GROUPING) =====
+        slideTotal = images.size
+        slideFinished = 0
+        slideFailed = false
+        isSlideDownload = true
 
-            requireActivity().runOnUiThread {
-                val unduhText = buttonLayout.findViewById<TextView>(R.id.unduhtext)
-                updateDownloadButtonState(
-                    buttonLayout,
-                    unduhText,
-                    isEnabled = true,
-                    text = if (success) "Unduh Lagi?" else "Coba Lagi"
-                )
-                if (!success) showError("Gagal mengunduh gambar!")
-                DownloadServiceTT.setDoneCallback(null)
+        // ===== START SERVICE PER GAMBAR =====
+        images.forEach { imageUrl ->
+            val intent = Intent(
+                requireContext(),
+                DownloadServiceTT::class.java
+            ).apply {
+                putExtra(DownloadServiceTT.EXTRA_VIDEO_URL, imageUrl)
+                putExtra(DownloadServiceTT.EXTRA_FORMAT, "Gambar")
             }
+
+            // ❗ WAJIB pakai startForegroundService (Android 8+ safe)
+            ContextCompat.startForegroundService(requireContext(), intent)
         }
     }
+
 
     private fun showError(message: String) {
         if (!isAdded || view == null) return
@@ -907,6 +971,52 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             textProgress.visibility = View.GONE
             arrowIcon.visibility = View.VISIBLE
             isAdShowing = false
+        }
+    }
+    fun onNotificationOpened(videoUrl: String?) {
+        if (videoUrl.isNullOrEmpty() || !isAdded) return
+
+        editText.setText(videoUrl)
+        editText.setSelection(videoUrl.length)
+
+        // hanya sync STATE, bukan teks
+        syncButtonState()
+    }
+
+    private fun syncButtonState() {
+        if (!isAdded) return
+
+        when {
+            // 🔵 DOWNLOAD MASIH BERJALAN
+            DownloadSession.isDownloading -> {
+                downloadButton.isEnabled = false
+                progressDownload.visibility = View.VISIBLE
+                arrowIcon.visibility = View.GONE
+
+                // ❗ JANGAN set teks di sini
+                // teks akan diupdate oleh ACTION_PROGRESS
+                val p = DownloadSession.lastProgress
+                if (p > 0) {
+                    unduhtext.text = "Mengunduh… $p%"
+                    progressDownload.progress = p
+                }
+            }
+
+            // 🟢 DOWNLOAD SELESAI
+            DownloadSession.lastDownloadFinished -> {
+                unduhtext.text = "Unduh Lagi?"
+                downloadButton.isEnabled = true
+                progressDownload.visibility = View.GONE
+                arrowIcon.visibility = View.VISIBLE
+            }
+
+            // ⚪ DEFAULT
+            else -> {
+                unduhtext.text = "Unduh"
+                downloadButton.isEnabled = true
+                progressDownload.visibility = View.GONE
+                arrowIcon.visibility = View.VISIBLE
+            }
         }
     }
 

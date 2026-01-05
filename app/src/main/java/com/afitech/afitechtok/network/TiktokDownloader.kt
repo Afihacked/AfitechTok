@@ -121,7 +121,8 @@ object TikTokDownloader {
         return when {
             ct == "video/mp4" || ct == "application/mp4" -> ".mp4" to "video/mp4"
             ct == "audio/mpeg" || ct == "audio/mp3" -> ".mp3" to "audio/mpeg"
-            ct == "audio/mp4" || ct == "audio/aac" || ct == "audio/x-m4a" -> ".m4a" to "audio/mp4"
+            ct == "audio/mp4" || ct == "audio/aac" || ct == "audio/x-m4a" ->
+                ".m4a" to "audio/mp4"
             ct?.startsWith("image/") == true -> {
                 when {
                     ct.contains("jpeg") || ct.contains("jpg") -> ".jpg" to "image/jpeg"

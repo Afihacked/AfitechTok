@@ -2,6 +2,7 @@ package com.afitech.afitechtok.ui
 
 import android.Manifest
 import android.app.NotificationManager
+import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -35,6 +36,7 @@ import com.afitech.afitechtok.ui.fragments.*
 import com.afitech.afitechtok.ui.helpers.RemoteConfigHelper
 import com.afitech.afitechtok.ui.helpers.ThemeHelper
 import com.afitech.afitechtok.ui.services.DownloadServiceTT
+import com.afitech.afitechtok.ui.services.DownloadSession
 import com.afitech.afitechtok.utils.setStatusBarColorInt
 import com.afitech.afitechtok.utils.setStatusBarColorRes
 import com.google.android.material.button.MaterialButton
@@ -273,6 +275,23 @@ class MainActivity : AppCompatActivity() {
         }
 
         handleBackPressed()
+    }
+    private fun openDownloadTTFragment() {
+
+        // pindah ke TAB TikTok
+        showTabs()
+        viewPager.currentItem = tiktokTabIndex
+
+        // ambil fragment TikTok yang sedang aktif
+        val fragment =
+            supportFragmentManager.fragments
+                .firstOrNull { it is DownloadFragmentTT }
+                    as? DownloadFragmentTT
+
+        // kirim ulang URL terakhir dari DownloadSession
+        fragment?.onNotificationOpened(
+            DownloadSession.lastVideoUrl
+        )
     }
 
     // Inflate menu (ikon help)
