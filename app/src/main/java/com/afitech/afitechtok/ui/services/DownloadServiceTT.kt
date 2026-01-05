@@ -17,6 +17,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.afitech.afitechtok.R
 import com.afitech.afitechtok.data.database.AppDatabase
 import com.afitech.afitechtok.data.model.DownloadHistory
+import com.afitech.afitechtok.network.NetworkHelper
 import com.afitech.afitechtok.network.TikTokDownloader
 import com.afitech.afitechtok.ui.MainActivity
 import kotlinx.coroutines.*
@@ -50,7 +51,11 @@ class DownloadServiceTT : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-
+        if (!NetworkHelper.isInternetAvailable(this)) {
+            broadcastResult(false)
+            stopSelf()
+            return START_NOT_STICKY
+        }
         val videoUrl = intent?.getStringExtra(EXTRA_VIDEO_URL)
             ?: return START_NOT_STICKY
         val format = intent.getStringExtra(EXTRA_FORMAT) ?: "Videos"

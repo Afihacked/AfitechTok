@@ -33,6 +33,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.afitech.afitechtok.R
 import com.afitech.afitechtok.data.database.AppDatabase
 import com.afitech.afitechtok.data.database.DownloadHistoryDao
+import com.afitech.afitechtok.network.NetworkHelper
 import com.afitech.afitechtok.ui.services.DownloadServiceTT
 import com.afitech.afitechtok.ui.services.DownloadSession
 import com.afitech.afitechtok.ui.viewmodel.TiktokViewModel
@@ -219,10 +220,14 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
     override fun onResume() {
         super.onResume()
+        if (DownloadSession.isDownloading &&
+            !NetworkHelper.isInternetAvailable(requireContext())
+        ) {
+            showToastSafe("Koneksi internet terputus")
+        }
         checkClipboardOnStart()
         syncButtonState()
-
-    }
+        }
 
     // === Inisialisasi ===
     private fun initViews(view: View) {
@@ -317,6 +322,10 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
     private fun initDownloadButton() {
         downloadButton.setOnClickListener {
+            if (!NetworkHelper.isInternetAvailable(requireContext())) {
+                requireContext().showToastSafe("Tidak ada koneksi internet")
+                return@setOnClickListener
+            }
             val link = editText.text.toString().trim()
             if (!hasUserInput && link.isEmpty()) {
                 requireContext().showToastSafe("Silakan masukkan link terlebih dahulu")
@@ -997,6 +1006,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                 // teks akan diupdate oleh ACTION_PROGRESS
                 val p = DownloadSession.lastProgress
                 if (p > 0) {
+                    unduhtext.text = "Menghubungkan..."
                     unduhtext.text = "Mengunduh… $p%"
                     progressDownload.progress = p
                 }
@@ -1009,7 +1019,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                 progressDownload.visibility = View.GONE
                 arrowIcon.visibility = View.VISIBLE
             }
-
             // ⚪ DEFAULT
             else -> {
                 unduhtext.text = "Unduh"
