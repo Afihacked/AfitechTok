@@ -36,7 +36,13 @@ import com.afitech.afitechtok.ui.fragments.*
 import com.afitech.afitechtok.ui.helpers.RemoteConfigHelper
 import com.afitech.afitechtok.ui.services.DownloadServiceTT
 import com.afitech.afitechtok.ui.services.DownloadSession
+import com.airbnb.lottie.LottieAnimationView
+import com.airbnb.lottie.LottieProperty
+import com.airbnb.lottie.SimpleColorFilter
+import com.airbnb.lottie.model.KeyPath
+import com.airbnb.lottie.value.LottieValueCallback
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.tabs.TabLayout
@@ -254,6 +260,9 @@ class MainActivity : AppCompatActivity() {
                     showTabs()
                     viewPager.currentItem = 2
                 }
+                R.id.nav_wa_web -> {
+                    replaceFragment(WaWebFragment(), getString(R.string.whatsapp_web))
+                }
                 R.id.nav_about -> {
                     replaceFragment(TentangFragment(), getString(R.string.nav_about))
                 }
@@ -288,18 +297,61 @@ class MainActivity : AppCompatActivity() {
     // Inflate menu (ikon help)
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)
+
+        val refreshItem = menu?.findItem(R.id.action_refresh)
+        val actionView = refreshItem?.actionView
+        val lottie = actionView?.findViewById<LottieAnimationView>(R.id.lottie_refresh)
+        lottie?.apply {
+
+            // Recolor all layers
+            addValueCallback(
+                KeyPath("**"),
+                LottieProperty.COLOR_FILTER,
+                LottieValueCallback(
+                    SimpleColorFilter(
+                        ContextCompat.getColor(context, R.color.colorSurface)
+                    )
+                )
+            )}
+        lottie?.setOnClickListener {
+            lottie.playAnimation()
+
+            val fragment = supportFragmentManager.findFragmentById(R.id.extra_fragment_container)
+            if (fragment is WaWebFragment) {
+                fragment.reloadPage()
+            }
+        }
+
         return true
     }
 
     override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
-        // Pastikan menu ter-inflate
         val helpItem = menu?.findItem(R.id.action_help)
-        // visible hanya jika sedang di tab TikTok (index tiktokTabIndex) dan extra container TIDAK visible
+        val refreshItem = menu?.findItem(R.id.action_refresh)
         val extraVisible = findViewById<View>(R.id.extra_fragment_container).visibility == View.VISIBLE
+        val currentFragment = supportFragmentManager.findFragmentById(R.id.extra_fragment_container)
+
+        // Help hanya di tab TikTok
         val showHelp = !extraVisible && ::viewPager.isInitialized && viewPager.currentItem == tiktokTabIndex
         helpItem?.isVisible = showHelp
+
+        // Refresh hanya saat WA Web aktif
+        refreshItem?.isVisible = extraVisible && currentFragment is WaWebFragment
+
+        // ===============================
+        // Tint icon TikTok pakai colorOnSurface
+        // ===============================
+        helpItem?.icon?.mutate()?.setTint(
+            com.google.android.material.color.MaterialColors.getColor(
+                this,
+                com.google.android.material.R.attr.colorSurface,
+                android.graphics.Color.BLACK
+            )
+        )
+
         return super.onPrepareOptionsMenu(menu)
     }
+
 
     // Handle klik menu
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -328,16 +380,21 @@ class MainActivity : AppCompatActivity() {
             .addToBackStack(null)
             .commit()
 
+        supportFragmentManager.executePendingTransactions() // ⬅ pastikan fragment sudah aktif
+
         supportActionBar?.title = title
 
         when (fragment) {
+            is WaWebFragment -> navView.setCheckedItem(R.id.nav_wa_web)
             is TentangFragment -> navView.setCheckedItem(R.id.nav_about)
             is SettingsFragment -> navView.setCheckedItem(R.id.nav_settings)
         }
+
+// refresh menu setelah fragment benar-benar aktif
         invalidateOptionsMenu()
     }
 
-    private fun showTabs() {
+        private fun showTabs() {
         findViewById<View>(R.id.extra_fragment_container).visibility = View.GONE
         findViewById<View>(R.id.viewPager).visibility = View.VISIBLE
         findViewById<View>(R.id.tabLayout).visibility = View.VISIBLE
@@ -446,6 +503,7 @@ class MainActivity : AppCompatActivity() {
             "STATUSBAR",
             "color=#${Integer.toHexString(window.statusBarColor)}"
         )
+        invalidateOptionsMenu()
 
         // optional debug
         android.util.Log.d("DBG_STATUSBAR", "onResume (scrim) window.statusBarColor=#${Integer.toHexString(window.statusBarColor)}")

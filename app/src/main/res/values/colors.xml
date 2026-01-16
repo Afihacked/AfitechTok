@@ -6,17 +6,17 @@
     <color name="colorOnSurface">#000000</color> <!-- Warna teks hitam -->
     <color name="colorHint">#888888</color> <!-- Warna hint -->
 
-        <color name="colorPrimary">#CC3734</color> <!-- Warna saat fokus -->
+        <color name="colorPrimary">#A22B29</color> <!-- Warna saat fokus -->
         <color name="colorOutline">#000000</color> <!-- Warna saat tidak aktif -->
-        <color name="colorAccent">#E42421</color>
+        <color name="colorAccent">#822321</color>
     <color name="light_gray">#BCBCBC</color>
-    <color name="dark_red">#E53935</color>
+    <color name="dark_red">#A22B29</color>
     <color name="blackTab">#000000</color>
-    <color name="sttsbar">#CC3734</color>
+    <color name="sttsbar">#A22B29</color>
     <color name="selection_bg">#A22B29</color> <!-- biru semi-transparan -->
 
     <color name="shimmer_placeholder">#DDDDDD</color>
-    <color name="navigationBarColor">#CC3734</color>
+    <color name="navigationBarColor">#A22B29</color>
 
 
 

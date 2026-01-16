@@ -46,9 +46,9 @@
     <style name="EditTextTheme"
         parent="Widget.Material3.TextInputEditText.OutlinedBox">
 
-        <item name="android:textColor">@color/colorOnSurface</item>
+        <item name="android:textColor">@color/colorSurface</item>
         <item name="android:textColorHint">@color/colorHint</item>
-        <item name="android:backgroundTint">@color/colorOnSurface</item>
+        <item name="android:backgroundTint">@color/colorSurface</item>
         <item name="boxStrokeColor">@drawable/edit_text_border</item>
 
     </style>

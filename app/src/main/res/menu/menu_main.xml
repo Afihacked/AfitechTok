@@ -7,4 +7,9 @@
         android:title="help"
         app:showAsAction="always"
         android:icon="@drawable/ic_help"/>
+    <item
+        android:id="@+id/action_refresh"
+        android:title="Refresh"
+        app:showAsAction="always"
+        app:actionLayout="@layout/toolbar_refresh_lottie"/>
 </menu>

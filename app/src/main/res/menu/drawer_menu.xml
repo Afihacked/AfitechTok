@@ -13,6 +13,12 @@
             android:icon="@drawable/ic_wa"/>
 
         <item
+            android:id="@+id/nav_wa_web"
+            android:title="@string/whatsapp_web"
+            android:icon="@drawable/ic_browser"/>
+
+
+        <item
             android:id="@+id/nav_history"
             android:title="@string/riwayat_unduh"
             android:icon="@drawable/ic_manager"/>

@@ -84,5 +84,6 @@ Nikmati kemudahan mengunduh video dari berbagai platform populer seperti TikTok,
     <string name="saved_to_gallery">Tersimpan di galeri</string>
     <string name="save_failed">Gagal menyimpan gambar</string>
     <string name="share_failed">Gagal membagikan gambar</string>
+    <string name="whatsapp_web">Whatsapp WEB</string>
 
 </resources>

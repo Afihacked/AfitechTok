@@ -49,8 +49,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:paddingHorizontal="8dp"
-                android:paddingTop="4dp">
+                android:paddingHorizontal="16dp"
+                android:paddingTop="0dp">
 
                 <TextView
                     android:layout_width="0dp"
