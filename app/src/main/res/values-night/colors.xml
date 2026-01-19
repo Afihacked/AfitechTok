@@ -6,21 +6,21 @@
     <color name="white">#FFFFFFFF</color>
 
     <!-- Surface -->
-    <color name="colorSurface">#FFFFFF</color> <!-- Background putih -->
-    <color name="colorOnSurface">#000000</color> <!-- Teks hitam -->
-    <color name="colorHint">#000000</color> <!-- Hint abu -->
+    <color name="colorSurface">#121212</color> <!-- Latar belakang gelap -->
+    <color name="colorOnSurface">#FFFFFF</color> <!-- Teks putih -->
+    <color name="colorHint">#FFFFFF</color> <!-- Hint abu terang -->
 
     <!-- Primary -->
-    <color name="colorPrimary">#A22B29</color> <!-- Merah utama -->
-    <color name="colorOutline">#000000</color> <!-- Outline abu terang -->
-    <color name="colorAccent">#822321</color>
+    <color name="colorPrimary">#A22B29</color> <!-- Merah terang agar kontras -->
+    <color name="colorOutline">#FFFFFF</color> <!-- Outline abu gelap -->
+    <color name="colorAccent">#A22B29</color>
 
     <!-- Gray -->
-    <color name="light_gray">#E0E0E0</color>
+    <color name="light_gray">#444444</color>
     <color name="dark_red">#A22B29</color>
 
     <!-- Tab -->
-    <color name="blackTab">#000000</color>
+    <color name="blackTab">#FFFFFF</color>
 
     <!-- System Bar -->
     <color name="sttsbar">#A22B29</color>
@@ -33,6 +33,6 @@
     <color name="shimmer_placeholder">#DDDDDD</color>
 
     <color name="navtext">#FFFFFF</color>
-    <color name="navtext_default">#000000</color>
+    <color name="navtext_default">#FFFFFF</color>
 
 </resources>

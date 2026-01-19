@@ -1,38 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- ================= BASE THEME (APP-WIDE) ================= -->
+    <!-- ===================================================== -->
+    <!-- BASE THEME (APP-WIDE)                                 -->
+    <!-- ===================================================== -->
     <style name="Base.Theme.TikDownloader"
         parent="Theme.Material3.Light.NoActionBar">
-
-        <!-- Core colors -->
+        <item name="android:forceDarkAllowed">false</item>
+        <!-- Surface colors -->
         <item name="colorSurface">@color/colorSurface</item>
         <item name="colorOnSurface">@color/colorOnSurface</item>
 
-        <!-- System Bars -->
+        <!-- Primary -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+
+        <!-- Status bar -->
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:statusBarColor">@color/sttsbar</item>
         <item name="android:windowLightStatusBar">true</item>
 
+        <!-- Navigation bar -->
         <item name="android:navigationBarColor">@color/navigationBarColor</item>
         <item name="android:windowLightNavigationBar">true</item>
 
     </style>
 
-    <!-- ================= APP THEME ================= -->
+    <!-- ===================================================== -->
+    <!-- APP THEME                                            -->
+    <!-- ===================================================== -->
     <style name="Theme.TikDownloader"
         parent="Base.Theme.TikDownloader" />
 
-    <!-- ================= SPLASH THEME (MATERIAL 3) ================= -->
+    <!-- ===================================================== -->
+    <!-- SPLASH THEME                                         -->
+    <!-- ===================================================== -->
     <style name="Theme.Splash"
         parent="Theme.Material3.Light.NoActionBar">
 
         <item name="android:windowBackground">@drawable/splash_background</item>
         <item name="android:statusBarColor">@color/sttsbar</item>
+        <item name="android:navigationBarColor">@color/navigationBarColor</item>
 
     </style>
 
-    <!-- ================= POPUP MENU ================= -->
+    <!-- ===================================================== -->
+    <!-- POPUP MENU                                           -->
+    <!-- ===================================================== -->
     <style name="PopupMenuStyle"
         parent="Widget.Material3.PopupMenu">
 
@@ -41,21 +54,34 @@
 
     </style>
 
-    <!-- ================= TEXTINPUT / EDITTEXT STYLE ================= -->
-    <!-- Pakai sebagai style, bukan theme -->
+    <!-- ===================================================== -->
+    <!-- TEXTINPUT / EDITTEXT STYLE                            -->
+    <!-- ===================================================== -->
+    <!-- Dipakai sebagai style di layout -->
     <style name="EditTextTheme"
-        parent="Widget.Material3.TextInputEditText.OutlinedBox">
+        parent="Widget.Material3.TextInputLayout.OutlinedBox">
 
-        <item name="android:textColor">@color/colorSurface</item>
+        <!-- Text -->
+        <item name="android:textColor">@color/colorOnSurface</item>
         <item name="android:textColorHint">@color/colorHint</item>
-        <item name="android:backgroundTint">@color/colorSurface</item>
-        <item name="boxStrokeColor">@drawable/edit_text_border</item>
+
+        <!-- Box -->
+        <item name="boxBackgroundColor">@color/colorSurface</item>
+<!--        <item name="boxStrokeColor">@color/colorOutline</item>-->
+        <item name="boxStrokeWidth">1.5dp</item>
+        <item name="boxStrokeWidthFocused">2dp</item>
+
+        <!-- Hint -->
+        <item name="hintTextColor">@color/colorHint</item>
 
     </style>
 
-
-    <!-- ================= DIALOG ================= -->
+    <!-- ===================================================== -->
+    <!-- DIALOG                                               -->
+    <!-- ===================================================== -->
     <style name="ThemeOverlay.TikDownloader.MaterialAlertDialog"
-        parent="ThemeOverlay.Material3.MaterialAlertDialog" />
+        parent="ThemeOverlay.Material3.MaterialAlertDialog">
+    </style>
+
 
 </resources>

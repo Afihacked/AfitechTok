@@ -193,8 +193,8 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     @SuppressLint("SourceLockedOrientationActivity")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setStatusBarColorRes(R.color.sttsbar, isLightStatusBar = true, drawBehind = true)
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-
         arguments?.getString("video_url")?.let { url ->
             if (editText.text.isNullOrBlank()) {
                 editText.setText(url)

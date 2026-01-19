@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Fokus -->
+    <item android:color="@color/colorOutline" android:state_focused="true"/>
+
+    <!-- Error -->
+    <item android:color="@color/colorPrimary"  android:state_enabled="false"/>
+
+    <!-- Normal -->
+    <item android:color="@color/colorOnSurface"/>
+
+</selector>

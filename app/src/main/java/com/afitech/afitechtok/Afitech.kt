@@ -1,12 +1,13 @@
 package com.afitech.afitechtok
 
 import android.app.Application
+import com.afitech.afitechtok.utils.ThemeManager
 import com.startapp.sdk.adsbase.StartAppSDK
 
 class Afitech : Application() {
     override fun onCreate() {
         super.onCreate()
-
+        ThemeManager.applySavedTheme(this)
         // ✅ Init Start.io dengan cara baru
         StartAppSDK.initParams(this, "208775679")
 

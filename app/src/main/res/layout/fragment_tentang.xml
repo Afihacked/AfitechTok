@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="?android:attr/windowBackground">
+    android:background="@color/colorSurface">
 
     <!-- Header (menyatu dengan toolbar warna sttsbar) -->
     <LinearLayout
@@ -14,13 +14,14 @@
         android:orientation="vertical"
         android:background="@drawable/bg_header"
         android:gravity="center"
-        android:paddingTop="20dp"
-        android:paddingBottom="12dp">
+        android:paddingStart="20dp"
+        android:paddingEnd="12dp">
 
         <ImageView
             android:id="@+id/about_logo"
-            android:layout_width="65dp"
-            android:layout_height="65dp"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:layout_marginBottom="-10dp"
             android:src="@mipmap/ic_launcher_foreground"
             android:contentDescription="@string/logo_afitech" />
 
@@ -31,7 +32,7 @@
             android:text="@string/app_name"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="@android:color/white"
+            android:textColor="@color/white"
             android:layout_marginTop="0dp" />
 
         <TextView
@@ -40,7 +41,7 @@
             android:layout_height="wrap_content"
             android:text="@string/version_unknown"
             android:textSize="12sp"
-            android:textColor="@android:color/white"
+            android:textColor="@color/white"
             android:layout_marginTop="2dp" />
     </LinearLayout>
 
@@ -62,12 +63,13 @@
                 android:layout_height="wrap_content"
                 android:text="@string/about_summary_placeholder"
                 android:textSize="14sp"
+                android:textColor="@color/colorOnSurface"
                 android:lineSpacingExtra="4dp"
                 android:textAlignment="textStart" />
 
             <View
                 android:layout_width="match_parent"
-                android:layout_height="12dp" />
+                android:layout_height="10dp" />
 
             <!-- Divider -->
             <View
@@ -95,12 +97,12 @@
                     android:paddingStart="12dp"
                     android:text="@string/view_readme"
                     android:textAllCaps="false"
-                    android:textColor="@color/sttsbar"
+                    android:textColor="@color/colorPrimary"
                     android:backgroundTint="@android:color/transparent"
                     app:icon="@drawable/ic_baseline_description_24"
                     app:iconGravity="textStart"
                     app:iconPadding="12dp"
-                    app:iconTint="@color/sttsbar" />
+                    app:iconTint="@color/colorPrimary" />
 
                 <View android:layout_width="match_parent" android:layout_height="8dp" />
 
@@ -113,12 +115,12 @@
                     android:paddingStart="12dp"
                     android:text="@string/view_license"
                     android:textAllCaps="false"
-                    android:textColor="@color/sttsbar"
+                    android:textColor="@color/colorPrimary"
                     android:backgroundTint="@android:color/transparent"
                     app:icon="@drawable/ic_baseline_gavel_24"
                     app:iconGravity="textStart"
                     app:iconPadding="12dp"
-                    app:iconTint="@color/sttsbar" />
+                    app:iconTint="@color/colorPrimary" />
 
                 <View android:layout_width="match_parent" android:layout_height="8dp" />
 
@@ -131,12 +133,12 @@
                     android:paddingStart="12dp"
                     android:text="@string/view_privacy"
                     android:textAllCaps="false"
-                    android:textColor="@color/sttsbar"
+                    android:textColor="@color/colorPrimary"
                     android:backgroundTint="@android:color/transparent"
                     app:icon="@drawable/ic_baseline_privacy_tip_24"
                     app:iconGravity="textStart"
                     app:iconPadding="12dp"
-                    app:iconTint="@color/sttsbar" />
+                    app:iconTint="@color/colorPrimary" />
 
                 <View android:layout_width="match_parent" android:layout_height="8dp" />
 
@@ -149,12 +151,12 @@
                     android:paddingStart="12dp"
                     android:text="@string/view_source"
                     android:textAllCaps="false"
-                    android:textColor="@color/sttsbar"
+                    android:textColor="@color/colorPrimary"
                     android:backgroundTint="@android:color/transparent"
                     app:icon="@drawable/ic_baseline_github_24"
                     app:iconGravity="textStart"
                     app:iconPadding="12dp"
-                    app:iconTint="@color/sttsbar" />
+                    app:iconTint="@color/colorPrimary" />
 
                 <View android:layout_width="match_parent" android:layout_height="12dp" />
 
@@ -168,12 +170,12 @@
                     android:paddingStart="12dp"
                     android:text="@string/donate"
                     android:textAllCaps="false"
-                    android:textColor="@color/sttsbar"
+                    android:textColor="@color/colorPrimary"
                     android:backgroundTint="@android:color/transparent"
                     app:icon="@drawable/ic_baseline_monetization_on_24"
                     app:iconGravity="textStart"
                     app:iconPadding="12dp"
-                    app:iconTint="@color/sttsbar" />
+                    app:iconTint="@color/colorPrimary" />
 
                 <View android:layout_width="match_parent" android:layout_height="12dp" />
 
@@ -187,12 +189,12 @@
                     android:paddingStart="12dp"
                     android:text="@string/send_feedback"
                     android:textAllCaps="false"
-                    android:textColor="@color/sttsbar"
+                    android:textColor="@color/colorPrimary"
                     android:backgroundTint="@android:color/transparent"
                     app:icon="@drawable/ic_baseline_feedback_24"
                     app:iconGravity="textStart"
                     app:iconPadding="12dp"
-                    app:iconTint="@color/sttsbar" />
+                    app:iconTint="@color/colorPrimary" />
             </LinearLayout>
 
             <View android:layout_width="match_parent" android:layout_height="20dp" />
@@ -203,7 +205,7 @@
                 android:layout_height="wrap_content"
                 android:text="@string/about_credits_txt"
                 android:textSize="12sp"
-                android:textColor="?android:attr/textColorSecondary" />
+                android:textColor="@color/colorOnSurface" />
 
             <View android:layout_width="match_parent" android:layout_height="18dp" />
 

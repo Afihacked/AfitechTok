@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:background="@color/colorSurface">
 
     <!-- ================= SCROLL CONTENT ================= -->
     <androidx.core.widget.NestedScrollView
@@ -41,7 +41,8 @@
                     android:minHeight="48dp"
                     android:padding="14dp"
                     android:inputType="textUri"
-                    android:textSize="14sp"/>
+                    android:textSize="14sp"
+                    android:textColor="@color/colorOnSurface"/>
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Counter -->
@@ -49,7 +50,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:paddingHorizontal="16dp"
+                android:paddingHorizontal="8dp"
                 android:paddingTop="0dp">
 
                 <TextView
@@ -58,7 +59,7 @@
                     android:layout_weight="1"
                     android:text="@string/copyright"
                     android:textSize="12sp"
-                    android:textColor="@color/light_gray"/>
+                    android:textColor="@color/colorHint"/>
 
                 <TextView
                     android:id="@+id/textCount"
@@ -66,7 +67,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/count_text"
                     android:textSize="13sp"
-                    android:textColor="@android:color/darker_gray"/>
+                    android:textColor="@color/colorHint"/>
             </LinearLayout>
 
             <!-- ================= BUTTON BAR ================= -->
@@ -92,7 +93,7 @@
                         android:layout_height="match_parent"
                         android:padding="10dp"
                         android:src="@drawable/ic_add"
-                        android:tint="@android:color/white"/>
+                        android:tint="@color/white"/>
                 </com.google.android.material.card.MaterialCardView>
 
                 <!-- Download Button -->

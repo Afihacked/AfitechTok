@@ -4,7 +4,7 @@
     android:id="@+id/tutorial_scroll"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
+    android:background="@color/colorSurface"
     android:padding="12dp">
 
     <LinearLayout
@@ -19,6 +19,7 @@
             android:text="BAGAIMANA CARA UNDUH DARI TIKTOK ?"
             android:textSize="18sp"
             android:textStyle="bold"
+            android:textColor="@color/colorOnSurface"
             android:gravity="center"
             android:paddingBottom="12dp" />
 
@@ -35,7 +36,7 @@
                 android:text="1. Klik Ikon Tiktok Untuk Membuka Aplikasi Tiktok"
                 android:textStyle="bold"
                 android:textSize="16sp"
-                android:textColor="@android:color/black" />
+                android:textColor="@color/colorOnSurface" />
 
             <ImageView
                 android:layout_width="match_parent"
@@ -60,7 +61,7 @@
                 android:text="2. Cari Video yang Ingin di Unduh, Kemudian Klik Ikon Bagikan"
                 android:textStyle="bold"
                 android:textSize="16sp"
-                android:textColor="@android:color/black" />
+                android:textColor="@color/colorOnSurface" />
 
             <ImageView
                 android:layout_width="match_parent"
@@ -85,7 +86,7 @@
                 android:text="3. Kemudian Pilih Salin Tautan. Buka Kembali Aplikasi Sosmed Toolkit"
                 android:textStyle="bold"
                 android:textSize="16sp"
-                android:textColor="@android:color/black" />
+                android:textColor="@color/colorOnSurface" />
 
             <ImageView
                 android:layout_width="match_parent"
@@ -110,7 +111,7 @@
                 android:text="4. Jika Aplikasi Tidak Menempel Tautan Otomatis Klik Tombol Tempel, Kemudian Klik Unduh."
                 android:textStyle="bold"
                 android:textSize="16sp"
-                android:textColor="@android:color/black" />
+                android:textColor="@color/colorOnSurface" />
 
             <ImageView
                 android:layout_width="match_parent"
@@ -135,7 +136,7 @@
                 android:text="5. Jika Tautan Berupa Video Maka Akan Muncul Dua Pilihan Videos atau Music dan Ketika Tautan Berisi Gambar Maka Akan Muncul Halaman Untuk Memilih Foto Yang Ingin Diunduh."
                 android:textStyle="bold"
                 android:textSize="16sp"
-                android:textColor="@android:color/black" />
+                android:textColor="@color/colorOnSurface" />
         </LinearLayout>
 
         <!-- Akhir -->
@@ -145,7 +146,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Tip: Gunakan tombol Paste jika link tidak otomatis muncul dari clipboard."
-            android:textColor="@android:color/darker_gray"
+            android:textColor="@color/colorOutline"
             android:textSize="13sp" />
         <LinearLayout
             android:layout_width="match_parent"

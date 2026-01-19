@@ -26,6 +26,8 @@ import com.afitech.afitechtok.ui.helpers.WizardStep
 import com.afitech.afitechtok.utils.AdsManager
 import com.afitech.afitechtok.utils.setStatusBarColorRes
 import com.google.android.gms.ads.AdView
+import com.google.android.material.color.MaterialColors
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayoutMediator
 
 /**
@@ -192,10 +194,7 @@ class WhatsappStoryFragment : Fragment() {
         binding.tutorialBlock.visibility = View.VISIBLE
         binding.viewPager.visibility = View.GONE
         binding.tabLayout.visibility = View.GONE
-
-        binding.lottieGuide.visibility = View.VISIBLE
         binding.btnRetry.visibility = View.GONE
-
         binding.btnGrantAccess.text = originalGrantText ?: "Izinkan Akses"
         binding.btnGrantAccess.setOnClickListener { showSAFTutorialDialog() }
     }
@@ -227,10 +226,6 @@ class WhatsappStoryFragment : Fragment() {
         binding.tutorialBlock.visibility = View.VISIBLE
         binding.viewPager.visibility = View.GONE
         binding.tabLayout.visibility = View.GONE
-
-        // sembunyikan lottie agar tampilan lebih informatif
-        binding.lottieGuide.visibility = View.GONE
-
         // ubah teks & tombol
         binding.tutorialText.text = "Folder .Statuses sudah dipilih tetapi belum ditemukan story.\n\nSilakan buka WhatsApp/WhatsApp Business dan tonton story teman Anda. Setelah itu tekan 'Periksa Ulang'."
 
@@ -412,6 +407,9 @@ Ikuti langkah berikut untuk memilih folder .Statuses (WhatsApp/Business):
             .setCancelable(true)
             .show()
     }
+
+
+
 
 
     /**

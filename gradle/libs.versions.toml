@@ -27,7 +27,6 @@ inapp-sdk = { module = "com.startapp:inapp-sdk", version.ref = "inappSdk" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 lottie = { module = "com.airbnb.android:lottie", version.ref = "lottie" }
-lottie-v610 = { module = "com.airbnb.android:lottie", version.ref = "lottieVersion" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }

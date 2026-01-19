@@ -2,13 +2,11 @@ package com.afitech.afitechtok.ui
 
 import android.Manifest
 import android.app.NotificationManager
-import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
@@ -88,7 +86,7 @@ class MainActivity : AppCompatActivity() {
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
         firebaseAnalytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, null)
 
-        // Izin notifikasi (Android 13+)
+        // Iain notification (Android 13+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(
                     this,
@@ -115,7 +113,6 @@ class MainActivity : AppCompatActivity() {
 
         // -------------------- SCRIM-BASED STATUSBAR (reliable on all devices) --------------------
         // Make status bar transparent and draw behind
-        window.statusBarColor = Color.TRANSPARENT
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         // Ensure flags (safety)
@@ -138,15 +135,10 @@ class MainActivity : AppCompatActivity() {
         toolbar.elevation = 0f
         scrim?.setBackgroundColor(desiredColor)
 
-        window.statusBarColor = ContextCompat.getColor(this, R.color.sttsbar)
 
         val controller = WindowInsetsControllerCompat(window, window.decorView)
         controller.isAppearanceLightStatusBars = true // karena sttsbar terang
 
-        // Apply insets:
-        //  - scrim height = statusBarHeight
-        //  - toolbar height = actionBarHeight + statusBarHeight
-        //  - toolbar padding top = statusBarHeight (so content not cut)
         scrim?.let { s ->
             ViewCompat.setOnApplyWindowInsetsListener(s) { v, insets ->
                 val statusBarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
@@ -309,7 +301,7 @@ class MainActivity : AppCompatActivity() {
                 LottieProperty.COLOR_FILTER,
                 LottieValueCallback(
                     SimpleColorFilter(
-                        ContextCompat.getColor(context, R.color.colorSurface)
+                        ContextCompat.getColor(context, R.color.white)
                     )
                 )
             )}
@@ -342,11 +334,7 @@ class MainActivity : AppCompatActivity() {
         // Tint icon TikTok pakai colorOnSurface
         // ===============================
         helpItem?.icon?.mutate()?.setTint(
-            com.google.android.material.color.MaterialColors.getColor(
-                this,
-                com.google.android.material.R.attr.colorSurface,
-                android.graphics.Color.BLACK
-            )
+            ContextCompat.getColor(this, R.color.white)
         )
 
         return super.onPrepareOptionsMenu(menu)
@@ -432,12 +420,15 @@ class MainActivity : AppCompatActivity() {
         if (btnOk != null) {
             // Ambil colorPrimary dari theme, fallback ke R.color.colorPrimary
             val primaryColor = try {
-                com.google.android.material.color.MaterialColors.getColor(
+                MaterialColors.getColor(
                     this,
                     com.google.android.material.R.attr.colorPrimary,
                     ContextCompat.getColor(this, R.color.colorPrimary)
                 )
             } catch (e: Exception) {
+                ContextCompat.getColor(this, R.color.colorPrimary)
+            }
+            catch (e: Exception) {
                 ContextCompat.getColor(this, R.color.colorPrimary)
             }
 
@@ -499,20 +490,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        Log.d(
-            "STATUSBAR",
-            "color=#${Integer.toHexString(window.statusBarColor)}"
-        )
         invalidateOptionsMenu()
-
-        // optional debug
-        android.util.Log.d("DBG_STATUSBAR", "onResume (scrim) window.statusBarColor=#${Integer.toHexString(window.statusBarColor)}")
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        // optional debug
-        android.util.Log.d("DBG_STATUSBAR", "onWindowFocusChanged hasFocus=$hasFocus statusBarColor=#${Integer.toHexString(window.statusBarColor)}")
     }
 
     override fun onRequestPermissionsResult(

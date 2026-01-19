@@ -12,14 +12,19 @@ import android.os.Process
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import com.afitech.afitechtok.R
 import com.afitech.afitechtok.ui.helpers.RestartReceiver
+import com.afitech.afitechtok.ui.viewmodel.ThemeViewModel
 import com.afitech.afitechtok.utils.areAdsEnabled
 import com.afitech.afitechtok.utils.setAdsEnabled
 import com.afitech.afitechtok.utils.setStatusBarColorRes
@@ -34,6 +39,10 @@ class SettingsFragment : Fragment() {
 
     // flag untuk menandai perubahan programatik (agar tidak memicu dialog)
     private var internalChange = false
+
+    private lateinit var themeViewModel: ThemeViewModel
+    private lateinit var spinnerTheme: Spinner
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -73,7 +82,46 @@ class SettingsFragment : Fragment() {
             // tampilkan dialog konfirmasi restart
             showRestartConfirmDialog(isChecked, old)
         }
+
+        themeViewModel = ViewModelProvider(this)[ThemeViewModel::class.java]
+        spinnerTheme = view.findViewById(R.id.spinnerTheme)
+
+        val themes = listOf("Sistem", "Terang", "Gelap")
+        val adapter =
+            ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, themes)
+        spinnerTheme.adapter = adapter
+
+// set posisi sesuai preference
+        spinnerTheme.setSelection(themeViewModel.selectedTheme.value ?: 0)
+
+// listen perubahan
+        spinnerTheme.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+
+                if (themeViewModel.selectedTheme.value == position) return
+
+                themeViewModel.setTheme(position)
+
+                // restart activity secara aman (bukan recreate)
+                restartAppTask()
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>) {}
+        }
+
+
     }
+    private fun restartAppTask() {
+        val intent = Intent(requireContext(), com.afitech.afitechtok.ui.MainActivity::class.java)
+        intent.addFlags(
+            Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TASK
+        )
+        startActivity(intent)
+
+        requireActivity().overridePendingTransition(0, 0)
+    }
+
 
     /**
      * isChecked = nilai baru yang di-request user pada Switch (true = adsDisabled)

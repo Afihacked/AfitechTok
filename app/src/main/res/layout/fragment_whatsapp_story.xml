@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/white"
+    android:background="@color/colorSurface"
     android:fitsSystemWindows="false">
 
     <!-- Konten utama -->
@@ -33,7 +33,7 @@
                 android:gravity="center"
                 android:text="Untuk menampilkan status WhatsApp, izinkan aplikasi membaca folder Status."
                 android:textSize="16sp"
-                android:textColor="@android:color/black"
+                android:textColor="@color/colorOnSurface"
                 android:padding="16dp" />
 
             <!-- Tombol utama (fungsi berubah sesuai state) -->
@@ -43,7 +43,7 @@
                 android:layout_height="wrap_content"
                 android:text="Izinkan Akses"
                 android:textAllCaps="false"
-                android:textColor="@android:color/white"
+                android:textColor="@color/white"
                 android:backgroundTint="@color/colorPrimary"
                 android:paddingHorizontal="24dp"
                 android:paddingVertical="12dp"
@@ -57,23 +57,13 @@
                 android:layout_height="wrap_content"
                 android:text="Periksa Ulang"
                 android:textAllCaps="false"
-                android:textColor="@android:color/white"
+                android:textColor="@color/white"
                 android:backgroundTint="@color/colorPrimary"
                 android:paddingHorizontal="24dp"
                 android:paddingVertical="12dp"
                 android:elevation="4dp"
                 android:layout_marginTop="8dp"
                 android:visibility="gone"/>
-
-            <!-- Animasi Lottie (tampilkan hanya di tutorial awal) -->
-            <com.airbnb.lottie.LottieAnimationView
-                android:id="@+id/lottieGuide"
-                android:layout_width="200dp"
-                android:layout_height="200dp"
-                app:lottie_autoPlay="true"
-                app:lottie_loop="true"
-                app:lottie_fileName="folder_guide.json"
-                android:layout_marginTop="16dp" />
         </LinearLayout>
 
         <!-- Tab WhatsApp Story -->
@@ -95,7 +85,7 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:background="?android:attr/windowBackground"
+            android:background="@color/colorSurface"
             android:clipToPadding="false"
             android:padding="4dp" />
 
@@ -122,7 +112,7 @@
             android:layout_height="wrap_content"
             android:text="Memeriksa folder .Statuses..."
             android:textSize="16sp"
-            android:textColor="@android:color/black"
+            android:textColor="@color/colorOnSurface"
             android:layout_marginTop="12dp" />
     </LinearLayout>
 
