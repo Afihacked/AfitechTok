@@ -50,12 +50,15 @@ Setiap hasil unduhan tersimpan otomatis ke **Riwayat Unduhan** yang rapi dan mud
 |-----------|------------|
 | 🎬 **Downloader TikTok** | Unduh video, musik, dan slide gambar tanpa watermark |
 | 💬 **Downloader WA Story** | Unduh story (status) WhatsApp teman secara otomatis |
+| 🌐 **WhatsApp Web** | Akses WhatsApp Web langsung di dalam aplikasi (mode desktop) |
+| 📎 **Upload & Kirim File WA** | Kirim file, foto, video langsung dari WA Web |
+| 📥 **Downloader File WA Web** | Download dokumen, foto, video dari WhatsApp Web |
 | 📋 **Auto Paste Link** | Deteksi link TikTok otomatis dari clipboard |
 | 🗂 **Riwayat Unduhan** | Simpan semua hasil unduhan dengan metadata dan waktu |
 | 🎞 **Preview Gambar Slide** | Pilih gambar tertentu sebelum diunduh |
 | 📢 **Iklan Aman** | Menggunakan AdMob + Start.io dengan fallback otomatis |
 | 📱 **UI Modern** | Material Design, responsif, dan ringan |
-| 💾 **Dukungan Storage Modern** | Kompatibel dengan Scoped Storage & Android 13+ |
+| 💾 **Storage Modern** | Kompatibel Scoped Storage & Android 13+ |
 
 ---
 
@@ -89,6 +92,7 @@ AfitechTok/
 | Arsitektur | **MVVM**, ViewModel, LiveData |
 | Database | **Room** (AppDatabase, DAO) |
 | UI | **Material Components**, RecyclerView, Shimmer |
+| Web | **Android WebView (Desktop Mode)** |
 | Gambar | **Glide** |
 | Iklan | **AdMob**, **Start.io** |
 | Asinkron | **Kotlin Coroutines**, LifecycleScope |
