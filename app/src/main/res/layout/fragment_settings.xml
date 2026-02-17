@@ -78,10 +78,12 @@
 
             <Spinner
                 android:id="@+id/spinnerTheme"
+                style="@style/MySpinnerStyle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="@color/white"
+                android:backgroundTint="@color/colorOnSurface"
                 android:layout_marginTop="8dp"/>
+
         </LinearLayout>
 
 

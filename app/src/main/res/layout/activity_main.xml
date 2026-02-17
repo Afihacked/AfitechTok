@@ -5,7 +5,7 @@
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="false">
+    android:fitsSystemWindows="true">
 
     <!-- STATUS BAR SCRIM (first child) -->
     <!-- height akan di-set di runtime melalui WindowInsets -->
@@ -51,7 +51,7 @@
                     app:tabIndicator="@drawable/tab_indicator_full"
                     app:tabIndicatorFullWidth="true"
                     app:tabIndicatorGravity="bottom"
-                    app:tabIndicatorAnimationMode="elastic"
+                    app:tabIndicatorAnimationMode="linear"
                     app:tabMode="fixed"
                     app:tabGravity="fill"
                     app:tabIconTint="@color/tab_icon_color"

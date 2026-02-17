@@ -10,7 +10,7 @@
     <!-- Header (menyatu dengan toolbar warna sttsbar) -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="140dp"
+        android:layout_height="170dp"
         android:orientation="vertical"
         android:background="@drawable/bg_header"
         android:gravity="center"

@@ -46,12 +46,18 @@
     <!-- ===================================================== -->
     <!-- POPUP MENU                                           -->
     <!-- ===================================================== -->
-    <style name="PopupMenuStyle"
-        parent="Widget.Material3.PopupMenu">
+    <style name="PopupMenuStyle" parent="Widget.AppCompat.PopupMenu">
+        <item name="android:popupBackground">@drawable/bg_popup_menu</item>
+    </style>
 
-        <item name="android:popupBackground">@color/colorSurface</item>
-        <item name="android:textColor">@color/colorOnSurface</item>
+    <!-- 🔥 INI YANG SERING TERLEWAT -->
+    <style name="PopupMenuThemeOverlay">
+        <item name="popupMenuStyle">@style/PopupMenuStyle</item>
+    </style>
 
+<!--    SPINNER-->
+    <style name="MySpinnerStyle" parent="Widget.AppCompat.Spinner">
+        <item name="android:popupBackground">@drawable/bg_spinner_dropdown</item>
     </style>
 
     <!-- ===================================================== -->

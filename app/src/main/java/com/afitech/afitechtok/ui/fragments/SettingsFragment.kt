@@ -87,8 +87,14 @@ class SettingsFragment : Fragment() {
         spinnerTheme = view.findViewById(R.id.spinnerTheme)
 
         val themes = listOf("Sistem", "Terang", "Gelap")
-        val adapter =
-            ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, themes)
+        val adapter = ArrayAdapter(
+            requireContext(),
+            R.layout.item_spinner_theme, // layout custom
+            themes
+        )
+
+        adapter.setDropDownViewResource(R.layout.item_spinner_theme)
+
         spinnerTheme.adapter = adapter
 
 // set posisi sesuai preference

@@ -10,7 +10,9 @@ import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
 import android.text.Editable
+import android.text.SpannableString
 import android.text.TextWatcher
+import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.view.ContextThemeWrapper
 import android.view.Gravity
@@ -598,32 +600,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         }
     }
 
-//    private fun startDownloadAfterAd(videoUrl: String, format: String, unduhText: TextView) {
-//        requireActivity().runOnUiThread {
-//            downloadButton.setDownloadState(unduhText, false, "Menunggu...")
-//        }
-//
-//        val intent = Intent(requireContext(), DownloadServiceTT::class.java).apply {
-//            putExtra(DownloadServiceTT.EXTRA_VIDEO_URL, videoUrl)
-//            putExtra(DownloadServiceTT.EXTRA_FORMAT, format)
-//        }
-//        ContextCompat.startForegroundService(requireContext(), intent)
-//
-//        DownloadServiceTT.setDoneCallback { isSuccess ->
-//            if (!isAdded) return@setDoneCallback
-//            requireActivity().runOnUiThread {
-//                downloadButton.setDownloadState(
-//                    unduhText,
-//                    true,
-//                    if (isSuccess) "Unduh Lagi?" else "Coba Lagi!"
-//                )
-//                if (!isSuccess) showError("Gagal mengunduh $format!")
-//                isAdShowing = false
-//                DownloadServiceTT.setDoneCallback(null)
-//            }
-//        }
-//    }
-
     // helper to show interstitial then perform action
     private fun showInterstitialThen(actionAfter: () -> Unit) {
         viewLifecycleOwner.lifecycleScope.launch {
@@ -643,17 +619,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             }
         }
     }
-
-    private fun updateDownloadButtonState(
-        layout: LinearLayout,
-        textView: TextView,
-        isEnabled: Boolean,
-        text: String
-    ) {
-        layout.isEnabled = isEnabled
-        textView.text = text
-    }
-
     private fun showDownloadMenu(view: View) {
         val url = editText.text.toString().trim()
         val platform = detectPlatform(url)
@@ -716,13 +681,31 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         buttonLayout: LinearLayout,
     ) {
         val popupMenu = PopupMenu(
-            ContextThemeWrapper(requireContext(), R.style.PopupMenuStyle),
+            ContextThemeWrapper(requireContext(), R.style.PopupMenuThemeOverlay),
             anchor,
             Gravity.END
         )
+        popupMenu.setForceShowIcon(true)
 
+        // 🔥 tambah menu
         formats.forEachIndexed { index, format ->
             popupMenu.menu.add(0, index, index, format)
+        }
+
+        // ✅ FORCE warna text (FIX PALING AMPUH)
+        val menu = popupMenu.menu
+        for (i in 0 until menu.size()) {
+            val item = menu.getItem(i)
+            val span = SpannableString(item.title)
+            span.setSpan(
+                ForegroundColorSpan(
+                    ContextCompat.getColor(requireContext(), R.color.colorOnSurface)
+                ),
+                0,
+                span.length,
+                0
+            )
+            item.title = span
         }
 
         popupMenu.setOnMenuItemClickListener { item ->
@@ -731,7 +714,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             if (selectedFormat == "Gambar" && isSlide) {
                 showSlideSelectionPopup(url, buttonLayout)
             } else {
-                // ✅ AMBIL TEXTVIEW DARI BUTTON (INI YANG BENAR)
+                // ✅ AMBIL TEXTVIEW DARI BUTTON
                 val unduhText = buttonLayout.findViewById<TextView>(R.id.unduhtext)
 
                 unduhText.text = "Menunggu..."
@@ -747,7 +730,23 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         }
 
         popupMenu.show()
+
+        // 🔥 offset biar turun dikit
+        try {
+            val field = PopupMenu::class.java.getDeclaredField("mPopup")
+            field.isAccessible = true
+            val menuPopupHelper = field.get(popupMenu)
+
+            val setVerticalOffset =
+                menuPopupHelper.javaClass.getDeclaredMethod("setVerticalOffset", Int::class.java)
+            val offset = (8 * resources.displayMetrics.density).toInt()
+            setVerticalOffset.invoke(menuPopupHelper, offset)
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
+
 
 
     private fun showSlideSelectionPopup(url: String, buttonLayout: LinearLayout) {
