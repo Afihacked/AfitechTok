@@ -1,6 +1,7 @@
 package com.afitech.afitechtok.ui.adapters
 
 import android.app.AlertDialog
+import android.app.Dialog
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -15,7 +16,6 @@ import android.text.format.DateFormat
 import android.util.Size
 import android.view.*
 import android.widget.*
-import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
@@ -42,7 +42,7 @@ class HistoryAdapter(
         val fileType: TextView = view.findViewById(R.id.textFileType)
         val fileSize: TextView = view.findViewById(R.id.textFileSize)
         val btnMore: ImageButton = view.findViewById(R.id.btnMore)
-        val infoContainer: View = view.findViewById(R.id.infoContainer)
+
         val rootLayout: View = view
     }
 
@@ -135,43 +135,70 @@ class HistoryAdapter(
         }
 
         holder.btnMore.setOnClickListener {
-            val popup = PopupMenu(context, holder.btnMore)
-            popup.menu.add("Rincian")
-            popup.menu.add("Bagikan")
-            popup.menu.add("Hapus")
-            popup.setOnMenuItemClickListener { item ->
-                when (item.title) {
-                    "Rincian" -> {
-                        showDetailDialog(history)
-                        true
-                    }
-                    "Bagikan" -> {
-                        if (fileExists(uri)) {
-                            shareFile(history, uri)
-                        } else {
-                            Toast.makeText(context, "File tidak ditemukan", Toast.LENGTH_SHORT).show()
-                        }
-                        true
-                    }
-                    "Hapus" -> {
-                        // Langsung hapus, JANGAN onDelete di sini.
-                        showDeleteConfirmation(
-                            title = "Konfirmasi Hapus",
-                            message = "Yakin ingin menghapus file ini?",
-                            onConfirm = {
-                                // PANGGIL CALLBACK, bukan lagi show dialog di Fragment
-                                onDelete(history)
-                            }
-                        )
-                        true
-                    }
-                    else -> false
-                }
+            showActionMenu(holder.btnMore, history)
+        }
+    }
+    private fun showActionMenu(anchor: View, history: DownloadHistory) {
+
+        val view = LayoutInflater.from(context)
+            .inflate(R.layout.menu_history_actions, null)
+
+        val popup = PopupWindow(
+            view,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            true
+        )
+
+        popup.elevation = 12f
+        popup.setBackgroundDrawable(null)
+
+        // posisi muncul
+        popup.showAsDropDown(anchor, -160, 0)
+
+        view.findViewById<View>(R.id.actionDetail).setOnClickListener {
+            popup.dismiss()
+            showDetailDialog(history)
+        }
+
+        view.findViewById<View>(R.id.actionShare).setOnClickListener {
+            popup.dismiss()
+            shareFile(history, Uri.parse(history.savedUri))
+        }
+
+        view.findViewById<View>(R.id.actionDelete).setOnClickListener {
+            popup.dismiss()
+            showDeleteConfirmDialog(
+                "Yakin ingin menghapus file ini?"
+            ) {
+                onDelete(history)
             }
-            popup.show()
         }
     }
 
+    private fun showDeleteConfirmDialog(
+        message: String,
+        onConfirm: () -> Unit
+    ) {
+        val view = LayoutInflater.from(context)
+            .inflate(R.layout.dialog_confirm_delete, null)
+
+        val dialog = Dialog(context)
+        dialog.setContentView(view)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.show()
+
+        view.findViewById<TextView>(R.id.textMessage).text = message
+
+        view.findViewById<View>(R.id.btnCancel).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        view.findViewById<View>(R.id.btnDelete).setOnClickListener {
+            dialog.dismiss()
+            onConfirm()
+        }
+    }
     private fun showDeleteConfirmation(
         title: String,
         message: String,
@@ -207,57 +234,72 @@ class HistoryAdapter(
         }
     }
     private fun showDetailDialog(history: DownloadHistory) {
+
         val uri = Uri.parse(history.savedUri)
         val fileSizeReadable = getFileSizeReadable(uri)
-        val dateFormatted = DateFormat.format("dd MMM yyyy, HH:mm", history.downloadDate).toString()
+
+        val mediaDuration =
+            if (history.fileType.equals("Video", true) ||
+                history.fileType.equals("Audio", true)
+            ) {
+                getVideoDuration(context, uri)
+            } else null
+
+        val dateFormatted =
+            DateFormat.format("dd MMM yyyy, HH:mm", history.downloadDate).toString()
 
         val displayPath = when {
-            history.fileType.equals(
-                "Video",
-                ignoreCase = true
-            ) -> "/storage/emulated/0/Movies/Afitech-${history.source.replaceFirstChar { it.uppercaseChar() }
-            }/${history.fileName}"
-            history.fileType.equals(
-                "Audio",
-                ignoreCase = true
-            ) -> "/storage/emulated/0/Music/Afitech-${history.source.replaceFirstChar { it.uppercaseChar() }
-            }/${history.fileName}"
-            history.fileType.equals(
-                "Image",
-                ignoreCase = true
-            ) -> "/storage/emulated/0/Pictures/Afitech-${history.source.replaceFirstChar { it.uppercaseChar() }
-            }/${history.fileName}"
-            else -> "/storage/emulated/0/Download/${history.source.capitalize()}Downloads/${history.fileName}"
+            history.fileType.equals("Video", true) ->
+                "/storage/emulated/0/Movies/Afitech-${history.source.replaceFirstChar { it.uppercaseChar() }}/${history.fileName}"
+
+            history.fileType.equals("Audio", true) ->
+                "/storage/emulated/0/Music/Afitech-${history.source.replaceFirstChar { it.uppercaseChar() }}/${history.fileName}"
+
+            history.fileType.equals("Image", true) ->
+                "/storage/emulated/0/Pictures/Afitech-${history.source.replaceFirstChar { it.uppercaseChar() }}/${history.fileName}"
+
+            else ->
+                "/storage/emulated/0/Download/${history.source.capitalize()}Downloads/${history.fileName}"
         }
 
-        val view = LayoutInflater.from(context).inflate(R.layout.rincian_file_dialog, null)
+        val view = LayoutInflater.from(context)
+            .inflate(R.layout.rincian_file_dialog, null)
 
         view.findViewById<TextView>(R.id.textNama).text = history.fileName
         view.findViewById<TextView>(R.id.textTanggal).text = dateFormatted
         view.findViewById<TextView>(R.id.textLokasi).text = displayPath
         view.findViewById<TextView>(R.id.textUkuran).text = fileSizeReadable
+        view.findViewById<TextView>(R.id.textTipe).text = history.fileType
 
-        val dialog = AlertDialog.Builder(context)
-            .setTitle("Rincian File")
-            .setView(view)
-            .setNegativeButton("Tutup", null)
-            .setPositiveButton("Salin Lokasi", null)
-            .create()
+        val durationLayout = view.findViewById<View>(R.id.layoutDurasi)
+        val durationText = view.findViewById<TextView>(R.id.textDurasi)
 
-        dialog.setOnShowListener {
-            val primaryColor = ContextCompat.getColor(context, R.color.colorPrimary)
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(primaryColor)
-            dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(primaryColor)
-
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setOnClickListener {
-                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                val clip = ClipData.newPlainText("filePath", displayPath)
-                clipboard.setPrimaryClip(clip)
-                Toast.makeText(context, "Lokasi berhasil disalin", Toast.LENGTH_SHORT).show()
-            }
+        if (mediaDuration != null) {
+            durationLayout.visibility = View.VISIBLE
+            durationText.text = mediaDuration
+        } else {
+            durationLayout.visibility = View.GONE
         }
 
+        // ✅ CUSTOM DIALOG (FULL CONTROL)
+        val dialog = Dialog(context)
+        dialog.setContentView(view)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
         dialog.show()
+
+        val btnTutup = view.findViewById<TextView>(R.id.btnTutup)
+        val btnSalin = view.findViewById<TextView>(R.id.btnSalin)
+
+        btnTutup.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        btnSalin.setOnClickListener {
+            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("filePath", displayPath)
+            clipboard.setPrimaryClip(clip)
+            Toast.makeText(context, "Lokasi berhasil disalin", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun getFileSizeReadable(fileUri: Uri): String {
@@ -283,7 +325,7 @@ class HistoryAdapter(
                 }
             }
             "0 B"
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             "0 B"
         }
     }
@@ -302,18 +344,31 @@ class HistoryAdapter(
     fun getCurrentList(): List<DownloadHistory> = historyList
 
     private fun shareFile(history: DownloadHistory, uri: Uri) {
+
         val mimeType = when (history.fileType) {
             "Video" -> "video/*"
             "Audio" -> "audio/*"
             "Image" -> "image/*"
             else -> "*/*"
         }
+
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = mimeType
+
             putExtra(Intent.EXTRA_STREAM, uri)
+
+            // ⭐ penting → override nama file
+            clipData = ClipData.newRawUri(history.fileName, uri)
+
+            putExtra(Intent.EXTRA_TITLE, history.fileName)
+            putExtra(Intent.EXTRA_SUBJECT, history.fileName)
+
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(Intent.createChooser(shareIntent, "Bagikan file"))
+
+        context.startActivity(
+            Intent.createChooser(shareIntent, history.fileName)
+        )
     }
 
     fun isSelectionMode(): Boolean = isSelectionMode
@@ -371,5 +426,23 @@ class HistoryAdapter(
             }
         }
         return null
+    }
+    private fun getVideoDuration(context: Context, uri: Uri): String? {
+        return try {
+            val retriever = MediaMetadataRetriever()
+            retriever.setDataSource(context, uri)
+            val durationMs =
+                retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong()
+            retriever.release()
+
+            durationMs?.let {
+                val seconds = it / 1000
+                val minutes = seconds / 60
+                val remainingSeconds = seconds % 60
+                String.format("%02d:%02d", minutes, remainingSeconds)
+            }
+        } catch (_: Exception) {
+            null
+        }
     }
 }

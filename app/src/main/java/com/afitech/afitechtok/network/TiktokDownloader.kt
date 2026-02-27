@@ -42,7 +42,34 @@ object TikTokDownloader {
             connection.connect()
 
             val response = connection.inputStream.bufferedReader().use { it.readText() }
-            Log.d("TikTokDownloader", "API Response: $response")
+            Log.d("TikTokDownloader", "========== RAW API RESPONSE ==========")
+            Log.d("TikTokDownloader", response)
+            Log.d("TikTokDownloader", "=====================================")
+
+            try {
+                val json = JSONObject(response)
+                val data = json.optJSONObject("data")
+
+                if (data != null) {
+                    Log.d("TikTokDownloader", "===== FIELD CHECK =====")
+
+                    Log.d("TikTokDownloader", "play: ${data.optString("play")}")
+                    Log.d("TikTokDownloader", "wmplay: ${data.optString("wmplay")}")
+                    Log.d("TikTokDownloader", "hdplay: ${data.optString("hdplay")}")
+                    Log.d("TikTokDownloader", "play_hd: ${data.optString("play_hd")}")
+                    Log.d("TikTokDownloader", "bitrate: ${data.optString("bitrate")}")
+                    Log.d("TikTokDownloader", "size: ${data.optString("size")}")
+                    Log.d("TikTokDownloader", "duration: ${data.optString("duration")}")
+                    Log.d("TikTokDownloader", "music: ${data.optJSONObject("music_info")?.optString("play")}")
+
+                    Log.d("TikTokDownloader", "=======================")
+                }
+
+                json
+            } catch (e: Exception) {
+                Log.e("TikTokDownloader", "JSON parse error: ${e.message}")
+                null
+            }
 
             JSONObject(response)
         } catch (e: Exception) {

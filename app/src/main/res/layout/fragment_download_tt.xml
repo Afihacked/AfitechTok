@@ -83,6 +83,12 @@
                     android:layout_height="48dp"
                     app:cardCornerRadius="12dp"
                     app:cardElevation="4dp"
+
+                    app:strokeWidth="0dp"
+                    app:strokeColor="@android:color/transparent"
+                    app:cardForegroundColor="@android:color/transparent"
+                    app:rippleColor="@android:color/transparent"
+
                     app:cardBackgroundColor="@color/colorPrimary"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent">
@@ -169,6 +175,11 @@
                     android:layout_height="48dp"
                     app:cardCornerRadius="18dp"
                     app:cardElevation="0dp"
+
+                    app:cardBackgroundColor="@android:color/transparent"
+                    app:cardUseCompatPadding="false"
+                    app:cardPreventCornerOverlap="false"
+
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent">
 

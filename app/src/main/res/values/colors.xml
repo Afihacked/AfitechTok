@@ -6,7 +6,8 @@
     <color name="white">#FFFFFFFF</color>
 
     <!-- Surface -->
-    <color name="colorSurface">#FFFFFF</color> <!-- Background putih -->
+    <color name="colorSurface">#FFFFFF</color>
+    <color name="colorSurfaceTT">#000000</color><!-- Background putih -->
     <color name="colorOnSurface">#000000</color> <!-- Teks hitam -->
     <color name="colorHint">#000000</color> <!-- Hint abu -->
 

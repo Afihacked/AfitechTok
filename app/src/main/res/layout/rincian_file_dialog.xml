@@ -1,10 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:padding="24dp"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:layout_margin="12dp"
+    app:cardCornerRadius="22dp"
+    app:strokeWidth="0dp"
+    app:strokeColor="@android:color/transparent"
+    app:cardForegroundColor="@android:color/transparent"
+    app:rippleColor="@android:color/transparent"
+    app:cardElevation="0dp"
+    app:cardBackgroundColor="?attr/colorSurface">
 
+    <LinearLayout
+        android:orientation="vertical"
+        android:padding="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/dialogTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Rincian File"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorOnSurface"
+        android:letterSpacing="0.02"
+        android:paddingBottom="12dp"/>
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -12,22 +36,85 @@
         android:baselineAlignedChildIndex="0">
 
         <TextView
-            android:text="Nama :"
+            android:text="Nama   :"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="?attr/colorOnSurface"
             android:layout_marginEnd="16dp"
             android:textStyle="bold"
+            android:alpha="0.85"
             android:typeface="monospace"
             android:gravity="end"
             android:minWidth="72dp" />
 
         <TextView
             android:id="@+id/textNama"
+            android:textColor="?attr/colorOnSurface"
             android:layout_width="0dp"
+            android:layout_weight="1"
+            android:alpha="0.85"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+    <!-- Tipe File -->
+    <LinearLayout
+        android:id="@+id/layoutTipe"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp"
+        android:baselineAlignedChildIndex="0">
+
+        <TextView
+            android:text="Tipe   :"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold"
+            android:typeface="monospace"
+            android:alpha="0.85"
+            android:gravity="end"
+            android:minWidth="72dp"/>
+
+        <TextView
+            android:id="@+id/textTipe"
+            android:textColor="?attr/colorOnSurface"
+            android:layout_width="0dp"
+            android:alpha="0.85"
             android:layout_weight="1"
             android:layout_height="wrap_content"/>
     </LinearLayout>
 
+    <!-- Durasi Video -->
+    <LinearLayout
+        android:id="@+id/layoutDurasi"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp"
+        android:visibility="gone"
+        android:baselineAlignedChildIndex="0">
+
+        <TextView
+            android:text="Durasi :"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="?attr/colorOnSurface"
+            android:layout_marginEnd="16dp"
+            android:textStyle="bold"
+            android:alpha="0.85"
+            android:typeface="monospace"
+            android:gravity="end"
+            android:minWidth="72dp"/>
+
+        <TextView
+            android:id="@+id/textDurasi"
+            android:textColor="?attr/colorOnSurface"
+            android:layout_width="0dp"
+            android:alpha="0.85"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -39,15 +126,19 @@
             android:text="Tanggal:"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="?attr/colorOnSurface"
             android:layout_marginEnd="16dp"
             android:textStyle="bold"
+            android:alpha="0.85"
             android:typeface="monospace"
             android:gravity="end"
             android:minWidth="72dp"/>
 
         <TextView
             android:id="@+id/textTanggal"
+            android:textColor="?attr/colorOnSurface"
             android:layout_width="0dp"
+            android:alpha="0.85"
             android:layout_weight="1"
             android:layout_height="wrap_content"/>
     </LinearLayout>
@@ -63,18 +154,23 @@
             android:text="Lokasi :"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="?attr/colorOnSurface"
             android:layout_marginEnd="16dp"
             android:textStyle="bold"
+            android:alpha="0.85"
             android:typeface="monospace"
             android:gravity="end"
             android:minWidth="72dp"/>
 
         <TextView
             android:id="@+id/textLokasi"
+            android:textColor="?attr/colorOnSurface"
             android:layout_width="0dp"
             android:layout_weight="1"
+            android:alpha="0.85"
             android:layout_height="wrap_content"
-            android:maxLines="5"/>
+            android:maxLines="5"
+            android:ellipsize="end"/>
     </LinearLayout>
 
     <LinearLayout
@@ -88,17 +184,44 @@
             android:text="Ukuran :"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="?attr/colorOnSurface"
             android:layout_marginEnd="16dp"
             android:textStyle="bold"
+            android:alpha="0.85"
             android:typeface="monospace"
             android:gravity="end"
             android:minWidth="72dp"/>
 
         <TextView
             android:id="@+id/textUkuran"
+            android:textColor="?attr/colorOnSurface"
             android:layout_width="0dp"
+            android:alpha="0.85"
             android:layout_weight="1"
             android:layout_height="wrap_content"/>
-    </LinearLayout>
 
-</LinearLayout>
+    </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:gravity="end"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTutup"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tutup"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSalin"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Salin Lokasi"
+                android:layout_marginStart="8dp"/>
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

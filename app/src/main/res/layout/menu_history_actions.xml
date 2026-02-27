@@ -1,0 +1,62 @@
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="16dp"
+    app:strokeWidth="0dp"
+    app:strokeColor="@android:color/transparent"
+    app:cardForegroundColor="@android:color/transparent"
+    app:rippleColor="@android:color/transparent"
+    app:cardElevation="0dp"
+    app:cardBackgroundColor="?attr/colorSurface">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:padding="8dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <!-- Rincian -->
+        <LinearLayout
+            android:id="@+id/actionDetail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/MenuItemStyle">
+
+            <TextView
+                android:text="Rincian"
+                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                style="@style/MenuTextStyle"/>
+        </LinearLayout>
+
+        <!-- Bagikan -->
+        <LinearLayout
+            android:id="@+id/actionShare"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/MenuItemStyle">
+
+            <TextView
+                android:text="Bagikan"
+                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                style="@style/MenuTextStyle"/>
+        </LinearLayout>
+
+        <!-- Hapus -->
+        <LinearLayout
+            android:id="@+id/actionDelete"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/MenuItemStyle">
+            <TextView
+                android:text="Hapus"
+                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                style="@style/MenuTextStyle"/>
+        </LinearLayout>
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

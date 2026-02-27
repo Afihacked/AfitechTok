@@ -1,71 +1,114 @@
-# -----------------------------
-# ✅ Umum: Keep anotasi penting & metadata debug
-# -----------------------------
+# ==================================================
+# ✅ BASIC ATTRIBUTES (WAJIB)
+# ==================================================
 -keepattributes *Annotation*
+-keepattributes Signature
 -keepattributes SourceFile,LineNumberTable
+-keepattributes InnerClasses,EnclosingMethod
 
-# -----------------------------
-# ✅ Room Database
-# -----------------------------
--keep class androidx.room.** { *; }
--keep interface androidx.room.** { *; }
+# ==================================================
+# ✅ KOTLIN
+# ==================================================
+-dontwarn kotlin.**
+-keep class kotlin.Metadata { *; }
+
+# ==================================================
+# ✅ ROOM DATABASE (SAFE & MINIMAL)
+# ==================================================
+-keep class androidx.room.RoomDatabase
+-keep @androidx.room.* class * { *; }
 -dontwarn androidx.room.**
 
-# -----------------------------
-# ✅ Material Components & AndroidX
-# -----------------------------
--keep class com.google.android.material.** { *; }
--keep class androidx.core.** { *; }
--keep class androidx.appcompat.** { *; }
--keep class androidx.constraintlayout.** { *; }
+# ==================================================
+# ✅ ANDROIDX & MATERIAL (LEAN)
+# ==================================================
+-dontwarn androidx.**
 -dontwarn com.google.android.material.**
--dontwarn androidx.core.**
--dontwarn androidx.appcompat.**
--dontwarn androidx.constraintlayout.**
 
-# -----------------------------
-# ✅ Glide
-# -----------------------------
--keep class com.bumptech.glide.** { *; }
+# ❗ tidak perlu keep seluruh package (biar shrink maksimal)
+
+# ==================================================
+# ✅ GLIDE (WAJIB)
+# ==================================================
+-keep public class * extends com.bumptech.glide.module.AppGlideModule
+-keep public class * extends com.bumptech.glide.module.LibraryGlideModule
+
 -dontwarn com.bumptech.glide.**
--keep class * extends com.bumptech.glide.module.AppGlideModule { *; }
--keep class * extends com.bumptech.glide.module.LibraryGlideModule { *; }
 
-# -----------------------------
-# ✅ OkHttp / Retrofit (kalau pakai)
-# -----------------------------
--keep class okhttp3.** { *; }
--keep interface okhttp3.** { *; }
+# ==================================================
+# ✅ OKHTTP
+# ==================================================
 -dontwarn okhttp3.**
+-dontwarn okio.**
 
--keep class retrofit2.** { *; }
--dontwarn retrofit2.**
+# (tidak perlu keep semua class → biar kecil)
 
-# -----------------------------
-# ✅ AdMob / Google Play Services
-# -----------------------------
+# ==================================================
+# ✅ ADMOB / PLAY SERVICES
+# ==================================================
 -keep class com.google.android.gms.ads.** { *; }
 -dontwarn com.google.android.gms.ads.**
+-dontwarn com.google.android.gms.internal.ads.**
 
-# -----------------------------
-# ✅ Testing (JUnit, Espresso)
-# -----------------------------
--dontwarn junit.**
--dontwarn org.junit.**
--dontwarn androidx.test.**
--dontwarn androidx.test.espresso.**
--dontwarn androidx.test.ext.**
+# ==================================================
+# ✅ FIREBASE (MODERN SDK)
+# ==================================================
+-dontwarn com.google.firebase.**
+-keep class com.google.firebase.** { *; }
 
-# -----------------------------
-# ✅ Ignore warning umum
-# -----------------------------
--dontwarn javax.annotation.**
--dontwarn org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement
--dontwarn kotlin.Unit
+# Crashlytics mapping
+-keepattributes SourceFile,LineNumberTable
 
-# -----------------------------
-# ✅ Hapus Log di Rilis
-# -----------------------------
+# ==================================================
+# ✅ FIREBASE PERFORMANCE
+# ==================================================
+-dontwarn com.google.firebase.perf.**
+
+# ==================================================
+# ✅ START.IO SDK
+# ==================================================
+-dontwarn com.startapp.**
+-keep class com.startapp.** { *; }
+
+# ==================================================
+# ✅ MEDIA3 EXOPLAYER
+# ==================================================
+-dontwarn androidx.media3.**
+-keep class androidx.media3.** { *; }
+
+# ==================================================
+# ✅ JSoup
+# ==================================================
+-dontwarn org.jsoup.**
+
+# ==================================================
+# ✅ LOTTIE
+# ==================================================
+-dontwarn com.airbnb.lottie.**
+
+# ==================================================
+# ✅ SHIMMER
+# ==================================================
+-dontwarn com.facebook.shimmer.**
+
+# ==================================================
+# ✅ MODEL JSON APP KAMU
+# ==================================================
+-keep class com.afitech.afitechtok.data.model.** { *; }
+
+# ==================================================
+# ✅ PARCELABLE / SERIALIZABLE
+# ==================================================
+-keepclassmembers class * implements android.os.Parcelable {
+    public static final android.os.Parcelable$Creator *;
+}
+
+-keep class * implements java.io.Serializable { *; }
+-keepnames class * implements java.io.Serializable
+
+# ==================================================
+# ✅ REMOVE LOG DI RELEASE (GOOD)
+# ==================================================
 -assumenosideeffects class android.util.Log {
     public static *** d(...);
     public static *** v(...);
@@ -74,21 +117,14 @@
     public static *** e(...);
 }
 
-# -----------------------------
-# ✅ Optimasi tambahan
-# -----------------------------
-# Hapus metode/metode tak terpakai (kecuali beberapa yang sensitif)
+# ==================================================
+# ✅ R8 OPTIMIZATION (SAFE)
+# ==================================================
 -optimizations !code/simplification/arithmetic,!field/*,!class/merging/*
 
-# Jaga class turunan jika pakai reflection / Parcelable / Serializable
--keep class * implements java.io.Serializable { *; }
--keepnames class * implements java.io.Serializable
-
--keepclassmembers class * implements android.os.Parcelable {
-    public static final android.os.Parcelable$Creator *;
-}
-
-# -----------------------------
-# ✅ Keep model untuk JSON parsing (Gson/Moshi)
-# -----------------------------
--keep class com.afitech.afitechtok.data.model.** { *; }
+# ==================================================
+# ✅ TESTING (IGNORE)
+# ==================================================
+-dontwarn junit.**
+-dontwarn org.junit.**
+-dontwarn androidx.test.**
