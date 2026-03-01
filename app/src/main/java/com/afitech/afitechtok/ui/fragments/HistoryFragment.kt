@@ -19,8 +19,8 @@ import com.afitech.afitechtok.utils.setStatusBarColorRes
 import com.google.android.material.tabs.TabLayoutMediator
 import kotlin.math.max
 import kotlin.math.min
-
-class HistoryFragment : Fragment() {
+import com.afitech.afitechtok.ui.interfaces.SelectionMenuHost
+class HistoryFragment : Fragment(), SelectionMenuHost {
 
     private var _binding: FragmentHistoryBinding? = null
     private val binding get() = _binding!!
@@ -105,7 +105,13 @@ class HistoryFragment : Fragment() {
 
         }.attach()
     }
+    override fun onSelectionMenuClicked() {
+        val listFragment = childFragmentManager.fragments
+            .filterIsInstance<HistoryListFragment>()
+            .firstOrNull()
 
+        listFragment?.onSelectionMenuClicked()
+    }
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

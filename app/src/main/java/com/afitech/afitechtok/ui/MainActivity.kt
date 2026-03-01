@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
@@ -48,6 +49,7 @@ import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.FirebaseApp
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.afitech.afitechtok.ui.interfaces.SelectionMenuHost
 
 class MainActivity : AppCompatActivity() {
 
@@ -56,6 +58,8 @@ class MainActivity : AppCompatActivity() {
         const val EXTRA_VIDEO_URL = "video_url"
     }
 
+    private lateinit var pagerAdapter: MainPagerAdapter
+    private var historyFragment: HistoryListFragment? = null
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navView: NavigationView
     private lateinit var sharedPref: SharedPreferences
@@ -68,6 +72,8 @@ class MainActivity : AppCompatActivity() {
 
     // index tab TikTok (sesuaikan jika urutan adapter berubah)
     private val tiktokTabIndex = 0
+
+    private var showSelectionMenu = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         FirebaseApp.initializeApp(this)
@@ -82,6 +88,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         // 1) set layout
         setContentView(R.layout.activity_main)
+
 
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
         firebaseAnalytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, null)
@@ -108,72 +115,69 @@ class MainActivity : AppCompatActivity() {
         drawerLayout = findViewById(R.id.drawer_layout)
         navView = findViewById(R.id.nav_view)
         val toolbar: Toolbar = findViewById(R.id.toolbar)
-        val scrim: View? = findViewById(R.id.status_bar_scrim) // <-- ensure this view exists in activity_main.xml (first child)
         setSupportActionBar(toolbar)
+        toolbar.setTitleTextColor(Color.WHITE)
+        toolbar.navigationIcon?.setTint(Color.WHITE)
 
-        // -------------------- SCRIM-BASED STATUSBAR (reliable on all devices) --------------------
-        // Make status bar transparent and draw behind
+// EDGE TO EDGE (clean & stable)
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        // Ensure flags (safety)
-        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+        window.statusBarColor = Color.TRANSPARENT
+        window.navigationBarColor = Color.TRANSPARENT
 
-        // desired color (from colors.xml)
-        val desiredColor = ContextCompat.getColor(this, R.color.sttsbar)
+// warna surface dari theme
+        val primaryColor = MaterialColors.getColor(
+            toolbar,
+            com.google.android.material.R.attr.colorPrimary
+        )
 
-        // ----- Calculate actionBar size (fallback to 56dp if not available) -----
-        val tv = TypedValue()
-        val actionBarHeight = if (theme.resolveAttribute(android.R.attr.actionBarSize, tv, true)) {
-            TypedValue.complexToDimensionPixelSize(tv.data, resources.displayMetrics)
-        } else {
-            // fallback ~56dp
-            (56 * resources.displayMetrics.density).toInt()
-        }
-        // toolbar styling and scrim color
-        toolbar.setBackgroundColor(desiredColor)
-        toolbar.elevation = 0f
-        scrim?.setBackgroundColor(desiredColor)
+        toolbar.setBackgroundColor(primaryColor)
 
+// dark/light icon otomatis
+        val isLightTheme =
+            (resources.configuration.uiMode and
+                    android.content.res.Configuration.UI_MODE_NIGHT_MASK) !=
+                    android.content.res.Configuration.UI_MODE_NIGHT_YES
 
-        val controller = WindowInsetsControllerCompat(window, window.decorView)
-        controller.isAppearanceLightStatusBars = true // karena sttsbar terang
-
-        scrim?.let { s ->
-            ViewCompat.setOnApplyWindowInsetsListener(s) { v, insets ->
-                val statusBarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-                val statusBarHeight = statusBarInsets.top
-                if (v.layoutParams.height != statusBarHeight) {
-                    v.layoutParams = v.layoutParams.apply { height = statusBarHeight }
-                    v.requestLayout()
-                }
-                insets
-            }
-            s.requestApplyInsets()
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = false   // icon PUTIH
+            isAppearanceLightNavigationBars = false
         }
 
-        ViewCompat.setOnApplyWindowInsetsListener(toolbar) { v, insets ->
-            val statusBarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-            val statusBarHeight = statusBarInsets.top
-            val totalToolbarHeight = actionBarHeight + statusBarHeight
+// tinggi scrim mengikuti status bar
 
-            // update toolbar height if needed
-            if (v.layoutParams.height != totalToolbarHeight) {
-                v.layoutParams = v.layoutParams.apply { height = totalToolbarHeight }
-                v.requestLayout()
-            }
+        val content = findViewById<View>(R.id.viewPager)
 
-            // padding so toolbar content sits below status bar
-            v.updatePadding(top = statusBarHeight)
+        ViewCompat.setOnApplyWindowInsetsListener(content) { view, insets ->
+            val bottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+            view.updatePadding(bottom = bottom)
+            insets
+        }
+
+        ViewCompat.setOnApplyWindowInsetsListener(toolbar) { view, insets ->
+
+            val statusBarHeight =
+                insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+
+            val actionBarHeight = resources.getDimensionPixelSize(
+                androidx.appcompat.R.dimen.abc_action_bar_default_height_material
+            )
+
+            val params = view.layoutParams
+            params.height = statusBarHeight + actionBarHeight
+            view.layoutParams = params
+
+            view.setPadding(
+                view.paddingLeft,
+                statusBarHeight,
+                view.paddingRight,
+                view.paddingBottom
+            )
 
             insets
         }
+
         toolbar.requestApplyInsets()
-
-        // Optional fallback util (commented out because scrim is authoritative)
-        // setStatusBarColorRes(R.color.sttsbar, isLightStatusBar = true, drawBehind = false)
-
-        // ----------------------------------------------------------------------------------------
 
         val toggle = ActionBarDrawerToggle(
             this,
@@ -184,7 +188,7 @@ class MainActivity : AppCompatActivity() {
         )
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
-
+        toggle.drawerArrowDrawable.color = Color.WHITE
         // Setup Tab + ViewPager
         viewPager = findViewById(R.id.viewPager)
         tabLayout = findViewById(R.id.tabLayout)
@@ -204,8 +208,8 @@ class MainActivity : AppCompatActivity() {
             // property tidak tersedia di versi lama -> lewati
         }
 
-        val adapter = MainPagerAdapter(this)
-        viewPager.adapter = adapter
+        pagerAdapter = MainPagerAdapter(this)
+        viewPager.adapter = pagerAdapter
 
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
             when (position) {
@@ -218,6 +222,11 @@ class MainActivity : AppCompatActivity() {
         // Judul toolbar saat ganti tab dan (opsional) ubah warna per-tab
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
+                if (position == 2) {
+                    historyFragment = supportFragmentManager.fragments
+                        .filterIsInstance<HistoryListFragment>()
+                        .firstOrNull()
+                }
                 super.onPageSelected(position)
                 when (position) {
                     0 -> {
@@ -285,7 +294,10 @@ class MainActivity : AppCompatActivity() {
             DownloadSession.lastVideoUrl
         )
     }
-
+    fun setSelectionMenuVisible(visible: Boolean) {
+        showSelectionMenu = visible
+        invalidateOptionsMenu()
+    }
     // Inflate menu (ikon help)
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)
@@ -318,25 +330,43 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
+
         val helpItem = menu?.findItem(R.id.action_help)
         val refreshItem = menu?.findItem(R.id.action_refresh)
-        val extraVisible = findViewById<View>(R.id.extra_fragment_container).visibility == View.VISIBLE
-        val currentFragment = supportFragmentManager.findFragmentById(R.id.extra_fragment_container)
+        val selectionItem = menu?.findItem(R.id.action_selection_menu)
 
-        // Help hanya di tab TikTok
-        val showHelp = !extraVisible && ::viewPager.isInitialized && viewPager.currentItem == tiktokTabIndex
+        val extraVisible =
+            findViewById<View>(R.id.extra_fragment_container).visibility == View.VISIBLE
+
+        val currentFragment =
+            supportFragmentManager.findFragmentById(R.id.extra_fragment_container)
+
+        // ✅ Help hanya di tab TikTok
+        val showHelp =
+            !extraVisible &&
+                    ::viewPager.isInitialized &&
+                    viewPager.currentItem == tiktokTabIndex
+
         helpItem?.isVisible = showHelp
 
-        // Refresh hanya saat WA Web aktif
-        refreshItem?.isVisible = extraVisible && currentFragment is WaWebFragment
+        // ✅ Refresh hanya saat WA Web aktif
+        refreshItem?.isVisible =
+            extraVisible && currentFragment is WaWebFragment
 
-        // ===============================
-        // Tint icon TikTok pakai colorOnSurface
-        // ===============================
+        // ✅ Selection menu hanya di tab HISTORY & saat selection aktif
+        val isHistoryTab =
+            !extraVisible &&
+                    ::viewPager.isInitialized &&
+                    viewPager.currentItem == 2   // tab history index
+
+        selectionItem?.isVisible = isHistoryTab && showSelectionMenu
+
+        // tint help icon
         helpItem?.icon?.mutate()?.setTint(
             ContextCompat.getColor(this, R.color.white)
         )
-
+        Log.d("MENU_DEBUG", "showSelectionMenu = $showSelectionMenu")
+        Log.d("MENU_DEBUG", "isHistoryTab = $isHistoryTab")
         return super.onPrepareOptionsMenu(menu)
     }
 
@@ -344,15 +374,38 @@ class MainActivity : AppCompatActivity() {
     // Handle klik menu
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
+
             R.id.action_help -> {
                 val current = viewPager.currentItem
                 if (current == tiktokTabIndex) {
                     showTutorialDialog()
                 } else {
-                    Toast.makeText(this, getString(R.string.help_only_tiktok), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this,
+                        getString(R.string.help_only_tiktok),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
                 true
             }
+
+            R.id.action_selection_menu -> {
+
+                Log.d("MENU_DEBUG","Selection menu clicked")
+
+                val fragment = pagerAdapter.getFragment(viewPager.currentItem)
+                        as? SelectionMenuHost
+
+                if (fragment != null) {
+                    Log.d("MENU_DEBUG","History fragment found")
+                    fragment.onSelectionMenuClicked()
+                } else {
+                    Log.d("MENU_DEBUG","Fragment not ready")
+                }
+
+                true
+            }
+
             else -> super.onOptionsItemSelected(item)
         }
     }

@@ -3,5 +3,5 @@
     <!-- Track saat aktif (50% transparan dari colorPrimary) -->
     <item android:color="#520000" android:state_checked="true" />
     <!-- Track saat tidak aktif (abu tipis) -->
-    <item android:color="@color/colorOnSurface" />
+    <item android:color="#707070" />
 </selector>

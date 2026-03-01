@@ -28,12 +28,14 @@ import java.io.File
 class HistoryAdapter(
     private val context: Context,
     private var historyList: List<DownloadHistory>,
-    private val onDelete: (DownloadHistory) -> Unit,
     private val onMultipleDelete: (List<DownloadHistory>) -> Unit,
+    private val onDelete: (DownloadHistory) -> Unit,
     private val onSelectionChanged: (() -> Unit)? = null
 ) : RecyclerView.Adapter<HistoryAdapter.HistoryViewHolder>() {
-
-    private val selectedItems = mutableSetOf<DownloadHistory>()
+    init {
+        setHasStableIds(true)
+    }
+    private val selectedItems = mutableSetOf<Long>()
     private var isSelectionMode = false
 
     class HistoryViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -100,12 +102,13 @@ class HistoryAdapter(
             holder.thumbnail.setImageResource(R.drawable.ic_broken_image)
         }
 
-        holder.rootLayout.setBackgroundColor(
-            ContextCompat.getColor(
-                context,
-                if (selectedItems.contains(history)) R.color.selection_bg else android.R.color.transparent
-            )
-        )
+//        if (selectedItems.contains(history.id)) {
+//            holder.rootLayout.setBackgroundResource(R.color.selection_bg)
+//        } else {
+//            holder.rootLayout.setBackgroundResource(android.R.color.transparent)
+//        }
+        holder.rootLayout.isActivated = selectedItems.contains(history.id)
+
 
         holder.rootLayout.setOnClickListener {
             if (isSelectionMode) {
@@ -148,13 +151,36 @@ class HistoryAdapter(
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT,
             true
+        ).apply {
+            elevation = 12f
+            isOutsideTouchable = true
+            setBackgroundDrawable(null)
+        }
+
+        // ⬇️ ukur popup dulu
+        view.measure(
+            View.MeasureSpec.UNSPECIFIED,
+            View.MeasureSpec.UNSPECIFIED
         )
+        val popupHeight = view.measuredHeight
 
-        popup.elevation = 12f
-        popup.setBackgroundDrawable(null)
+        val location = IntArray(2)
+        anchor.getLocationOnScreen(location)
+        val anchorY = location[1]
+        val anchorHeight = anchor.height
 
-        // posisi muncul
-        popup.showAsDropDown(anchor, -160, 0)
+        val screenHeight = context.resources.displayMetrics.heightPixels
+
+        val spaceBelow = screenHeight - (anchorY + anchorHeight)
+        val spaceAbove = anchorY
+
+        if (spaceBelow < popupHeight && spaceAbove > popupHeight) {
+            // tampilkan di ATAS anchor
+            popup.showAsDropDown(anchor, -view.measuredWidth + anchor.width, -anchorHeight - popupHeight)
+        } else {
+            // tampilkan di BAWAH anchor (default)
+            popup.showAsDropDown(anchor, -view.measuredWidth + anchor.width, 0)
+        }
 
         view.findViewById<View>(R.id.actionDetail).setOnClickListener {
             popup.dismiss()
@@ -168,14 +194,14 @@ class HistoryAdapter(
 
         view.findViewById<View>(R.id.actionDelete).setOnClickListener {
             popup.dismiss()
-            showDeleteConfirmDialog(
-                "Yakin ingin menghapus file ini?"
-            ) {
+            showDeleteConfirmDialog("Yakin ingin menghapus file ini?") {
                 onDelete(history)
             }
         }
     }
-
+    override fun getItemId(position: Int): Long {
+        return historyList[position].id
+    }
     private fun showDeleteConfirmDialog(
         message: String,
         onConfirm: () -> Unit
@@ -199,40 +225,7 @@ class HistoryAdapter(
             onConfirm()
         }
     }
-    private fun showDeleteConfirmation(
-        title: String,
-        message: String,
-        onConfirm: () -> Unit
-    ) {
-        val dialog = AlertDialog.Builder(context)
-            .setTitle(title)
-            .setMessage(message)
-            .setPositiveButton("Hapus") { _, _ -> onConfirm() }
-            .setNegativeButton("Batal", null)
-            .create()
 
-        dialog.setOnShowListener {
-            val color = ContextCompat.getColor(context, R.color.colorPrimary)
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(color)
-            dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(color)
-        }
-
-        dialog.show()
-    }
-
-    fun deleteSelectedItems() {
-        val toDelete = selectedItems.toList()
-        if (toDelete.isNotEmpty()) {
-            showDeleteConfirmation(
-                title = "Konfirmasi Hapus Beberapa File",
-                message = "Yakin ingin menghapus ${toDelete.size} file terpilih?",
-                onConfirm = {
-                    clearSelection()
-                    onMultipleDelete(toDelete)
-                }
-            )
-        }
-    }
     private fun showDetailDialog(history: DownloadHistory) {
 
         val uri = Uri.parse(history.savedUri)
@@ -384,37 +377,56 @@ class HistoryAdapter(
         val diffResult = DiffUtil.calculateDiff(diffCallback)
         historyList = newList
         diffResult.dispatchUpdatesTo(this)
-        clearSelection()
+
+        selectedItems.retainAll(newList.map { it.id }.toSet())
+
+        if (selectedItems.isEmpty()) {
+            isSelectionMode = false
+        }
+
+        onSelectionChanged?.invoke()
     }
 
     private fun toggleSelection(item: DownloadHistory) {
-        if (selectedItems.contains(item)) {
-            selectedItems.remove(item)
+        if (selectedItems.contains(item.id)) {
+            selectedItems.remove(item.id)
             if (selectedItems.isEmpty()) isSelectionMode = false
         } else {
-            selectedItems.add(item)
+            selectedItems.add(item.id)
             isSelectionMode = true
         }
         notifyDataSetChanged()
         onSelectionChanged?.invoke()
     }
 
-    fun selectItem(item: DownloadHistory) {
-        if (!selectedItems.contains(item)) {
-            selectedItems.add(item)
-        }
+    fun selectItem(item: DownloadHistory, notify: Boolean = true) {
+        selectedItems.add(item.id)
         isSelectionMode = true
-        notifyDataSetChanged()
-        onSelectionChanged?.invoke()
+        if (notify) notifyDataSetChanged()
+    }
+    fun refreshVisible(recyclerView: RecyclerView) {
+        val layoutManager = recyclerView.layoutManager ?: return
+        val first = (layoutManager as androidx.recyclerview.widget.LinearLayoutManager)
+            .findFirstVisibleItemPosition()
+        val last = layoutManager.findLastVisibleItemPosition()
+
+        for (i in first..last) {
+            notifyItemChanged(i)
+        }
+    }
+    fun selectAll(items: List<DownloadHistory>) {
+        selectedItems.clear()
+        selectedItems.addAll(items.map { it.id })
+        isSelectionMode = true
     }
 
-    fun getSelectedItems(): List<DownloadHistory> = selectedItems.toList()
+    fun getSelectedItems(): List<DownloadHistory> {
+        return historyList.filter { selectedItems.contains(it.id) }
+    }
 
     fun clearSelection() {
         selectedItems.clear()
         isSelectionMode = false
-        notifyDataSetChanged()
-        onSelectionChanged?.invoke()
     }
 
     private fun getRealPathFromURI(context: Context, contentUri: Uri): String? {
