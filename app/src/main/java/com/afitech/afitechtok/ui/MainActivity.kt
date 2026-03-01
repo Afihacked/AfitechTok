@@ -32,7 +32,6 @@ import androidx.viewpager2.widget.ViewPager2
 import com.afitech.afitechtok.R
 import com.afitech.afitechtok.ui.adapters.MainPagerAdapter
 import com.afitech.afitechtok.ui.fragments.*
-import com.afitech.afitechtok.ui.helpers.RemoteConfigHelper
 import com.afitech.afitechtok.ui.services.DownloadServiceTT
 import com.afitech.afitechtok.ui.services.DownloadSession
 import com.airbnb.lottie.LottieAnimationView
@@ -46,9 +45,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
-import com.google.firebase.FirebaseApp
-import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.afitech.afitechtok.ui.interfaces.SelectionMenuHost
 
 class MainActivity : AppCompatActivity() {
@@ -64,9 +60,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var navView: NavigationView
     private lateinit var sharedPref: SharedPreferences
     private val REQ_NOTIF = 1001
-
-    private lateinit var firebaseAnalytics: FirebaseAnalytics
-
     private lateinit var viewPager: ViewPager2
     private lateinit var tabLayout: TabLayout
 
@@ -76,22 +69,12 @@ class MainActivity : AppCompatActivity() {
     private var showSelectionMenu = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        FirebaseApp.initializeApp(this)
-
-        FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(true)
-        FirebaseCrashlytics.getInstance().log("MainActivity onCreate() called")
-
-        RemoteConfigHelper.init(this)
 
         sharedPref = getSharedPreferences("theme_pref", MODE_PRIVATE)
 //        ThemeHelper.applyTheme(this)
         super.onCreate(savedInstanceState)
         // 1) set layout
         setContentView(R.layout.activity_main)
-
-
-        firebaseAnalytics = FirebaseAnalytics.getInstance(this)
-        firebaseAnalytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, null)
 
         // Iain notification (Android 13+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

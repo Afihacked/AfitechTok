@@ -2,9 +2,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.kapt)
-    id("com.google.gms.google-services")
-    id("com.google.firebase.crashlytics")
-    id("com.google.firebase.firebase-perf")
 }
 
 android {
@@ -15,7 +12,7 @@ android {
         applicationId = "com.afitech.afitechtok"
         minSdk = 29
         targetSdk = 35
-        versionCode = 5
+        versionCode = 6
         versionName = "1.2.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -85,13 +82,10 @@ dependencies {
 
     // UI & Animasi
     implementation(libs.lottie)
-    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+    implementation(libs.androidx.swiperefreshlayout)
 
     // Parsing HTML
     implementation(libs.jsoup)
-
-    // Glide & HTTP
-    implementation(libs.glide)
     implementation(libs.okhttp)
 
     // Room
@@ -104,17 +98,9 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    implementation ("com.facebook.shimmer:shimmer:0.5.0")
-    annotationProcessor ("com.github.bumptech.glide:compiler:4.16.0")
+    implementation (libs.shimmer)
     implementation ("com.github.bumptech.glide:glide:4.16.0")
     kapt ("com.github.bumptech.glide:compiler:4.16.0")
-
-    // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:32.7.1"))
-    implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-crashlytics")
-    implementation("com.google.firebase:firebase-perf")
-    implementation("com.google.firebase:firebase-config")
 
     implementation("androidx.media3:media3-exoplayer:1.8.0")
     implementation("androidx.media3:media3-ui:1.8.0")

@@ -49,7 +49,6 @@ import com.facebook.shimmer.ShimmerFrameLayout
 import com.google.android.gms.ads.AdView
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
-import com.google.firebase.analytics.FirebaseAnalytics
 import kotlinx.coroutines.*
 
 class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
@@ -67,7 +66,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     private lateinit var adsManager: AdsManager
 
     private lateinit var fallbackContainer: FrameLayout
-    private lateinit var firebaseAnalytics: FirebaseAnalytics
     private lateinit var downloadHistoryDao: DownloadHistoryDao
 
     private var isAdShowing = false
@@ -204,8 +202,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             }
         }
 
-        // inisialisasi analytics (non-ktx safe)
-        firebaseAnalytics = FirebaseAnalytics.getInstance(requireContext())
         adsManager = AdsManager(requireContext())
         downloadHistoryDao = AppDatabase.getDatabase(requireContext()).downloadHistoryDao()
 
