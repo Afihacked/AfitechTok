@@ -296,7 +296,7 @@ class HistoryListFragment : Fragment(), SelectionMenuHost {
                 adapter.refreshVisible(binding.recyclerViewHistory)
                 updateSelectionUI()
                 viewModel.deleteMultiple(items)
-                Toast.makeText(requireContext(), "Berhasil menghapus $selectedCount item", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Berhasil menghapus $selectedCount file", Toast.LENGTH_SHORT).show()
             }
         }
     }

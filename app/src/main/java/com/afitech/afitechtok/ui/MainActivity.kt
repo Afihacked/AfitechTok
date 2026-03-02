@@ -116,18 +116,6 @@ class MainActivity : AppCompatActivity() {
 
         toolbar.setBackgroundColor(primaryColor)
 
-// dark/light icon otomatis
-        val isLightTheme =
-            (resources.configuration.uiMode and
-                    android.content.res.Configuration.UI_MODE_NIGHT_MASK) !=
-                    android.content.res.Configuration.UI_MODE_NIGHT_YES
-
-        WindowInsetsControllerCompat(window, window.decorView).apply {
-            isAppearanceLightStatusBars = false   // icon PUTIH
-            isAppearanceLightNavigationBars = false
-        }
-
-// tinggi scrim mengikuti status bar
 
         val content = findViewById<View>(R.id.viewPager)
 

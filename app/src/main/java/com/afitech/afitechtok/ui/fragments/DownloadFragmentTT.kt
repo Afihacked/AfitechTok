@@ -2,7 +2,6 @@ package com.afitech.afitechtok.ui.fragments
 
 import android.annotation.SuppressLint
 import android.content.*
-import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.pm.ActivityInfo
 import android.content.res.ColorStateList
 import android.graphics.Outline
@@ -50,6 +49,7 @@ import com.google.android.gms.ads.AdView
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.*
+import kotlin.coroutines.resume
 
 class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
@@ -80,6 +80,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     private var isSlideDownload = false
 
     private var hasShownNoInternetToast = false
+    private val TAG_DL = "TT_SLIDE_DEBUG"
 
     // === Broadcast Receiver ===
     // === Broadcast Receiver (SYNC WITH STATUS) ===
@@ -91,18 +92,21 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                 // PROGRESS (PERSENTASE SAJA)
                 // ===============================
                 DownloadServiceTT.ACTION_PROGRESS -> {
-                    val progress = intent.getIntExtra(
-                        DownloadServiceTT.EXTRA_PROGRESS,
-                        0
+
+                    val fileProgress = intent.getIntExtra(
+                        DownloadServiceTT.EXTRA_PROGRESS, 0
                     )
 
-                    progressDownload.visibility = View.VISIBLE
-                    arrowIcon.visibility = View.GONE
-                    progressDownload.progress = progress
+                    Log.d(TAG_DL, "PROGRESS event | fileProgress=$fileProgress | finished=$slideFinished/$slideTotal | slideMode=$isSlideDownload")
 
-                    unduhtext.text = "Mengunduh… $progress%"
+                    // NORMAL MODE (video/audio)
+                    if (!isSlideDownload) {
+                        progressDownload.progress = fileProgress
+                        unduhtext.text = "Mengunduh… $fileProgress%"
+                        DownloadSession.lastProgress = fileProgress
+                        return
+                    }
 
-                    DownloadSession.isDownloading = true
                 }
 
                 // ===============================
@@ -123,19 +127,40 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                     // 🔥 MODE SLIDE (BANYAK GAMBAR)
                     // ===============================
                     if (isSlideDownload) {
+
                         slideFinished++
+
+                        Log.d(TAG_DL, "COMPLETE event | success=$success | finished=$slideFinished/$slideTotal")
+
                         if (!success) slideFailed = true
 
-                        // belum semua → tunggu
+                        if (slideTotal == 0) {
+                            Log.w(TAG_DL, "slideTotal = 0 saat COMPLETE")
+                            return
+                        }
+
+                        // 🔥 progress berdasarkan jumlah file selesai
+                        val overall = (slideFinished * 100) / slideTotal
+
+                        Log.d(TAG_DL, "UPDATED overall progress = $overall%")
+
+                        progressDownload.setProgress(overall, true)
+                        unduhtext.text = "Mengunduh… $overall% ($slideFinished/$slideTotal)"
+
                         if (slideFinished < slideTotal) return
 
-                        // ===== SEMUA GAMBAR SELESAI =====
+                        Log.d(TAG_DL, "ALL SLIDES FINISHED")
+
+                        // ===== SEMUA SELESAI =====
                         isSlideDownload = false
                         DownloadSession.isDownloading = false
-                        DownloadSession.lastDownloadFinished = success
+                        DownloadSession.lastDownloadFinished = !slideFailed
+                        DownloadSession.lastProgress = 100
                         isAdShowing = false
 
-                        textProgress.visibility = View.GONE
+                        progressDownload.progress = 100
+                        unduhtext.text = "Mengunduh… 100% ($slideTotal/$slideTotal)"
+
                         syncButtonState()
 
                         requireContext().showToastSafe(
@@ -144,8 +169,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                             else
                                 "Semua gambar berhasil diunduh"
                         )
-
-                        // ✅ reset flag di akhir SLIDE
                         hasShownNoInternetToast = false
                         return
                     }
@@ -283,7 +306,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                 // banner: gunakan loadBanner (AdMob -> Start.io fallback)
                 adsManager.loadBanner(adView, fallbackContainer)
                 adView.visibility = View.VISIBLE
-            } catch (t: Throwable) {
+            } catch (_: Throwable) {
                 adView.visibility = View.GONE
             }
         } else {
@@ -663,7 +686,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
     private fun buildFormatOptions(platform: String, isSlide: Boolean): List<String> {
         return when {
-            platform == "tiktok" && isSlide -> listOf("Gambar")
+            platform == "tiktok" && isSlide -> listOf("Gambar", "Music")
             platform == "tiktok" -> listOf("Videos", "Music")
             else -> emptyList()
         }
@@ -759,14 +782,13 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                     return@withContext
                 }
 
-                buildImageSelectionDialog(slideImages, url, buttonLayout).show()
+                buildImageSelectionDialog(slideImages, buttonLayout).show()
             }
         }
     }
 
     private fun buildImageSelectionDialog(
         imageUrls: List<String>,
-        originalUrl: String,
         buttonLayout: LinearLayout,
     ): AlertDialog {
         val selectedImages = mutableSetOf<String>()
@@ -959,49 +981,65 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         images: List<String>,
         buttonLayout: LinearLayout
     ) {
-        // ===== UI STATE =====
         val unduhText = buttonLayout.findViewById<TextView>(R.id.unduhtext)
-        unduhText.text = "Mengunduh gambar..."
+        unduhText.text = "Mengunduh ${images.size} gambar..."
         buttonLayout.isEnabled = false
 
         progressDownload.visibility = View.VISIBLE
         arrowIcon.visibility = View.GONE
 
-        // ===== LOGIC STATE (PENTING UNTUK GROUPING) =====
         slideTotal = images.size
+        Log.d(TAG_DL, "START slide download | total=$slideTotal")
+
         slideFinished = 0
         slideFailed = false
         isSlideDownload = true
 
-        // ===== START SERVICE PER GAMBAR =====
-        images.forEach { imageUrl ->
-            val intent = Intent(
-                requireContext(),
-                DownloadServiceTT::class.java
-            ).apply {
-                putExtra(DownloadServiceTT.EXTRA_VIDEO_URL, imageUrl)
-                putExtra(DownloadServiceTT.EXTRA_FORMAT, "Gambar")
+        DownloadSession.lastProgress = 0
+        progressDownload.progress = 0
+
+        // tampil mulai dari 0%
+        unduhtext.text = "Mengunduh… 0% (0/$slideTotal)"
+
+        lifecycleScope.launch {
+            for (imageUrl in images) {
+
+                val intent = Intent(
+                    requireContext(),
+                    DownloadServiceTT::class.java
+                ).apply {
+                    putExtra(DownloadServiceTT.EXTRA_VIDEO_URL, imageUrl)
+                    putExtra(DownloadServiceTT.EXTRA_FORMAT, "Gambar")
+                    putExtra("SLIDE_TOTAL", slideTotal) // ⭐ PENTING
+                }
+
+                requireContext().startService(intent)
+
+                // ⏳ tunggu sampai file selesai dulu
+                waitUntilOneDownloadFinished()
+            }
+        }
+    }
+    private suspend fun waitUntilOneDownloadFinished() =
+        suspendCancellableCoroutine { cont ->
+
+            val lbm = LocalBroadcastManager.getInstance(requireContext())
+
+            val receiver = object : BroadcastReceiver() {
+                override fun onReceive(context: Context?, intent: Intent?) {
+                    if (intent?.action == DownloadServiceTT.ACTION_COMPLETE) {
+                        lbm.unregisterReceiver(this)
+                        if (!cont.isCompleted) cont.resume(Unit)
+                    }
+                }
             }
 
-            // ❗ WAJIB pakai startForegroundService (Android 8+ safe)
-            ContextCompat.startForegroundService(requireContext(), intent)
+            lbm.registerReceiver(receiver, IntentFilter(DownloadServiceTT.ACTION_COMPLETE))
+
+            cont.invokeOnCancellation {
+                lbm.unregisterReceiver(receiver)
+            }
         }
-    }
-
-
-    private fun showError(message: String) {
-        if (!isAdded || view == null) return
-
-        lifecycleScope.launch(Dispatchers.Main) {
-            if (!isAdded || view == null) return@launch
-
-            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
-            progressDownload.visibility = View.GONE
-            textProgress.visibility = View.GONE
-            arrowIcon.visibility = View.VISIBLE
-            isAdShowing = false
-        }
-    }
     fun onNotificationOpened(videoUrl: String?) {
         if (videoUrl.isNullOrEmpty() || !isAdded) return
 

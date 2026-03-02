@@ -26,6 +26,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.math.roundToInt
 
 class DownloadServiceTT : Service() {
 
@@ -45,6 +46,16 @@ class DownloadServiceTT : Service() {
         const val EXTRA_ERROR_REASON = "error_reason"
         const val ERROR_NO_INTERNET = "no_internet"
 
+        @Volatile
+        var slideTaskActive = false
+
+        @Volatile
+        var slideCompletedCount = 0
+
+        @Volatile
+        var slideTotalCount = 0
+
+        const val EXTRA_SLIDE_TOTAL = "SLIDE_TOTAL"
     }
 
     private lateinit var notificationManager: NotificationManager
@@ -62,7 +73,16 @@ class DownloadServiceTT : Service() {
         val videoUrl = intent?.getStringExtra(EXTRA_VIDEO_URL)
             ?: return START_NOT_STICKY
         val format = intent.getStringExtra(EXTRA_FORMAT) ?: "Videos"
+        val slideTotal = intent.getIntExtra(EXTRA_SLIDE_TOTAL, 0)
 
+        if (format == "Gambar" && slideTotal > 0) {
+
+            if (!slideTaskActive) {
+                slideTaskActive = true
+                slideTotalCount = slideTotal
+                slideCompletedCount = 0
+            }
+        }
         // ===============================
         // 🔥 DOWNLOAD SESSION
         // ===============================
@@ -83,7 +103,10 @@ class DownloadServiceTT : Service() {
 
         serviceScope.launch {
             try {
-                updateNotification(notifTitle, 0, "Menghubungkan ke TikTok…")
+// tampilkan hanya sekali di awal task
+                if (slideCompletedCount == 0) {
+                    updateNotification(notifTitle, 0, "Menghubungkan ke TikTok…")
+                }
 
                 val info = if (format == "Gambar" && videoUrl.startsWith("http")) {
                     val meta = TikTokDownloader.probeRemote(videoUrl)
@@ -119,11 +142,14 @@ class DownloadServiceTT : Service() {
 
                     sendProgress(pct, "Mengunduh… $pct%")
 
-                    updateNotification(
-                        notifTitle,
-                        pct,
-                        "Mengunduh… $pct% (${formatBytes(downloaded)} / ${formatBytes(total)})"
-                    )
+                    // update notif hanya jika bukan slide mode
+                    if (!slideTaskActive) {
+                        updateNotification(
+                            notifTitle,
+                            pct,
+                            "Mengunduh… $pct% (${formatBytes(downloaded)} / ${formatBytes(total)})"
+                        )
+                    }
                 }
 
                 if (!downloadOk) {
@@ -142,6 +168,7 @@ class DownloadServiceTT : Service() {
                 }
 
                 dao.insertDownload(
+
                     DownloadHistory(
                         0L,
                         fileName,
@@ -158,9 +185,38 @@ class DownloadServiceTT : Service() {
                         System.currentTimeMillis(),
                         "tiktok"
                     )
-                )
 
-                updateNotification(notifTitle, 100, "Unduhan selesai")
+                )
+// ===============================
+// ⭐ UPDATE PROGRESS SLIDE MODE
+// ===============================
+                if (format == "Gambar" && slideTaskActive) {
+
+                    slideCompletedCount++
+
+                    val overall =
+                        ((slideCompletedCount.toFloat() / slideTotalCount) * 100).roundToInt()
+
+                    updateNotification(
+                        "Mengunduh gambar…",
+                        overall,
+                        "$overall% (${slideCompletedCount}/${slideTotalCount})"
+                    )
+
+                    if (slideCompletedCount >= slideTotalCount) {
+                        slideTaskActive = false
+
+                        updateNotification(
+                            "Gambar TikTok",
+                            100,
+                            "Semua gambar selesai"
+                        )
+                    }
+                }
+// hanya untuk video/music
+                if (!slideTaskActive && format != "Gambar") {
+                    updateNotification(notifTitle, 100, "Unduhan selesai")
+                }
                 broadcastResult(true)
 
             } catch (e: Exception) {
@@ -425,8 +481,10 @@ class DownloadServiceTT : Service() {
             }
         )
 
-        stopForeground(STOP_FOREGROUND_DETACH)
-        stopSelf()
+        if (!slideTaskActive) {
+            stopForeground(STOP_FOREGROUND_DETACH)
+        }
+//        stopSelf()
     }
 
     private fun showNoInternetNotification(format: String) {
@@ -467,11 +525,18 @@ class DownloadServiceTT : Service() {
     }
 
     private fun ensureForegroundStarted(title: String) {
+
+        // ⭐ JIKA slide aktif → notif sudah ada → jangan sentuh lagi
+        if (slideTaskActive && isForegroundStarted) {
+            return
+        }
+
+        // ⭐ jika sudah pernah start → jangan start ulang
         if (isForegroundStarted) return
 
         val notif = NotificationCompat.Builder(this, NOTIF_CHANNEL_ID)
             .setContentTitle(title)
-            .setContentText("Menyiapkan…")
+            .setContentText("Menghubungkan ke TikTok…")
             .setSmallIcon(R.drawable.ic_download)
             .setProgress(100, 0, true)
             .setContentIntent(createNotificationIntent())
