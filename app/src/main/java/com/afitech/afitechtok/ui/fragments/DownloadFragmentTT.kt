@@ -686,9 +686,75 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
     private fun buildFormatOptions(platform: String, isSlide: Boolean): List<String> {
         return when {
-            platform == "tiktok" && isSlide -> listOf("Gambar", "Music")
-            platform == "tiktok" -> listOf("Videos", "Music")
+            platform == "tiktok" && isSlide ->
+                listOf("Gambar", "Music", "Unduh Semua")
+
+            platform == "tiktok" ->
+                listOf("Videos", "Music", "Unduh Semua")
+
             else -> emptyList()
+        }
+    }
+
+    private fun downloadVideoThenAudio(
+        url: String,
+        buttonLayout: LinearLayout
+    ) {
+        val unduhText = buttonLayout.findViewById<TextView>(R.id.unduhtext)
+
+        lifecycleScope.launch {
+
+            // STEP 1 — VIDEO
+            unduhText.text = "Mengunduh video..."
+            startDownloadService(url, "Videos", unduhText)
+
+            // tunggu selesai
+            waitUntilOneDownloadFinished()
+
+            // ⭐ pastikan service benar-benar idle
+            while (DownloadSession.isDownloading) {
+                delay(200)
+            }
+
+            delay(400) // ⭐ penting untuk stabilitas foreground
+
+            // STEP 2 — AUDIO
+            unduhText.text = "Mengunduh audio..."
+            startDownloadService(url, "Music", unduhText)
+        }
+    }
+
+    private fun downloadSlideThenAudio(
+        url: String,
+        buttonLayout: LinearLayout
+    ) {
+        lifecycleScope.launch {
+
+            val images = viewModel.getImageUrlsIfSlide(url)
+
+            if (images.isNullOrEmpty()) {
+                showToastSafe("Gambar tidak ditemukan")
+                return@launch
+            }
+
+            // STEP 1 — DOWNLOAD SEMUA GAMBAR
+            downloadSelectedImages(images, buttonLayout)
+
+            // tunggu semua selesai
+            waitUntilOneDownloadFinished()
+
+            // ⭐ pastikan service benar-benar idle
+            while (DownloadSession.isDownloading) {
+                delay(200)
+            }
+
+            delay(400) // ⭐ penting
+
+            // STEP 2 — AUDIO
+            val unduhText = buttonLayout.findViewById<TextView>(R.id.unduhtext)
+            unduhText.text = "Mengunduh audio..."
+
+            startDownloadService(url, "Music", unduhText)
         }
     }
 
@@ -730,20 +796,35 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         popupMenu.setOnMenuItemClickListener { item ->
             val selectedFormat = formats[item.itemId]
 
-            if (selectedFormat == "Gambar" && isSlide) {
-                showSlideSelectionPopup(url, buttonLayout)
-            } else {
-                // ✅ AMBIL TEXTVIEW DARI BUTTON
-                val unduhText = buttonLayout.findViewById<TextView>(R.id.unduhtext)
+            when (selectedFormat) {
 
-                unduhText.text = "Menunggu..."
-                buttonLayout.isEnabled = false
+                "Unduh Semua" -> {
+                    val unduhText = buttonLayout.findViewById<TextView>(R.id.unduhtext)
+                    unduhText.text = "Menyiapkan..."
+                    buttonLayout.isEnabled = false
 
-                requestDownloadWithAdGate(
-                    url = url,
-                    format = selectedFormat,
-                    unduhText = unduhText
-                )
+                    if (isSlide) {
+                        downloadSlideThenAudio(url, buttonLayout)
+                    } else {
+                        downloadVideoThenAudio(url, buttonLayout)
+                    }
+                }
+
+                "Gambar" -> {
+                    showSlideSelectionPopup(url, buttonLayout)
+                }
+
+                else -> {
+                    val unduhText = buttonLayout.findViewById<TextView>(R.id.unduhtext)
+                    unduhText.text = "Menunggu..."
+                    buttonLayout.isEnabled = false
+
+                    requestDownloadWithAdGate(
+                        url = url,
+                        format = selectedFormat,
+                        unduhText = unduhText
+                    )
+                }
             }
             true
         }
@@ -1017,6 +1098,8 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
                 // ⏳ tunggu sampai file selesai dulu
                 waitUntilOneDownloadFinished()
+
+                delay(150)
             }
         }
     }
