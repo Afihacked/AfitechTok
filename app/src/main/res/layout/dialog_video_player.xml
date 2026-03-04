@@ -61,7 +61,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:progressTint="@color/colorPrimary"
+            android:progressTint="?attr/colorPrimary"
             android:thumbTint="@color/white"/>
 <!--        android:thumbTint="@color/your_thumb_color"-->
 <!--        android:backgroundTint="@color/your_background_track_color"-->

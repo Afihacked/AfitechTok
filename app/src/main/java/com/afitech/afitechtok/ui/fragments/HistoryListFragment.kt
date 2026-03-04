@@ -18,6 +18,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.afitech.afitechtok.R
 import com.afitech.afitechtok.data.database.AppDatabase
 import com.afitech.afitechtok.data.model.DownloadHistory
@@ -73,7 +74,6 @@ class HistoryListFragment : Fragment(), SelectionMenuHost {
 
         binding.swipeRefreshLayout.setColorSchemeResources(
             R.color.colorPrimary,
-            R.color.colorAccent,
             R.color.colorSurface
         )
 
@@ -123,6 +123,7 @@ class HistoryListFragment : Fragment(), SelectionMenuHost {
         }
 
         reloadHistory()
+
     }
     override fun onSelectionMenuClicked() {
         showSelectionPopup(binding.root)
@@ -235,6 +236,7 @@ class HistoryListFragment : Fragment(), SelectionMenuHost {
             false
         }
     }
+
     private fun updateSelectionUI() {
         val count = adapter.getSelectedItems().size
         Log.d("SELECTION_DEBUG", "Selected count = $count")

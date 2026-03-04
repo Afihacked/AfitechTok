@@ -464,50 +464,80 @@ class DownloadServiceTT : Service() {
         )
     }
 
-    private fun broadcastResult(
-        success: Boolean,
-        errorReason: String? = null
-    ) {
-        DownloadSession.isDownloading = false
-        DownloadSession.lastDownloadFinished = success
-        DownloadSession.lastProgress = 0
+//    private fun broadcastResult(
+//        success: Boolean,
+//        errorReason: String? = null
+//    ) {
+//        DownloadSession.isDownloading = false
+//        DownloadSession.lastDownloadFinished = success
+//        DownloadSession.lastProgress = 0
+//
+//        LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(
+//            Intent(ACTION_COMPLETE).apply {
+//                putExtra(EXTRA_SUCCESS, success)
+//                errorReason?.let {
+//                    putExtra(EXTRA_ERROR_REASON, it)
+//                }
+//            }
+//        )
+//
+//        if (!slideTaskActive) {
+//            stopForeground(STOP_FOREGROUND_DETACH)
+//        }
+////        stopSelf()
+//    }
+private fun broadcastResult(
+    success: Boolean,
+    errorReason: String? = null
+) {
+    DownloadSession.isDownloading = false
+    DownloadSession.lastDownloadFinished = success
+    DownloadSession.lastProgress = 0
 
-        LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(
-            Intent(ACTION_COMPLETE).apply {
-                putExtra(EXTRA_SUCCESS, success)
-                errorReason?.let {
-                    putExtra(EXTRA_ERROR_REASON, it)
-                }
-            }
-        )
-
-        if (!slideTaskActive) {
-            stopForeground(STOP_FOREGROUND_DETACH)
+    LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(
+        Intent(ACTION_COMPLETE).apply {
+            putExtra(EXTRA_SUCCESS, success)
+            errorReason?.let { putExtra(EXTRA_ERROR_REASON, it) }
         }
-//        stopSelf()
+    )
+
+    stopForeground(STOP_FOREGROUND_REMOVE)
+    stopSelf() // 🔥 WAJIB
+}
+//    private fun showNoInternetNotification(format: String) {
+//        stopForeground(true)
+//        val errorNotif = NotificationCompat.Builder(this, NOTIF_CHANNEL_ID)
+//            .setContentTitle(getNotifTitleByFormat(format))
+//            .setContentText("Koneksi terputus")
+//            .setSmallIcon(R.drawable.ic_download)
+//            .setOngoing(false)
+//            .setAutoCancel(true)
+//            .setOnlyAlertOnce(false)
+//            .setContentIntent(createNotificationIntent())
+//            .build()
+//
+//        // 🔔 PASANG NOTIF BARU (BUKAN FOREGROUND)
+//        notificationManager.notify(NOTIF_ID, errorNotif)
+//    }
+private fun showNoInternetNotification(format: String) {
+
+    val errorNotif = NotificationCompat.Builder(this, NOTIF_CHANNEL_ID)
+        .setContentTitle(getNotifTitleByFormat(format))
+        .setContentText("Koneksi terputus")
+        .setSmallIcon(R.drawable.ic_download)
+        .setOngoing(false)
+        .setAutoCancel(true)
+        .setContentIntent(createNotificationIntent())
+        .build()
+
+    notificationManager.notify(NOTIF_ID, errorNotif)
+}
+
+    override fun onDestroy() {
+        super.onDestroy()
+        serviceJob.cancel()
+        isForegroundStarted = false
     }
-
-    private fun showNoInternetNotification(format: String) {
-
-        // 🔥 KELUAR DARI FOREGROUND MODE (INI KUNCI)
-        stopForeground(true)
-
-        val errorNotif = NotificationCompat.Builder(this, NOTIF_CHANNEL_ID)
-            .setContentTitle(getNotifTitleByFormat(format))
-            .setContentText("Koneksi terputus")
-            .setSmallIcon(R.drawable.ic_download)
-            .setOngoing(false)
-            .setAutoCancel(true)
-            .setOnlyAlertOnce(false)
-            .setContentIntent(createNotificationIntent())
-            .build()
-
-        // 🔔 PASANG NOTIF BARU (BUKAN FOREGROUND)
-        notificationManager.notify(NOTIF_ID, errorNotif)
-    }
-
-
-
     private fun createNotificationIntent(): PendingIntent {
         val intent = Intent(this, MainActivity::class.java).apply {
             action = "OPEN_DOWNLOAD_TT"

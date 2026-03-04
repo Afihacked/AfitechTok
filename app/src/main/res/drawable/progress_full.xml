@@ -2,7 +2,7 @@
     <!-- Layer Background (Default Warna) -->
     <item android:id="@android:id/background">
         <shape android:shape="rectangle">
-            <solid android:color="@color/colorPrimary"/> <!-- Warna Default -->
+            <solid android:color="?attr/colorPrimary"/> <!-- Warna Default -->
             <corners android:radius="25dp"/>
         </shape>
     </item>

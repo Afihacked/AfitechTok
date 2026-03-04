@@ -77,7 +77,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0 B"
-                android:textColor="@color/colorOnSurface"
+                android:textColor="?attr/colorOnSurface"
                 android:textSize="12sp"/>
 
         </LinearLayout>

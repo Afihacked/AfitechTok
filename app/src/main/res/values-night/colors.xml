@@ -1,39 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Base -->
-    <color name="black">#000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <!-- ===================================================== -->
+    <!-- PRIMARY (LEBIH TERANG UNTUK DARK)                    -->
+    <!-- ===================================================== -->
+    <color name="colorPrimary">#C44542</color>
+    <color name="colorOnPrimary">#FFFFFF</color>
 
-    <!-- Surface -->
-    <color name="colorSurface">#000000</color>
-    <color name="colorSurfaceTT">#FFFFFF</color><!-- Latar belakang gelap -->
-    <color name="colorOnSurface">#FFFFFF</color> <!-- Teks putih -->
-    <color name="colorHint">#FFFFFF</color> <!-- Hint abu terang -->
+    <!-- ===================================================== -->
+    <!-- SURFACE & BACKGROUND                                 -->
+    <!-- ===================================================== -->
+    <color name="colorSurface">#121212</color>
+    <color name="colorOnSurface">#FFFFFF</color>
+    <color name="colorHint">#BBBBBB</color>
 
-    <!-- Primary -->
-    <color name="colorPrimary">#A22B29</color> <!-- Merah terang agar kontras -->
-    <color name="colorOutline">#FFFFFF</color> <!-- Outline abu gelap -->
-    <color name="colorAccent">#A22B29</color>
+    <!-- ===================================================== -->
+    <!-- OUTLINE                                              -->
+    <!-- ===================================================== -->
+    <color name="colorOutline">#4DFFFFFF</color>
+    <!-- ===================================================== -->
+    <!-- OPTIONAL                                             -->
+    <!-- ===================================================== -->
+    <color name="selection_bg">#C44542</color>
+    <color name="shimmer_placeholder">#333333</color>
 
-    <!-- Gray -->
-    <color name="light_gray">#444444</color>
-    <color name="dark_red">#A22B29</color>
+    <!-- Glass -->
+    <color name="glass_surface">#BFFFFFFF</color>
+    <color name="glass_stroke">#30FFFFFF</color>
+    <color name="nav_active_bg">#A8C44542</color>
+    <color name="glass_popup_surface">#373737</color>
 
-    <!-- Tab -->
-    <color name="blackTab">#FFFFFF</color>
-
-    <!-- System Bar -->
-    <color name="sttsbar">#A22B29</color>
-    <color name="navigationBarColor">#A22B29</color>
-
-    <!-- Selection -->
-    <color name="selection_bg">#A22B29</color>
-
-    <!-- Shimmer -->
-    <color name="shimmer_placeholder">#DDDDDD</color>
-
-    <color name="navtext">#FFFFFF</color>
-    <color name="navtext_default">#FFFFFF</color>
+    <color name="switch_thumb">#A2A2A2</color>
+    <color name="switch_track">#707070</color>
 
 </resources>

@@ -29,7 +29,7 @@
                 android:text="Panduan Akses Status WhatsApp"
                 android:textStyle="bold"
                 android:textSize="18sp"
-                android:textColor="@color/colorOnSurface"
+                android:textColor="?attr/colorOnSurface"
                 android:layout_marginBottom="8dp"/>
 
             <!-- SUBTITLE -->
@@ -39,7 +39,7 @@
                 android:layout_height="wrap_content"
                 android:text="Ikuti langkah berikut agar story dapat terbaca"
                 android:textSize="14sp"
-                android:textColor="@color/colorOnSurface"
+                android:textColor="?attr/colorOnSurface"
                 android:alpha="0.7"
                 android:layout_marginBottom="8dp"/>
 
@@ -50,7 +50,7 @@
                 android:layout_height="wrap_content"
                 android:text="Langkah 1 dari 6"
                 android:textSize="13sp"
-                android:textColor="@color/colorOnSurface"
+                android:textColor="?attr/colorOnSurface"
                 android:alpha="0.6"
                 android:layout_marginBottom="20dp"/>
 

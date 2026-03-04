@@ -6,7 +6,7 @@
     android:background="@drawable/ripple_spinner_item"
     android:paddingHorizontal="16dp"
     android:paddingVertical="14dp"
-    android:textColor="@color/colorOnSurface"
+    android:textColor="?attr/colorOnSurface"
     android:textSize="15sp"
     android:fontFamily="sans-serif-medium"
     android:gravity="center_vertical"/>

@@ -5,23 +5,30 @@
     <!-- BASE THEME (APP-WIDE)                                 -->
     <!-- ===================================================== -->
     <style name="Base.Theme.TikDownloader"
-        parent="Theme.Material3.Light.NoActionBar">
-<!--        <item name="android:forceDarkAllowed">false</item>-->
-        <!-- Surface colors -->
+        parent="Theme.Material3.DayNight.NoActionBar">
+
+        <item name="toolbarStyle">@style/CustomToolbar</item>
+        <!-- SYSTEM BARS -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+
+        <!-- MATERIAL COLORS -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorOnPrimary">@color/colorOnPrimary</item>
+
         <item name="colorSurface">@color/colorSurface</item>
         <item name="colorOnSurface">@color/colorOnSurface</item>
 
-        <!-- Primary -->
-        <item name="colorPrimary">@color/colorPrimary</item>
-
-        <!-- Status bar -->
-        <item name="android:statusBarColor">@android:color/transparent</item>
-
-        <!-- Navigation bar -->
-        <item name="android:navigationBarColor">@color/colorSurface</item>
+        <item name="colorOutline">@color/colorOutline</item>
 
     </style>
+    <style name="CustomToolbar"
+        parent="Widget.Material3.Toolbar">
 
+        <item name="titleTextColor">@color/white</item>
+        <item name="subtitleTextColor">@color/white</item>
+
+    </style>
     <!-- ===================================================== -->
     <!-- APP THEME                                            -->
     <!-- ===================================================== -->
@@ -32,11 +39,19 @@
     <!-- SPLASH THEME                                         -->
     <!-- ===================================================== -->
     <style name="Theme.Splash"
-        parent="Theme.Material3.Light.NoActionBar">
+        parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- MATERIAL COLORS -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorOnPrimary">@color/colorOnPrimary</item>
+
+        <item name="colorSurface">@color/colorSurface</item>
+        <item name="colorOnSurface">@color/colorOnSurface</item>
+
+        <item name="colorOutline">@color/colorOutline</item>
 
         <item name="android:windowBackground">@drawable/splash_background</item>
-        <item name="android:statusBarColor">@color/sttsbar</item>
-        <item name="android:navigationBarColor">@color/navigationBarColor</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
 
     </style>
 
@@ -47,35 +62,31 @@
         <item name="android:popupBackground">@drawable/bg_popup_menu</item>
     </style>
 
-    <!-- 🔥 INI YANG SERING TERLEWAT -->
     <style name="PopupMenuThemeOverlay">
         <item name="popupMenuStyle">@style/PopupMenuStyle</item>
     </style>
 
-<!--    SPINNER-->
+    <!-- ===================================================== -->
+    <!-- SPINNER                                              -->
+    <!-- ===================================================== -->
     <style name="MySpinnerStyle" parent="Widget.AppCompat.Spinner">
         <item name="android:popupBackground">@drawable/bg_spinner_dropdown</item>
     </style>
 
     <!-- ===================================================== -->
-    <!-- TEXTINPUT / EDITTEXT STYLE                            -->
+    <!-- TEXTINPUT STYLE                                      -->
     <!-- ===================================================== -->
-    <!-- Dipakai sebagai style di layout -->
     <style name="EditTextTheme"
         parent="Widget.Material3.TextInputLayout.OutlinedBox">
 
-        <!-- Text -->
-        <item name="android:textColor">@color/colorOnSurface</item>
-        <item name="android:textColorHint">@color/colorHint</item>
+        <item name="boxBackgroundColor">?attr/colorSurface</item>
 
-        <!-- Box -->
-        <item name="boxBackgroundColor">@color/colorSurface</item>
-<!--        <item name="boxStrokeColor">@color/colorOutline</item>-->
+        <!-- Jangan set boxStrokeColor manual -->
+
+        <item name="hintTextColor">?attr/colorOnSurface</item>
+
         <item name="boxStrokeWidth">1.5dp</item>
         <item name="boxStrokeWidthFocused">2dp</item>
-
-        <!-- Hint -->
-        <item name="hintTextColor">@color/colorHint</item>
 
     </style>
 
@@ -83,7 +94,6 @@
     <!-- DIALOG                                               -->
     <!-- ===================================================== -->
     <style name="ThemeOverlay.TikDownloader.MaterialAlertDialog"
-        parent="ThemeOverlay.Material3.MaterialAlertDialog">
-    </style>
+        parent="ThemeOverlay.Material3.MaterialAlertDialog" />
 
 </resources>

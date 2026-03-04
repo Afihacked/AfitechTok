@@ -28,8 +28,6 @@ class ImageStoryFragment : Fragment() {
     private lateinit var storyViewModel: StoryViewModel
     private lateinit var prefs: SharedPreferences
 
-    private var adView: AdView? = null
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -61,41 +59,40 @@ class ImageStoryFragment : Fragment() {
             }
         }
 
-        // ===== ADS =====
-        try { MobileAds.initialize(requireContext()) } catch (_: Throwable) {}
-        adView = try { binding.adView } catch (_: Throwable) { null }
-        setupAdView()
+//        // ===== ADS =====
+//        try { MobileAds.initialize(requireContext()) } catch (_: Throwable) {}
+//        adView = try { binding.adView } catch (_: Throwable) { null }
+//        setupAdView()
 
         return binding.root
     }
 
-    private fun setupAdView() {
-        if (adView == null || !requireContext().areAdsEnabled()) {
-            binding.adContainer.visibility = View.GONE
-            return
-        }
-
-        try {
-            val dm = resources.displayMetrics
-            val adWidth = (dm.widthPixels / dm.density).toInt().coerceAtLeast(320)
-            val adSize =
-                AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
-                    requireContext(), adWidth
-                )
-            adView?.setAdSize(adSize)
-        } catch (_: Throwable) {}
-
-        try {
-            adView?.loadAd(AdRequest.Builder().build())
-            binding.adContainer.visibility = View.VISIBLE
-        } catch (_: Throwable) {
-            binding.adContainer.visibility = View.GONE
-        }
-    }
+//    private fun setupAdView() {
+//        if (adView == null || !requireContext().areAdsEnabled()) {
+//            binding.adContainer.visibility = View.GONE
+//            return
+//        }
+//
+//        try {
+//            val dm = resources.displayMetrics
+//            val adWidth = (dm.widthPixels / dm.density).toInt().coerceAtLeast(320)
+//            val adSize =
+//                AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
+//                    requireContext(), adWidth
+//                )
+//            adView?.setAdSize(adSize)
+//        } catch (_: Throwable) {}
+//
+//        try {
+//            adView?.loadAd(AdRequest.Builder().build())
+//            binding.adContainer.visibility = View.VISIBLE
+//        } catch (_: Throwable) {
+//            binding.adContainer.visibility = View.GONE
+//        }
+//    }
 
     override fun onResume() {
         super.onResume()
-        try { adView?.resume() } catch (_: Throwable) {}
 
         val saved = prefs.getString("savedUri", "") ?: ""
         if (saved.isNotEmpty()) {
@@ -104,13 +101,10 @@ class ImageStoryFragment : Fragment() {
     }
 
     override fun onPause() {
-        try { adView?.pause() } catch (_: Throwable) {}
         super.onPause()
     }
 
     override fun onDestroyView() {
-        try { adView?.destroy() } catch (_: Throwable) {}
-        adView = null
         _binding = null
         super.onDestroyView()
     }

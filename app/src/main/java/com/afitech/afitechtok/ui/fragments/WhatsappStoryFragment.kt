@@ -30,20 +30,6 @@ import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayoutMediator
 
-/**
- * Fragment untuk menampilkan / mengatur akses ke folder WhatsApp .Statuses (story).
- *
- * Behavior ringkas:
- * - Jika belum ada izin (persisted URI permission) → tampilkan tutorial + tombol "Izinkan Akses".
- * - Saat user memilih folder via SAF:
- *    • Jika menunjuk .Statuses:
- *        - jika berisi media → simpan uri dan tampilkan stories (ViewPager)
- *        - jika kosong → tampilkan empty-state (info + tombol "Buka WhatsApp" + "Periksa Ulang")
- *    • Jika bukan .Statuses → tampilkan dialog panduan langkah berikutnya (dan langsung buka SAF lagi jika user tekan "Mengerti")
- *
- * Catatan: panduan sekarang menyebutkan kedua varian aplikasi WhatsApp (standard & Business)
- * sehingga user tahu jika harus memilih folder com.whatsapp atau com.whatsapp.w4b.
- */
 class WhatsappStoryFragment : Fragment() {
 
     // ViewBinding
@@ -64,14 +50,6 @@ class WhatsappStoryFragment : Fragment() {
 
     private var pagerAdapter: StoryPagerAdapter? = null
 
-    /**
-     * ActivityResult untuk ACTION_OPEN_DOCUMENT_TREE (SAF).
-     * Setelah user pilih folder, kita ambil URI persistable permission lalu:
-     *  - jika URI menunjuk .Statuses -> cek media:
-     *       - ada media -> simpan uri & tampilkan stories
-     *       - tidak ada media -> tampilkan empty-state info (tanpa gambar)
-     *  - jika URI bukan .Statuses -> tampilkan panduan/step (jangan tampilkan empty-state)
-     */
     private val requestStorageAccessLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
@@ -218,10 +196,7 @@ class WhatsappStoryFragment : Fragment() {
         }
     }
 
-    /**
-     * Empty-state: folder .Statuses sudah dipilih tetapi masih kosong.
-     * Tampilkan informasi (tanpa lottie), tombol buka WhatsApp, dan tombol periksa ulang.
-     */
+
     private fun showEmptyStateUI() {
         binding.tutorialBlock.visibility = View.VISIBLE
         binding.viewPager.visibility = View.GONE

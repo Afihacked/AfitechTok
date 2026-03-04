@@ -61,9 +61,6 @@ class TentangFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Status bar style
-        setStatusBarColorRes(R.color.sttsbar, isLightStatusBar = true, drawBehind = true)
-
         adsManager = AdsManager(requireContext())
         adView = binding.adView
 

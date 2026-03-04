@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/colorSurface"
+    android:background="?attr/colorSurface"
     android:fitsSystemWindows="false">
 
     <!-- Konten utama -->
@@ -33,7 +33,7 @@
                 android:gravity="center"
                 android:text="Untuk menampilkan status WhatsApp, izinkan aplikasi membaca folder Status."
                 android:textSize="16sp"
-                android:textColor="@color/colorOnSurface"
+                android:textColor="?attr/colorOnSurface"
                 android:padding="16dp" />
 
             <!-- Tombol utama (fungsi berubah sesuai state) -->
@@ -44,7 +44,7 @@
                 android:text="Izinkan Akses"
                 android:textAllCaps="false"
                 android:textColor="@color/white"
-                android:backgroundTint="@color/colorPrimary"
+                android:backgroundTint="?attr/colorPrimary"
                 android:paddingHorizontal="24dp"
                 android:paddingVertical="12dp"
                 android:elevation="4dp"
@@ -58,7 +58,7 @@
                 android:text="Periksa Ulang"
                 android:textAllCaps="false"
                 android:textColor="@color/white"
-                android:backgroundTint="@color/colorPrimary"
+                android:backgroundTint="?attr/colorPrimary"
                 android:paddingHorizontal="24dp"
                 android:paddingVertical="12dp"
                 android:elevation="4dp"
@@ -75,7 +75,7 @@
             app:tabGravity="fill"
             app:tabIndicatorFullWidth="true"
             app:tabIndicatorColor="@color/white"
-            android:background="@color/colorPrimary"
+            android:background="?attr/colorPrimary"
             app:tabTextColor="@color/white"
             app:tabSelectedTextColor="@android:color/white" />
 
@@ -85,7 +85,7 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:background="@color/colorSurface"
+            android:background="?attr/colorSurface"
             android:clipToPadding="false"
             android:padding="4dp" />
 
@@ -112,7 +112,7 @@
             android:layout_height="wrap_content"
             android:text="Memeriksa folder .Statuses..."
             android:textSize="16sp"
-            android:textColor="@color/colorOnSurface"
+            android:textColor="?attr/colorOnSurface"
             android:layout_marginTop="12dp" />
     </LinearLayout>
 

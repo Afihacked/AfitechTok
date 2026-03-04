@@ -1,6 +1,7 @@
 package com.afitech.afitechtok.ui.fragments
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -82,6 +83,20 @@ class SettingsFragment : Fragment() {
             }
 
             override fun onNothingSelected(parent: AdapterView<*>) {}
+        }
+
+        view.findViewById<View>(R.id.itemWaWeb).setOnClickListener {
+            (activity as? MainActivity)?.replaceFragment(
+                WaWebFragment(),
+                getString(R.string.whatsapp_web)
+            )
+        }
+
+        view.findViewById<View>(R.id.itemAbout).setOnClickListener {
+            (activity as? MainActivity)?.replaceFragment(
+                TentangFragment(),
+                getString(R.string.nav_about)
+            )
         }
     }
 

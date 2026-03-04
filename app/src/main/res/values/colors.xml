@@ -1,39 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Base -->
-    <color name="black">#000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <!-- ===================================================== -->
+    <!-- PRIMARY BRAND                                        -->
+    <!-- ===================================================== -->
+    <color name="colorPrimary">#A22B29</color>
+    <color name="colorOnPrimary">#FFFFFF</color>
 
-    <!-- Surface -->
+    <!-- ===================================================== -->
+    <!-- SURFACE & BACKGROUND                                 -->
+    <!-- ===================================================== -->
     <color name="colorSurface">#FFFFFF</color>
-    <color name="colorSurfaceTT">#000000</color><!-- Background putih -->
-    <color name="colorOnSurface">#000000</color> <!-- Teks hitam -->
-    <color name="colorHint">#000000</color> <!-- Hint abu -->
+    <color name="colorOnSurface">#000000</color>
+    <color name="colorHint">#777777</color>
 
-    <!-- Primary -->
-    <color name="colorPrimary">#A22B29</color> <!-- Merah utama -->
-    <color name="colorOutline">#000000</color> <!-- Outline abu terang -->
-    <color name="colorAccent">#822321</color>
-
-    <!-- Gray -->
-    <color name="light_gray">#E0E0E0</color>
-    <color name="dark_red">#A22B29</color>
-
-    <!-- Tab -->
-    <color name="blackTab">#000000</color>
-
-    <!-- System Bar -->
-    <color name="sttsbar">#A22B29</color>
-    <color name="navigationBarColor">#A22B29</color>
-
-    <!-- Selection -->
+    <!-- ===================================================== -->
+    <!-- OUTLINE                                              -->
+    <!-- ===================================================== -->
+    <color name="colorOutline">#1F000000</color>
+    <!-- ===================================================== -->
+    <!-- OPTIONAL (MASIH DIPAKAI UI LAIN)                     -->
+    <!-- ===================================================== -->
     <color name="selection_bg">#A22B29</color>
-
-    <!-- Shimmer -->
     <color name="shimmer_placeholder">#DDDDDD</color>
+
+    <!-- Glass -->
+    <color name="glass_surface">#BFE1E1E1</color>
+    <color name="glass_stroke">#40C4C4C4</color>
+    <color name="nav_active_bg">#A3A22B29</color>
+    <color name="glass_popup_surface">#D6D6D6</color>
+
+    <!-- Legacy colors (dipakai file lama) -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="dark_red">#A22B29</color>
 
     <color name="navtext">#FFFFFF</color>
     <color name="navtext_default">#000000</color>
+
+    <color name="switch_thumb">#A2A2A2</color>
+    <color name="switch_track">#707070</color>
+
 
 </resources>

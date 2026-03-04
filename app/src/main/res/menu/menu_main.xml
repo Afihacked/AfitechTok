@@ -11,6 +11,7 @@
         android:id="@+id/action_refresh"
         android:title="Refresh"
         app:showAsAction="always"
+        app:iconTint="@color/white"
         app:actionLayout="@layout/toolbar_refresh_lottie"/>
 
     <item
@@ -18,5 +19,6 @@
         android:icon="@drawable/ic_more_vert"
         android:title="Selection"
         app:showAsAction="always"
+        app:iconTint="@color/white"
         android:visible="false"/>
 </menu>
