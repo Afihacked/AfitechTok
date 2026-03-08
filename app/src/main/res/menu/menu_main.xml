@@ -6,13 +6,12 @@
         android:id="@+id/action_help"
         android:title="help"
         app:showAsAction="always"
+        android:gravity="center"
         android:icon="@drawable/ic_help"/>
     <item
         android:id="@+id/action_refresh"
-        android:title="Refresh"
-        app:showAsAction="always"
-        app:iconTint="@color/white"
-        app:actionLayout="@layout/toolbar_refresh_lottie"/>
+        android:title="Perbarui"
+        app:showAsAction="always" />
 
     <item
         android:id="@+id/action_selection_menu"

@@ -39,6 +39,7 @@ interface DownloadHistoryDao {
 
     @Query("SELECT COUNT(*) FROM download_history WHERE fileType = :type")
     suspend fun countByFileType(type: String): Int
-
+    @Insert
+    suspend fun insert(history: DownloadHistory)
 
 }

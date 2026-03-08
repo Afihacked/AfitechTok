@@ -4,7 +4,8 @@
     <!-- ===================================================== -->
     <!-- PRIMARY (LEBIH TERANG UNTUK DARK)                    -->
     <!-- ===================================================== -->
-    <color name="colorPrimary">#C44542</color>
+<!--    <color name="colorPrimary">#C44542</color>-->
+    <color name="colorPrimary">#BC2F2C</color>
     <color name="colorOnPrimary">#FFFFFF</color>
 
     <!-- ===================================================== -->
@@ -21,13 +22,13 @@
     <!-- ===================================================== -->
     <!-- OPTIONAL                                             -->
     <!-- ===================================================== -->
-    <color name="selection_bg">#C44542</color>
+
     <color name="shimmer_placeholder">#333333</color>
 
     <!-- Glass -->
-    <color name="glass_surface">#BFFFFFFF</color>
+    <color name="glass_surface">#9A575757</color>
     <color name="glass_stroke">#30FFFFFF</color>
-    <color name="nav_active_bg">#A8C44542</color>
+    <color name="nav_active_bg">#B8BC2F2C</color>
     <color name="glass_popup_surface">#373737</color>
 
     <color name="switch_thumb">#A2A2A2</color>

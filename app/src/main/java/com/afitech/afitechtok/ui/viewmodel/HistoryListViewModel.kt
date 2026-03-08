@@ -36,4 +36,10 @@ class HistoryListViewModel(private val repository: DownloadHistoryRepository) : 
             onFinish?.invoke()
         }
     }
+
+    fun insert(history: DownloadHistory) {
+        viewModelScope.launch {
+            repository.insert(history)
+        }
+    }
 }

@@ -10,7 +10,7 @@
     <!-- Header (menyatu dengan toolbar warna sttsbar) -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="170dp"
+        android:layout_height="190dp"
         android:orientation="vertical"
         android:background="@drawable/bg_header"
         android:gravity="center"
@@ -22,7 +22,7 @@
             android:layout_width="70dp"
             android:layout_height="70dp"
             android:layout_marginBottom="-10dp"
-            android:src="@mipmap/ic_launcher_foreground"
+            android:src="@drawable/logo_afitechtok"
             android:contentDescription="@string/logo_afitech" />
 
         <TextView
@@ -32,8 +32,8 @@
             android:text="@string/app_name"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="@color/white"
-            android:layout_marginTop="0dp" />
+            android:textColor="?attr/colorOnPrimary"
+            android:layout_marginTop="10dp" />
 
         <TextView
             android:id="@+id/about_version"
@@ -47,6 +47,7 @@
 
     <!-- Content area -->
     <ScrollView
+        android:id="@+id/aboutScroll"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"

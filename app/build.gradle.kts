@@ -12,8 +12,8 @@ android {
         applicationId = "com.afitech.afitechtok"
         minSdk = 29
         targetSdk = 35
-        versionCode = 8
-        versionName = "1.2.2"
+        versionCode = 5
+        versionName = "1.2.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -45,7 +45,7 @@ android {
     applicationVariants.configureEach {
         outputs.configureEach {
             val appName = "AfitechTok"
-            val versionName = "1.2.2"
+            val versionName = "1.2.3"
             val outputImpl = this as? com.android.build.gradle.api.ApkVariantOutput
             outputImpl?.outputFileName = "${appName}_v${versionName}.apk"
         }
@@ -77,9 +77,6 @@ dependencies {
     // AdMob
     implementation(libs.play.services.ads.api)
 
-    // ✅ Start.io SDK
-    implementation(libs.inapp.sdk)
-
     // UI & Animasi
     implementation(libs.lottie)
     implementation(libs.androidx.swiperefreshlayout)
@@ -104,4 +101,6 @@ dependencies {
 
     implementation("androidx.media3:media3-exoplayer:1.8.0")
     implementation("androidx.media3:media3-ui:1.8.0")
+
+//    implementation("com.google.android.gms:play-services-ads:25.0.0")
 }

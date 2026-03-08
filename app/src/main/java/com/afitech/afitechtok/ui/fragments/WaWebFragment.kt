@@ -322,8 +322,14 @@ class WaWebFragment : Fragment() {
             webView.reload()
         }
     }
-
-
+    override fun onPause() {
+        super.onPause()
+        (activity as? com.afitech.afitechtok.ui.MainActivity)?.showBottomNav()
+    }
+    override fun onResume() {
+        super.onResume()
+        (activity as? com.afitech.afitechtok.ui.MainActivity)?.hideBottomNav()
+    }
     override fun onDestroyView() {
         super.onDestroyView()
         webView.destroy()

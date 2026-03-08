@@ -20,4 +20,8 @@ class DownloadHistoryRepository(private val dao: DownloadHistoryDao) {
     suspend fun deleteMultipleById(ids: List<Long>) {
         dao.deleteMultipleById(ids)
     }
+
+    suspend fun insert(history: DownloadHistory) {
+        dao.insert(history)
+    }
 }

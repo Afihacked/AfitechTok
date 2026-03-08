@@ -23,6 +23,7 @@ import com.afitech.afitechtok.R
 import com.afitech.afitechtok.data.model.DownloadHistory
 import com.afitech.afitechtok.ui.helpers.DownloadHistoryDiffCallback
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import java.io.File
 
 class HistoryAdapter(
@@ -46,6 +47,8 @@ class HistoryAdapter(
         val btnMore: ImageButton = view.findViewById(R.id.btnMore)
 
         val rootLayout: View = view
+
+        val iconSelected: ImageView = view.findViewById(R.id.iconSelected)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HistoryViewHolder {
@@ -70,48 +73,37 @@ class HistoryAdapter(
         if (fileExists) {
             when (history.fileType) {
                 "Video" -> {
-                    val filePath = getRealPathFromURI(context, uri) ?: history.savedUri
-                    val bitmap: Bitmap? = try {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                            context.contentResolver.loadThumbnail(uri, Size(200, 200), null)
-                        } else {
-                            if (filePath.startsWith("content://")) {
-                                val retriever = MediaMetadataRetriever()
-                                retriever.setDataSource(context, uri)
-                                retriever.getFrameAtTime(1, MediaMetadataRetriever.OPTION_CLOSEST_SYNC).also {
-                                    retriever.release()
-                                }
-                            } else {
-                                ThumbnailUtils.createVideoThumbnail(filePath, MediaStore.Images.Thumbnails.MINI_KIND)
-                            }
-                        }
-                    } catch (e: Exception) {
-                        null
-                    }
-                    if (bitmap != null) {
-                        holder.thumbnail.setImageBitmap(bitmap)
-                    } else {
-                        holder.thumbnail.setImageResource(R.drawable.ic_file)
-                    }
+                    Glide.with(context)
+                        .asBitmap()
+                        .load(uri)
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .placeholder(R.drawable.ic_file)
+                        .into(holder.thumbnail)
                 }
                 "Audio" -> holder.thumbnail.setImageResource(R.drawable.ic_music_note)
-                "Image" -> Glide.with(context).load(uri).placeholder(R.drawable.ic_placeholder).into(holder.thumbnail)
+                "Image" -> Glide.with(context)
+                    .load(uri)
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .placeholder(R.drawable.ic_placeholder)
+                    .into(holder.thumbnail)
                 else -> holder.thumbnail.setImageResource(R.drawable.ic_file)
             }
         } else {
             holder.thumbnail.setImageResource(R.drawable.ic_broken_image)
         }
 
-//        if (selectedItems.contains(history.id)) {
-//            holder.rootLayout.setBackgroundResource(R.color.selection_bg)
-//        } else {
-//            holder.rootLayout.setBackgroundResource(android.R.color.transparent)
-//        }
         holder.rootLayout.isActivated = selectedItems.contains(history.id)
+        holder.iconSelected.visibility =
+            if (selectedItems.contains(history.id)) View.VISIBLE else View.GONE
 
 
         holder.rootLayout.setOnClickListener {
             if (isSelectionMode) {
+
+                holder.rootLayout.performHapticFeedback(
+                    android.view.HapticFeedbackConstants.KEYBOARD_TAP
+                )
+
                 toggleSelection(history)
             } else if (fileExists) {
                 val intent = Intent(Intent.ACTION_VIEW).apply {
@@ -133,6 +125,11 @@ class HistoryAdapter(
         }
 
         holder.rootLayout.setOnLongClickListener {
+
+            holder.rootLayout.performHapticFeedback(
+                android.view.HapticFeedbackConstants.LONG_PRESS
+            )
+
             toggleSelection(history)
             true
         }
@@ -388,14 +385,24 @@ class HistoryAdapter(
     }
 
     private fun toggleSelection(item: DownloadHistory) {
+
+        val position = historyList.indexOfFirst { it.id == item.id }
+        if (position == -1) return
+
         if (selectedItems.contains(item.id)) {
             selectedItems.remove(item.id)
-            if (selectedItems.isEmpty()) isSelectionMode = false
+
+            if (selectedItems.isEmpty()) {
+                isSelectionMode = false
+            }
+
         } else {
             selectedItems.add(item.id)
             isSelectionMode = true
         }
-        notifyDataSetChanged()
+
+        notifyItemChanged(position)
+
         onSelectionChanged?.invoke()
     }
 
@@ -418,6 +425,8 @@ class HistoryAdapter(
         selectedItems.clear()
         selectedItems.addAll(items.map { it.id })
         isSelectionMode = true
+        notifyDataSetChanged()
+        onSelectionChanged?.invoke()
     }
 
     fun getSelectedItems(): List<DownloadHistory> {

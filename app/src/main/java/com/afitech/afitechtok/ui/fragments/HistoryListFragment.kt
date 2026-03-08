@@ -1,5 +1,6 @@
 package com.afitech.afitechtok.ui.fragments
 
+import android.R.attr.elevation
 import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.pm.ActivityInfo
@@ -10,10 +11,15 @@ import android.provider.MediaStore
 import android.util.Log
 import android.view.*
 import android.view.animation.AnimationUtils
+import android.view.animation.DecelerateInterpolator
+import android.widget.ImageView
+import android.widget.PopupMenu
 import android.widget.PopupWindow
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.addCallback
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -26,17 +32,17 @@ import com.afitech.afitechtok.data.repository.DownloadHistoryRepository
 import com.afitech.afitechtok.databinding.FragmentHistoryListBinding
 import com.afitech.afitechtok.ui.MainActivity
 import com.afitech.afitechtok.ui.adapters.HistoryAdapter
-import com.afitech.afitechtok.ui.interfaces.SelectionMenuHost
 import com.afitech.afitechtok.ui.viewmodel.HistoryListViewModel
 import com.afitech.afitechtok.ui.viewmodel.HistoryListViewModelFactory
 import com.afitech.afitechtok.utils.setStatusBarColorRes
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import java.io.File
 
-class HistoryListFragment : Fragment(), SelectionMenuHost {
+class HistoryListFragment : Fragment(){
 
     private var _binding: FragmentHistoryListBinding? = null
     private val binding get() = _binding!!
@@ -52,6 +58,8 @@ class HistoryListFragment : Fragment(), SelectionMenuHost {
 
     private var filterType: String = "All"
     private var historyJob: Job? = null
+
+    private var currentSort: String = "NEWEST"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -80,7 +88,19 @@ class HistoryListFragment : Fragment(), SelectionMenuHost {
         binding.swipeRefreshLayout.setOnRefreshListener {
             reloadHistory()
         }
+        ViewCompat.setOnApplyWindowInsetsListener(binding.recyclerViewHistory) { view, insets ->
 
+            val navBar = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+
+            view.setPadding(
+                view.paddingLeft,
+                view.paddingTop,
+                view.paddingRight,
+                navBar + 24
+            )
+
+            insets
+        }
         adapter = HistoryAdapter(
             context = requireContext(),
             historyList = emptyList(),
@@ -108,6 +128,95 @@ class HistoryListFragment : Fragment(), SelectionMenuHost {
             onSelectionChanged = { updateSelectionUI() }
         )
 
+        binding.recyclerViewHistory.addOnScrollListener(
+            object : RecyclerView.OnScrollListener() {
+
+                override fun onScrolled(
+                    recyclerView: RecyclerView,
+                    dx: Int,
+                    dy: Int
+                ) {
+
+                    val activity = activity as MainActivity
+
+                    if (dy > 10) {
+                        activity.hideBottomNav()
+                    } else if (dy < -10) {
+                        activity.showBottomNav()
+                    }
+                }
+            }
+        )
+        binding.iconSelectAll.setOnClickListener {
+
+            val items = adapter.getCurrentList()
+
+            if (adapter.getSelectedItems().size == items.size) {
+
+                adapter.clearSelection()
+                adapter.refreshVisible(binding.recyclerViewHistory)
+
+            } else {
+
+                adapter.selectAll(items)
+                adapter.refreshVisible(binding.recyclerViewHistory)
+
+            }
+
+            updateSelectionUI()
+        }
+
+        binding.iconDelete.setOnClickListener {
+
+            val items = adapter.getSelectedItems()
+
+            if (items.isEmpty()) return@setOnClickListener
+
+            showDeleteConfirmDialog("Hapus ${items.size} file?") {
+
+                items.forEach {
+                    deleteFilePhysical(it)
+                }
+
+                viewLifecycleOwner.lifecycleScope.launch {
+
+                    val deletedItems = items.toList()
+
+                    viewModel.deleteMultiple(items)
+
+                    adapter.clearSelection()
+                    adapter.refreshVisible(binding.recyclerViewHistory)
+
+                    updateSelectionUI()
+
+                    reloadHistory(suppressToast = true)
+
+                    Snackbar.make(
+                        binding.root,
+                        "${deletedItems.size} file dihapus",
+                        Snackbar.LENGTH_LONG
+                    ).setAction("UNDO") {
+
+                        viewLifecycleOwner.lifecycleScope.launch {
+
+                            deletedItems.forEach {
+                                viewModel.insert(it)
+                            }
+
+                            reloadHistory(suppressToast = true)
+                        }
+
+                    }.show()
+                }
+            }
+        }
+        binding.iconFilter.setOnClickListener {
+
+            binding.iconFilter.setOnClickListener {
+                showFilterMenu(binding.iconFilter)
+            }
+        }
+
         binding.recyclerViewHistory.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewHistory.adapter = adapter
         binding.recyclerViewHistory.layoutAnimation = AnimationUtils.loadLayoutAnimation(requireContext(), R.anim.layout_fall_down)
@@ -116,6 +225,7 @@ class HistoryListFragment : Fragment(), SelectionMenuHost {
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
             if (adapter.isSelectionMode()) {
                 adapter.cancelSelection()
+                updateSelectionUI()
             } else {
                 isEnabled = false
                 requireActivity().onBackPressed()
@@ -125,10 +235,81 @@ class HistoryListFragment : Fragment(), SelectionMenuHost {
         reloadHistory()
 
     }
-    override fun onSelectionMenuClicked() {
-        showSelectionPopup(binding.root)
+
+    private fun showFilterMenu(anchor: View) {
+
+        val view = layoutInflater.inflate(R.layout.menu_filter_actions, null)
+
+        val popup = PopupWindow(
+            view,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            true
+        ).apply {
+            elevation = 12f
+            isOutsideTouchable = true
+            setBackgroundDrawable(null)
+        }
+
+        popup.showAsDropDown(anchor, -80, 0)
+
+        val iconNewest = view.findViewById<ImageView>(R.id.iconNewest)
+        val iconOldest = view.findViewById<ImageView>(R.id.iconOldest)
+
+        iconNewest.visibility = View.INVISIBLE
+        iconOldest.visibility = View.INVISIBLE
+
+        if (currentSort == "NEWEST") {
+            iconNewest.visibility = View.VISIBLE
+        } else {
+            iconOldest.visibility = View.VISIBLE
+        }
+
+        view.findViewById<View>(R.id.actionNewest).setOnClickListener {
+
+            popup.dismiss()
+
+            currentSort = "NEWEST"
+
+            adapter.updateData(
+                adapter.getCurrentList().sortedByDescending { it.downloadDate }
+            )
+        }
+
+        view.findViewById<View>(R.id.actionOldest).setOnClickListener {
+
+            popup.dismiss()
+
+            currentSort = "OLDEST"
+
+            adapter.updateData(
+                adapter.getCurrentList().sortedBy { it.downloadDate }
+            )
+        }
     }
 
+    private fun showDeleteConfirmDialog(
+        message: String,
+        onConfirm: () -> Unit
+    ) {
+        val view = layoutInflater.inflate(R.layout.dialog_confirm_delete, null)
+
+        val dialog = Dialog(requireContext())
+        dialog.setContentView(view)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.show()
+
+        view.findViewById<TextView>(R.id.textMessage).text = message
+
+        view.findViewById<View>(R.id.btnCancel).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        view.findViewById<View>(R.id.btnDelete).setOnClickListener {
+            dialog.dismiss()
+            onConfirm()
+        }
+    }
     private fun deleteFilePhysical(history: DownloadHistory): Boolean {
         return try {
             val uri = Uri.parse(history.savedUri)
@@ -185,7 +366,11 @@ class HistoryListFragment : Fragment(), SelectionMenuHost {
 
             adapter.updateData(validData)
 
-            binding.textEmpty.visibility = if (validData.isEmpty()) View.VISIBLE else View.GONE
+            if (validData.isNotEmpty()) {
+                binding.recyclerViewHistory.scrollToPosition(0)
+            }
+
+            binding.layoutEmpty.visibility = if (validData.isEmpty()) View.VISIBLE else View.GONE
             binding.recyclerViewHistory.visibility = if (validData.isEmpty()) View.GONE else View.VISIBLE
             binding.recyclerViewHistory.scheduleLayoutAnimation()
 
@@ -238,92 +423,67 @@ class HistoryListFragment : Fragment(), SelectionMenuHost {
     }
 
     private fun updateSelectionUI() {
+
         val count = adapter.getSelectedItems().size
+        val total = adapter.getCurrentList().size
+
         Log.d("SELECTION_DEBUG", "Selected count = $count")
-        (activity as? MainActivity)?.setSelectionMenuVisible(
-            adapter.isSelectionMode() && count > 0
-        )
-    }
-    private fun showSelectionPopup(anchor: View) {
-        Log.d("POPUP_DEBUG", "showSelectionPopup executed")
-        val selectedCount = adapter.getSelectedItems().size
 
-        val view = layoutInflater.inflate(R.layout.menu_selection_actions, null)
+        if (adapter.isSelectionMode()) {
 
-        val popup = PopupWindow(
-            view,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            true
-        )
+            showSelectionBar()
 
-        popup.elevation = 12f
-        popup.setBackgroundDrawable(null)
+            // sembunyikan filter bar saat selection mode
+            binding.filterBar.visibility = View.GONE
 
-        popup.showAtLocation(anchor, Gravity.TOP or Gravity.END, 24, 180)
+            binding.textSelectionCount.text = "$count dipilih"
 
-        val delete = view.findViewById<TextView>(R.id.actionDelete)
-        val selectAll = view.findViewById<TextView>(R.id.actionSelectAll)
-        delete.text = "Hapus ($selectedCount)"
-        val totalItems = adapter.getCurrentList().size
-        val allSelected = selectedCount == totalItems && totalItems > 0
-
-        selectAll.text = if (allSelected)
-            "Batalkan semua"
-        else
-            "Pilih semua ($totalItems)"
-
-        selectAll.setOnClickListener {
-            popup.dismiss()
-
-            val items = adapter.getCurrentList()
-
-            if (adapter.getSelectedItems().size == items.size) {
-                adapter.clearSelection()
-                adapter.refreshVisible(binding.recyclerViewHistory)
-                updateSelectionUI()
+            if (count == total && total > 0) {
+                binding.iconSelectAll.setImageResource(R.drawable.ic_check_double)
             } else {
-                adapter.selectAll(items)
-                adapter.refreshVisible(binding.recyclerViewHistory)
-                updateSelectionUI()
+                binding.iconSelectAll.setImageResource(R.drawable.ic_check_single)
             }
 
-            updateSelectionUI()
+        } else {
+
+            hideSelectionBar()
+
+            // tampilkan kembali filter bar
+            binding.filterBar.visibility = View.VISIBLE
         }
-        delete.setOnClickListener {
-            popup.dismiss()
-            showDeleteConfirmDialog("Hapus $selectedCount file?") {
-                val items = adapter.getSelectedItems()
-                adapter.clearSelection()
-                adapter.refreshVisible(binding.recyclerViewHistory)
-                updateSelectionUI()
-                viewModel.deleteMultiple(items)
-                Toast.makeText(requireContext(), "Berhasil menghapus $selectedCount file", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun showSelectionBar() {
+
+        if (binding.selectionBar.visibility == View.VISIBLE) return
+
+        binding.selectionBar.post {
+
+            binding.selectionBar.translationY = -binding.selectionBar.height.toFloat()
+            binding.selectionBar.visibility = View.VISIBLE
+
+            binding.selectionBar.animate()
+                .translationY(0f)
+                .setDuration(180)
+                .setInterpolator(DecelerateInterpolator())
+                .start()
+        }
+    }
+
+    private fun hideSelectionBar() {
+
+        if (binding.selectionBar.visibility != View.VISIBLE) return
+
+        binding.selectionBar.animate()
+            .translationY(-binding.selectionBar.height.toFloat())
+            .setDuration(160)
+            .withEndAction {
+                binding.selectionBar.visibility = View.GONE
+                binding.selectionBar.translationY = 0f
             }
-        }
+            .start()
     }
-    private fun showDeleteConfirmDialog(
-        message: String,
-        onConfirm: () -> Unit
-    ) {
-        val view = layoutInflater.inflate(R.layout.dialog_confirm_delete, null)
 
-        val dialog = Dialog(requireContext())
-        dialog.setContentView(view)
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-        dialog.show()
-
-        view.findViewById<TextView>(R.id.textMessage).text = message
-
-        view.findViewById<View>(R.id.btnCancel).setOnClickListener {
-            dialog.dismiss()
-        }
-
-        view.findViewById<View>(R.id.btnDelete).setOnClickListener {
-            dialog.dismiss()
-            onConfirm()
-        }
-    }
     override fun onDestroyView() {
         historyJob?.cancel()
         super.onDestroyView()

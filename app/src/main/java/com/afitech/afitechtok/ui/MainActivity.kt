@@ -8,9 +8,13 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
@@ -29,13 +33,9 @@ import com.afitech.afitechtok.ui.adapters.MainPagerAdapter
 import com.afitech.afitechtok.ui.fragments.*
 import com.afitech.afitechtok.ui.services.DownloadServiceTT
 import com.google.android.material.color.MaterialColors
+import androidx.core.view.isVisible
 
 class MainActivity : AppCompatActivity() {
-
-    companion object {
-        const val EXTRA_FRAGMENT = "extra_fragment"
-        const val EXTRA_VIDEO_URL = "video_url"
-    }
 
     private lateinit var pagerAdapter: MainPagerAdapter
     private lateinit var sharedPref: SharedPreferences
@@ -44,6 +44,9 @@ class MainActivity : AppCompatActivity() {
     private val REQ_NOTIF = 1001
 
     private var showSelectionMenu = false
+
+    private lateinit var bottomNav: View
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -54,6 +57,8 @@ class MainActivity : AppCompatActivity() {
         WindowInsetsControllerCompat(window, window.decorView).apply {
             isAppearanceLightStatusBars = false
         }
+
+        bottomNav = findViewById(R.id.bottom_nav_container)
         setupStatusBar()
         setupToolbar()
         setupViewPager()
@@ -96,10 +101,28 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    fun hideBottomNav() {
+
+        bottomNav.animate()
+            .translationY(bottomNav.height + 120f)
+            .setDuration(200)
+            .setInterpolator(DecelerateInterpolator())
+            .start()
+    }
+
+    fun showBottomNav() {
+
+        bottomNav.animate()
+            .translationY(0f)
+            .setDuration(200)
+            .setInterpolator(DecelerateInterpolator())
+            .start()
+    }
     private fun setupToolbar() {
 
         val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
+        toolbar.setContentInsetsRelative(0,0)
 
         ViewCompat.setOnApplyWindowInsetsListener(toolbar) { view, insets ->
 
@@ -145,7 +168,7 @@ class MainActivity : AppCompatActivity() {
             supportFragmentManager.findFragmentById(R.id.extra_fragment_container)
 
         val isExtraActive =
-            extraContainer.visibility == View.VISIBLE &&
+            extraContainer.isVisible &&
                     extraFragment != null
 
         // HELP → hanya TikTok
@@ -170,6 +193,19 @@ class MainActivity : AppCompatActivity() {
         menuInflater.inflate(R.menu.menu_main, menu)
 
         val refreshItem = menu?.findItem(R.id.action_refresh)
+
+        // ubah warna text PERBARUI jadi putih
+        refreshItem?.let {
+            val title = SpannableString(it.title)
+            title.setSpan(
+                ForegroundColorSpan(Color.WHITE),
+                0,
+                title.length,
+                Spannable.SPAN_INCLUSIVE_INCLUSIVE
+            )
+            it.title = title
+        }
+
         val actionView = refreshItem?.actionView
 
         actionView?.setOnClickListener {
@@ -280,23 +316,23 @@ class MainActivity : AppCompatActivity() {
 
 
         val containers = listOf(
-            findViewById<View>(R.id.navTikTokInner),
-            findViewById<View>(R.id.navWhatsAppInner),
-            findViewById<View>(R.id.navHistoryInner),
+            findViewById(R.id.navTikTokInner),
+            findViewById(R.id.navWhatsAppInner),
+            findViewById(R.id.navHistoryInner),
             findViewById<View>(R.id.navSettingsInner)
         )
 
         val icons = listOf(
-            findViewById<ImageView>(R.id.iconTikTok),
-            findViewById<ImageView>(R.id.iconWhatsApp),
-            findViewById<ImageView>(R.id.iconHistory),
+            findViewById(R.id.iconTikTok),
+            findViewById(R.id.iconWhatsApp),
+            findViewById(R.id.iconHistory),
             findViewById<ImageView>(R.id.iconSettings)
         )
 
         val texts = listOf(
-            findViewById<TextView>(R.id.textTikTok),
-            findViewById<TextView>(R.id.textWhatsApp),
-            findViewById<TextView>(R.id.textHistory),
+            findViewById(R.id.textTikTok),
+            findViewById(R.id.textWhatsApp),
+            findViewById(R.id.textHistory),
             findViewById<TextView>(R.id.textSettings)
         )
 
@@ -448,30 +484,29 @@ class MainActivity : AppCompatActivity() {
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
 
-                    val extraContainer =
-                        findViewById<View>(
-                            R.id.extra_fragment_container
-                        )
-
-                    if (extraContainer.visibility == View.VISIBLE) {
-                        supportFragmentManager.popBackStack()
-                        showTabs()
-                        return
-                    }
+                    findViewById<View>(R.id.extra_fragment_container)
 
                     if (supportFragmentManager.backStackEntryCount > 0) {
                         supportFragmentManager.popBackStack()
-                    } else {
-                        finish()
+
+                        if (supportFragmentManager.backStackEntryCount == 1) {
+                            showTabs()
+                        }
+
+                        return
                     }
+
+                    finish()
                 }
             }
         )
     }
+
+
     override fun onResume() {
         super.onResume()
 
-        if (findViewById<View>(R.id.viewPager).visibility == View.VISIBLE) {
+        if (findViewById<View>(R.id.viewPager).isVisible) {
             setActiveNav(viewPager.currentItem)
         }
     }

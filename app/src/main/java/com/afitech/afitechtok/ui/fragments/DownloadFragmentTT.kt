@@ -605,7 +605,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                         isAdShowing = false
                         startDownloadService(url, format, unduhText)
                     },
-                    allowFallback = false,
                     onNotShown = {
                         isAdShowing = false
                         startDownloadService(url, format, unduhText)
@@ -625,7 +624,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             if (ready) {
                 adsManager.showInterstitialAd(onAdComplete = {
                     actionAfter()
-                }, allowFallback = true, onNotShown = {
+                }, onNotShown = {
                     // not shown (no fallback) — still proceed
                     actionAfter()
                 })
@@ -633,7 +632,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                 // not ready -> show with fallback immediately
                 adsManager.showInterstitialAd(onAdComplete = {
                     actionAfter()
-                }, allowFallback = true, onNotShown = null)
+                }, onNotShown = null)
             }
         }
     }

@@ -61,7 +61,7 @@
         android:layout_gravity="bottom"
         android:layout_marginStart="20dp"
         android:layout_marginEnd="20dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="40dp"
         android:elevation="12dp"
         android:background="@drawable/bg_glass_shadow">
 
@@ -75,9 +75,9 @@
             app:strokeWidth="1dp"
             app:cardElevation="0dp">
 
-                <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent">
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
 
                 <!-- CONTENT LAYER (NO BLUR) -->
                 <LinearLayout
@@ -134,36 +134,36 @@
                         android:layout_weight="1"
                         android:layout_height="wrap_content">
 
-                    <LinearLayout
-                        android:id="@+id/navWhatsAppInner"
-                        android:layout_width="match_parent"
-                        android:layout_marginHorizontal="6dp"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:paddingHorizontal="10dp"
-                        android:paddingVertical="8dp"
-                        android:background="@null">
-
-                        <ImageView
-                            android:id="@+id/iconWhatsApp"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_wa_outline"/>
-
-                        <TextView
-                            android:id="@+id/textWhatsApp"
-                            android:text="WhatsApp"
-                            android:textSize="11sp"
-                            android:maxLines="1"
-                            android:ellipsize="end"
-                            android:includeFontPadding="false"
-                            android:layout_marginTop="2dp"
-                            android:textAppearance="?attr/textAppearanceLabelSmall"
+                        <LinearLayout
+                            android:id="@+id/navWhatsAppInner"
+                            android:layout_width="match_parent"
+                            android:layout_marginHorizontal="6dp"
                             android:layout_height="wrap_content"
-                            android:layout_width="wrap_content"/>
-                    </LinearLayout>
+                            android:layout_gravity="center"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="8dp"
+                            android:background="@null">
+
+                            <ImageView
+                                android:id="@+id/iconWhatsApp"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@drawable/ic_wa_outline"/>
+
+                            <TextView
+                                android:id="@+id/textWhatsApp"
+                                android:text="WhatsApp"
+                                android:textSize="11sp"
+                                android:maxLines="1"
+                                android:ellipsize="end"
+                                android:includeFontPadding="false"
+                                android:layout_marginTop="2dp"
+                                android:textAppearance="?attr/textAppearanceLabelSmall"
+                                android:layout_height="wrap_content"
+                                android:layout_width="wrap_content"/>
+                        </LinearLayout>
                     </FrameLayout>
 
                     <!-- History -->
@@ -173,36 +173,36 @@
                         android:layout_weight="1"
                         android:layout_height="wrap_content">
 
-                    <LinearLayout
-                        android:id="@+id/navHistoryInner"
-                        android:layout_width="match_parent"
-                        android:layout_marginHorizontal="6dp"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:paddingHorizontal="10dp"
-                        android:paddingVertical="8dp"
-                        android:background="@null">
-
-                        <ImageView
-                            android:id="@+id/iconHistory"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_folder_outline"/>
-
-                        <TextView
-                            android:id="@+id/textHistory"
-                            android:text="Riwayat"
-                            android:textSize="11sp"
-                            android:maxLines="1"
-                            android:ellipsize="end"
-                            android:includeFontPadding="false"
-                            android:layout_marginTop="2dp"
-                            android:textAppearance="?attr/textAppearanceLabelSmall"
+                        <LinearLayout
+                            android:id="@+id/navHistoryInner"
+                            android:layout_width="match_parent"
+                            android:layout_marginHorizontal="6dp"
                             android:layout_height="wrap_content"
-                            android:layout_width="wrap_content"/>
-                    </LinearLayout>
+                            android:layout_gravity="center"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="8dp"
+                            android:background="@null">
+
+                            <ImageView
+                                android:id="@+id/iconHistory"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@drawable/ic_folder_outline"/>
+
+                            <TextView
+                                android:id="@+id/textHistory"
+                                android:text="Riwayat"
+                                android:textSize="11sp"
+                                android:maxLines="1"
+                                android:ellipsize="end"
+                                android:includeFontPadding="false"
+                                android:layout_marginTop="2dp"
+                                android:textAppearance="?attr/textAppearanceLabelSmall"
+                                android:layout_height="wrap_content"
+                                android:layout_width="wrap_content"/>
+                        </LinearLayout>
                     </FrameLayout>
 
                     <!-- Settings -->
@@ -211,39 +211,39 @@
                         android:layout_width="0dp"
                         android:layout_weight="1"
                         android:layout_height="wrap_content">
-                    <LinearLayout
-                        android:id="@+id/navSettingsInner"
-                        android:layout_width="match_parent"
-                        android:layout_marginHorizontal="6dp"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:paddingHorizontal="9dp"
-                        android:paddingVertical="8dp"
-                        android:background="@null">
-
-                        <ImageView
-                            android:id="@+id/iconSettings"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_settings_glass"/>
-
-                        <TextView
-                            android:id="@+id/textSettings"
-                            android:text="Pengaturan"
-                            android:textSize="11sp"
-                            android:maxLines="1"
-                            android:ellipsize="end"
-                            android:includeFontPadding="false"
-                            android:layout_marginTop="2dp"
-                            android:textAppearance="?attr/textAppearanceLabelSmall"
+                        <LinearLayout
+                            android:id="@+id/navSettingsInner"
+                            android:layout_width="match_parent"
+                            android:layout_marginHorizontal="6dp"
                             android:layout_height="wrap_content"
-                            android:layout_width="wrap_content"/>
-                    </LinearLayout>
+                            android:layout_gravity="center"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:paddingHorizontal="9dp"
+                            android:paddingVertical="8dp"
+                            android:background="@null">
+
+                            <ImageView
+                                android:id="@+id/iconSettings"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@drawable/ic_settings_glass"/>
+
+                            <TextView
+                                android:id="@+id/textSettings"
+                                android:text="Pengaturan"
+                                android:textSize="11sp"
+                                android:maxLines="1"
+                                android:ellipsize="end"
+                                android:includeFontPadding="false"
+                                android:layout_marginTop="2dp"
+                                android:textAppearance="?attr/textAppearanceLabelSmall"
+                                android:layout_height="wrap_content"
+                                android:layout_width="wrap_content"/>
+                        </LinearLayout>
                     </FrameLayout>
                 </LinearLayout>
-                </FrameLayout>
-            </com.google.android.material.card.MaterialCardView>
-        </FrameLayout>
+            </FrameLayout>
+        </com.google.android.material.card.MaterialCardView>
+    </FrameLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

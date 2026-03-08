@@ -21,9 +21,12 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.FileProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import com.afitech.afitechtok.R
 import com.afitech.afitechtok.databinding.FragmentTentangBinding
+import com.afitech.afitechtok.ui.MainActivity
 import com.afitech.afitechtok.utils.AdsManager
 import com.afitech.afitechtok.utils.areAdsEnabled
 import com.afitech.afitechtok.utils.setStatusBarColorRes
@@ -72,6 +75,40 @@ class TentangFragment : Fragment() {
 
         // Setup Iklan
         setupAds()
+        ViewCompat.setOnApplyWindowInsetsListener(binding.aboutScroll) { view, insets ->
+
+            val navBar = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+
+            view.setPadding(
+                view.paddingLeft,
+                view.paddingTop,
+                view.paddingRight,
+                navBar + 24
+            )
+
+            insets
+        }
+        var lastScrollY = 0
+        var navHidden = false
+        val threshold = 30
+
+        binding.aboutScroll.setOnScrollChangeListener { _, _, scrollY, _, _ ->
+
+            val main = activity as? MainActivity ?: return@setOnScrollChangeListener
+
+            val diff = scrollY - lastScrollY
+
+            if (diff > threshold && !navHidden) {
+                navHidden = true
+                main.hideBottomNav()
+            }
+            else if (diff < -threshold && navHidden) {
+                navHidden = false
+                main.showBottomNav()
+            }
+
+            lastScrollY = scrollY
+        }
     }
 
     private fun setupAds() {
@@ -100,6 +137,7 @@ class TentangFragment : Fragment() {
             fallbackContainer.visibility = View.GONE
         }
     }
+
 
     private fun setupAboutInfo() {
         try {

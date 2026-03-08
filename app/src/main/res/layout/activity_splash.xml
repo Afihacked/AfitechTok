@@ -8,9 +8,9 @@
 
     <ImageView
         android:id="@+id/logoImage"
-        android:layout_width="180dp"
-        android:layout_height="180dp"
-        android:src="@mipmap/ic_launcher_foreground"
+        android:layout_width="140dp"
+        android:layout_height="140dp"
+        android:src="@drawable/logo_afitechtok"
         android:contentDescription="@string/app_name" />
 
 </RelativeLayout>

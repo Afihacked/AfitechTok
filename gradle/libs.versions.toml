@@ -25,7 +25,6 @@ swiperefreshlayout = "1.2.0"
 androidx-swiperefreshlayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout", version.ref = "swiperefreshlayout" }
 fragmentKtx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragmentKtx" }
 
-inapp-sdk = { module = "com.startapp:inapp-sdk", version.ref = "inappSdk" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 lottie = { module = "com.airbnb.android:lottie", version.ref = "lottie" }
