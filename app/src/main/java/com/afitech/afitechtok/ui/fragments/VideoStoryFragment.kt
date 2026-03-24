@@ -160,15 +160,11 @@ class VideoStoryFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-
+        adapter.refreshDownloadState()
         val saved = prefs.getString("savedUri", "") ?: ""
         if (saved.isNotEmpty()) {
             storyViewModel.loadStoriesFromUri(Uri.parse(saved))
         }
-    }
-
-    override fun onPause() {
-        super.onPause()
     }
 
     override fun onDestroyView() {

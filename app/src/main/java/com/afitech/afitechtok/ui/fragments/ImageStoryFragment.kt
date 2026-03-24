@@ -121,33 +121,9 @@ class ImageStoryFragment : Fragment() {
         return binding.root
     }
 
-//    private fun setupAdView() {
-//        if (adView == null || !requireContext().areAdsEnabled()) {
-//            binding.adContainer.visibility = View.GONE
-//            return
-//        }
-//
-//        try {
-//            val dm = resources.displayMetrics
-//            val adWidth = (dm.widthPixels / dm.density).toInt().coerceAtLeast(320)
-//            val adSize =
-//                AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
-//                    requireContext(), adWidth
-//                )
-//            adView?.setAdSize(adSize)
-//        } catch (_: Throwable) {}
-//
-//        try {
-//            adView?.loadAd(AdRequest.Builder().build())
-//            binding.adContainer.visibility = View.VISIBLE
-//        } catch (_: Throwable) {
-//            binding.adContainer.visibility = View.GONE
-//        }
-//    }
-
     override fun onResume() {
         super.onResume()
-
+        adapter.refreshDownloadState()
         val saved = prefs.getString("savedUri", "") ?: ""
         if (saved.isNotEmpty()) {
             storyViewModel.loadStoriesFromUri(Uri.parse(saved))

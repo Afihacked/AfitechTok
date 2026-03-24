@@ -5,13 +5,6 @@
     android:layout_height="match_parent"
     android:background="@android:color/black">
 
-<!--    <com.afitech.afitechtok.ui.views.AspectRatioVideoView-->
-<!--        android:id="@+id/fullscreenVideoView"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="match_parent"-->
-<!--        android:layout_gravity="center" />-->
-
-    <!-- ganti AspectRatioVideoView -> PlayerView -->
     <androidx.media3.ui.PlayerView
         android:id="@+id/fullscreenVideoView"
         android:layout_width="match_parent"
@@ -85,5 +78,20 @@
         android:background="@android:color/transparent"
         android:src="@android:drawable/ic_menu_close_clear_cancel"
         android:contentDescription="@string/close_button"
-        app:tint="@android:color/white" />
+        app:tint="@android:color/white" />\
+
+    <TextView
+        android:id="@+id/downloadButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:layout_margin="18dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:text="UNDUH"
+        android:textColor="@android:color/white"
+        android:textStyle="bold"
+        android:background="#33000000" />
 </FrameLayout>

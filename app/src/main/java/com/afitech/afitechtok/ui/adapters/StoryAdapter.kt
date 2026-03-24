@@ -32,7 +32,7 @@ class StoryAdapter(
      * Hidup = selama adapter hidup
      * Adapter hancur → cache otomatis hilang
      */
-    private val downloadedSet = mutableSetOf<String>()
+    private val downloadedMap = mutableMapOf<String, String>()
 
     fun updateList(newStories: List<StoryItem>) {
         stories = newStories
@@ -54,9 +54,15 @@ class StoryAdapter(
         holder.playIcon.visibility =
             if (story.type == "video") View.VISIBLE else View.GONE
 
-        // ===== ICON STATE (SESSION ONLY) =====
+        val fileName = downloadedMap[uri.toString()]
+
+        val isDownloaded = fileName != null && (
+                downloadedMap.containsKey(uri.toString()) ||
+                        isFileExistsInGallery(fileName)
+                )
+
         holder.downloadIcon.setImageResource(
-            if (downloadedSet.contains(key))
+            if (isDownloaded)
                 R.drawable.ic_checked
             else
                 R.drawable.ic_download2
@@ -76,7 +82,14 @@ class StoryAdapter(
         // ===== DOWNLOAD =====
         holder.downloadButton.setOnClickListener {
 
-            if (downloadedSet.contains(key)) {
+            val fileName = downloadedMap[uri.toString()]
+
+            val alreadyDownloaded = fileName != null && (
+                    downloadedMap.containsKey(uri.toString()) ||
+                            isFileExistsInGallery(fileName)
+                    )
+
+            if (alreadyDownloaded) {
                 Toast.makeText(
                     context,
                     "Story sudah diunduh",
@@ -85,13 +98,32 @@ class StoryAdapter(
                 return@setOnClickListener
             }
 
-            saveStoryToGalleryAsync(uri) {
-                downloadedSet.add(key)
+            saveStoryToGalleryAsync(uri) { fileName ->
+                downloadedMap[uri.toString()] = fileName
                 notifyItemChanged(holder.bindingAdapterPosition)
             }
         }
     }
+    private fun isFileExistsInGallery(fileName: String): Boolean {
+        val projection = arrayOf(android.provider.MediaStore.MediaColumns.DISPLAY_NAME)
 
+        val selection = "${android.provider.MediaStore.MediaColumns.DISPLAY_NAME} = ?"
+        val selectionArgs = arrayOf(fileName)
+
+        val uri = android.provider.MediaStore.Files.getContentUri("external")
+
+        context.contentResolver.query(
+            uri,
+            projection,
+            selection,
+            selectionArgs,
+            null
+        )?.use { cursor ->
+            return cursor.count > 0
+        }
+
+        return false
+    }
     override fun getItemCount(): Int = stories.size
 
     // =======================
@@ -99,7 +131,7 @@ class StoryAdapter(
     // =======================
     private fun saveStoryToGalleryAsync(
         uri: Uri,
-        onSuccess: () -> Unit
+        onSuccess: (String) -> Unit
     ) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -125,7 +157,7 @@ class StoryAdapter(
                         "Story berhasil disimpan",
                         Toast.LENGTH_SHORT
                     ).show()
-                    onSuccess()
+                    onSuccess(fileName)
                 }
 
             } catch (e: Exception) {
@@ -348,7 +380,12 @@ class StoryAdapter(
         val totalTime: TextView = dialogView.findViewById(R.id.totalTime)
         val overlay: View = dialogView.findViewById(R.id.overlay)
         val controlPanel: View = dialogView.findViewById(R.id.controlPanel)
+        val downloadButton: TextView = dialogView.findViewById(R.id.downloadButton)
 
+        downloadButton.setOnClickListener {
+            saveStoryToGalleryAsync(uri) {
+            }
+        }
         // Build ExoPlayer
         val exoPlayer = ExoPlayer.Builder(context).build()
         playerView.player = exoPlayer
@@ -496,5 +533,9 @@ class StoryAdapter(
         val minutes = totalSeconds / 60
         val seconds = totalSeconds % 60
         return String.format("%02d:%02d", minutes, seconds)
+    }
+
+    fun refreshDownloadState() {
+        notifyDataSetChanged()
     }
 }
