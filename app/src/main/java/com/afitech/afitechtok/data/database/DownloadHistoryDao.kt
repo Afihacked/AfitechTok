@@ -26,17 +26,6 @@ interface DownloadHistoryDao {
     @Query("SELECT * FROM download_history WHERE fileType = :type ORDER BY downloadDate DESC")
     fun getDownloadsByType(type: String): Flow<List<DownloadHistory>>
 
-    // sekarang kita menyimpan URI hasil MediaStore di kolom `savedUri`
-    @Query("DELETE FROM download_history WHERE savedUri = :savedUri")
-    suspend fun deleteBySavedUri(savedUri: String)
-
-    @Query("""
-    SELECT originalUrl 
-    FROM download_history 
-    WHERE source = :source
-""")
-    suspend fun getAllDownloadedOriginalUrls(source: String): List<String>
-
     @Query("SELECT COUNT(*) FROM download_history WHERE fileType = :type")
     suspend fun countByFileType(type: String): Int
     @Insert

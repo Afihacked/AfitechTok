@@ -23,6 +23,7 @@ class HistoryFragment : Fragment() {
 
     private var _binding: FragmentHistoryBinding? = null
     private val binding get() = _binding!!
+    private lateinit var parentPager: androidx.viewpager2.widget.ViewPager2
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -41,6 +42,7 @@ class HistoryFragment : Fragment() {
 
         // Adapter ViewPager2
         binding.viewPager.adapter = HistoryPagerAdapter(this)
+        parentPager = requireActivity().findViewById(R.id.viewPager)
 
         // Status bar
         setStatusBarColorRes(
@@ -106,6 +108,8 @@ class HistoryFragment : Fragment() {
     }
     override fun onDestroyView() {
         super.onDestroyView()
+
+        parentPager.isUserInputEnabled = true
         _binding = null
     }
 }

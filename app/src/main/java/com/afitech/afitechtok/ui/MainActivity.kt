@@ -103,6 +103,8 @@ class MainActivity : AppCompatActivity() {
 
     fun hideBottomNav() {
 
+        bottomNav.animate().cancel()
+
         bottomNav.animate()
             .translationY(bottomNav.height + 120f)
             .setDuration(200)
@@ -111,6 +113,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun showBottomNav() {
+
+        bottomNav.animate().cancel()
 
         bottomNav.animate()
             .translationY(0f)
@@ -163,23 +167,20 @@ class MainActivity : AppCompatActivity() {
         val refreshItem = menu?.findItem(R.id.action_refresh)
         val selectionItem = menu?.findItem(R.id.action_selection_menu)
 
-        val extraContainer = findViewById<View>(R.id.extra_fragment_container)
         val extraFragment =
             supportFragmentManager.findFragmentById(R.id.extra_fragment_container)
 
-        val isExtraActive =
-            extraContainer.isVisible &&
-                    extraFragment != null
+        val isExtraActive = extraFragment != null
 
         // HELP → hanya TikTok
         helpItem?.isVisible =
             !isExtraActive && viewPager.currentItem == 0
 
-        // REFRESH → hanya WA Web
+        // REFRESH → hanya WaWebFragment
         refreshItem?.isVisible =
-            isExtraActive && extraFragment is WaWebFragment
+            extraFragment is WaWebFragment
 
-        // SELECTION → hanya History + selection aktif
+        // SELECTION → hanya History
         selectionItem?.isVisible =
             !isExtraActive &&
                     viewPager.currentItem == 2 &&
@@ -206,18 +207,6 @@ class MainActivity : AppCompatActivity() {
             it.title = title
         }
 
-        val actionView = refreshItem?.actionView
-
-        actionView?.setOnClickListener {
-
-            val fragment =
-                supportFragmentManager.findFragmentById(R.id.extra_fragment_container)
-
-            if (fragment is WaWebFragment) {
-                fragment.reloadPage()
-            }
-        }
-
         return true
     }
     private fun showTutorialDialog() {
@@ -241,6 +230,31 @@ class MainActivity : AppCompatActivity() {
             dialog.dismiss()
         }
     }
+
+    private fun showExitDialog() {
+
+        val view = layoutInflater.inflate(
+            R.layout.dialog_exit_app,
+            null
+        )
+
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setView(view)
+            .setCancelable(true)
+            .create()
+
+        dialog.show()
+
+        view.findViewById<View>(R.id.btnCancel).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        view.findViewById<View>(R.id.btnExit).setOnClickListener {
+            dialog.dismiss()
+            finish()
+        }
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
 
         when (item.itemId) {
@@ -250,8 +264,27 @@ class MainActivity : AppCompatActivity() {
                 return true
             }
 
+            R.id.action_refresh -> {
+
+                val fragment =
+                    supportFragmentManager.findFragmentById(R.id.extra_fragment_container)
+
+                if (fragment is WaWebFragment) {
+
+                    android.util.Log.d("WA_REFRESH", "Reload triggered")
+
+                    fragment.reloadPage()
+
+                } else {
+
+                    android.util.Log.d("WA_REFRESH", "Not WaWebFragment")
+
+                }
+
+                return true
+            }
+
             R.id.action_selection_menu -> {
-                // kalau ada logic selection nanti
                 return true
             }
         }
@@ -260,9 +293,28 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupViewPager() {
+
         viewPager = findViewById(R.id.viewPager)
-        viewPager.offscreenPageLimit = 3
-        viewPager.isUserInputEnabled = true
+
+        viewPager.apply {
+
+            offscreenPageLimit = 4
+            isUserInputEnabled = true
+            viewPager.getChildAt(0).overScrollMode = View.OVER_SCROLL_NEVER
+
+            // 🔥 membuat swipe lebih smooth seperti PlayStore
+            getChildAt(0).overScrollMode = View.OVER_SCROLL_NEVER
+
+            setPageTransformer { page, position ->
+
+                val absPos = kotlin.math.abs(position)
+
+                page.alpha = 1f - (absPos * 0.15f)
+
+                page.scaleY = 0.96f + (1 - absPos) * 0.04f
+
+            }
+        }
 
         pagerAdapter = MainPagerAdapter(this)
         viewPager.adapter = pagerAdapter
@@ -271,15 +323,22 @@ class MainActivity : AppCompatActivity() {
             ViewPager2.OnPageChangeCallback() {
 
             override fun onPageSelected(position: Int) {
+
                 setActiveNav(position)
 
                 when (position) {
+
                     0 -> supportActionBar?.title =
                         getString(R.string.btn_tiktok_downloader)
+
                     1 -> supportActionBar?.title =
                         getString(R.string.btn_whatsapp_story)
+
                     2 -> supportActionBar?.title =
                         getString(R.string.nav_history)
+
+                    3 -> supportActionBar?.title =
+                        getString(R.string.nav_settings)
                 }
 
                 invalidateOptionsMenu()
@@ -298,15 +357,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun animateNav(view: View) {
+
+        view.animate().cancel()
+
         view.animate()
-            .scaleX(1.15f)
-            .scaleY(1.15f)
-            .setDuration(120)
+            .scaleX(1.12f)
+            .scaleY(1.12f)
+            .setDuration(110)
+            .setInterpolator(DecelerateInterpolator())
             .withEndAction {
+
                 view.animate()
                     .scaleX(1f)
                     .scaleY(1f)
-                    .setDuration(120)
+                    .setDuration(110)
+                    .setInterpolator(DecelerateInterpolator())
                     .start()
             }
             .start()
@@ -338,10 +403,13 @@ class MainActivity : AppCompatActivity() {
 
         containers.forEachIndexed { i, view ->
             if (i == index) {
+                view.animate().cancel()
+
                 view.animate()
-                    .scaleX(1.05f)
-                    .scaleY(1.05f)
-                    .setDuration(150)
+                    .scaleX(1.06f)
+                    .scaleY(1.06f)
+                    .setDuration(160)
+                    .setInterpolator(DecelerateInterpolator())
                     .start()
 
                 view.background = ContextCompat.getDrawable(
@@ -400,11 +468,6 @@ class MainActivity : AppCompatActivity() {
             text.alpha = 1f
         }
     }
-
-    fun setSelectionMenuVisible(visible: Boolean) {
-        showSelectionMenu = visible
-        invalidateOptionsMenu()
-    }
     private fun initCustomBottomNav() {
 
         findViewById<View>(R.id.navTikTok).setOnClickListener {
@@ -431,11 +494,8 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.navSettings).setOnClickListener {
             haptic(it)
             animateNav(findViewById(R.id.navSettingsInner))
-            replaceFragment(
-                SettingsFragment(),
-                getString(R.string.nav_settings)
-            )
-            setActiveNav(3)
+            showTabs()
+            viewPager.currentItem = 3
         }
 
         setActiveNav(0)
@@ -496,7 +556,7 @@ class MainActivity : AppCompatActivity() {
                         return
                     }
 
-                    finish()
+                    showExitDialog()
                 }
             }
         )

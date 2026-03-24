@@ -166,7 +166,16 @@ class WaWebFragment : Fragment() {
             }
 
             override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                if (newProgress == 100) progressBar.visibility = android.view.View.GONE
+
+                progressBar.visibility = android.view.View.VISIBLE
+                progressBar.progress = newProgress
+
+                if (newProgress >= 100) {
+                    progressBar.postDelayed({
+                        progressBar.visibility = android.view.View.GONE
+                        progressBar.progress = 0
+                    }, 200)
+                }
             }
         }
 
