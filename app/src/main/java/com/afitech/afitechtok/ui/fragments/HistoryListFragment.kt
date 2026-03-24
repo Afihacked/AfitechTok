@@ -92,11 +92,14 @@ class HistoryListFragment : Fragment(){
 
             val navBar = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
 
+            val activity = requireActivity() as MainActivity
+            val bottomNavHeight = activity.getBottomNavHeight()
+
             view.setPadding(
                 view.paddingLeft,
                 view.paddingTop,
                 view.paddingRight,
-                navBar + 24
+                navBar + bottomNavHeight + 24
             )
 
             insets
@@ -139,9 +142,23 @@ class HistoryListFragment : Fragment(){
 
                     val activity = activity as MainActivity
 
+                    // 🔽 scroll ke bawah → sembunyikan
                     if (dy > 10) {
                         activity.hideBottomNav()
-                    } else if (dy < -10) {
+                    }
+
+                    // 🔼 scroll ke atas → tampilkan
+                    else if (dy < -10) {
+                        activity.showBottomNav()
+                    }
+
+                    // 🔥 mentok bawah → paksa sembunyikan
+                    if (!recyclerView.canScrollVertically(1) && dy >= 0) {
+                        activity.hideBottomNav()
+                    }
+
+                    // 🔥 mentok atas → paksa tampilkan
+                    if (!recyclerView.canScrollVertically(-1) && dy <= 0) {
                         activity.showBottomNav()
                     }
                 }
@@ -172,42 +189,134 @@ class HistoryListFragment : Fragment(){
 
             if (items.isEmpty()) return@setOnClickListener
 
+//            showDeleteConfirmDialog("Hapus ${items.size} file?") {
+//
+//                items.forEach {
+//                    deleteFilePhysical(it)
+//                }
+//
+//                viewLifecycleOwner.lifecycleScope.launch {
+//
+//                    val deletedItems = items.toList()
+//
+//                    viewModel.deleteMultiple(items)
+//
+//                    adapter.clearSelection()
+//                    adapter.refreshVisible(binding.recyclerViewHistory)
+//
+//                    updateSelectionUI()
+//
+//                    reloadHistory(suppressToast = true)
+//
+//                    val activity = requireActivity() as MainActivity
+//
+//                    val snackbar = Snackbar.make(
+//                        binding.root,
+//                        "${deletedItems.size} file dihapus",
+//                        Snackbar.LENGTH_LONG
+//                    )
+//
+//// 🔥 ACTION UNDO
+//                    snackbar.setAction("UNDO") {
+//
+//                        viewLifecycleOwner.lifecycleScope.launch {
+//                            deletedItems.forEach {
+//                                viewModel.insert(it)
+//                            }
+//
+//                            reloadHistory(suppressToast = true)
+//                        }
+//                    }
+//
+//// 🔥 ANIMASI LEBIH HALUS
+//                    snackbar.setAnimationMode(Snackbar.ANIMATION_MODE_FADE)
+//
+//// 🔥 ANGKAT POSISI SNACKBAR DI ATAS BOTTOM NAV
+//                    val bottomNavHeight = activity.getBottomNavHeight()
+//
+//                    val params = snackbar.view.layoutParams as ViewGroup.MarginLayoutParams
+//                    params.bottomMargin = bottomNavHeight + 40
+//                    snackbar.view.layoutParams = params
+//
+//// 🔥 HIDE NAV SAAT SNACKBAR MUNCUL
+//                    activity.hideBottomNav()
+//
+//// 🔥 TAMPILKAN KEMBALI SETELAH SNACKBAR HILANG
+//                    snackbar.addCallback(object : Snackbar.Callback() {
+//
+//                        override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
+//                            activity.showBottomNav()
+//                        }
+//                    })
+//
+//// 🔥 TAMPILKAN
+//                    snackbar.show()
+//                }
+//            }
             showDeleteConfirmDialog("Hapus ${items.size} file?") {
 
-                items.forEach {
-                    deleteFilePhysical(it)
+                val pendingDeleteItems = items.toList()
+
+                // 🔥 HANYA HAPUS DARI UI (sementara)
+                adapter.clearSelection()
+                adapter.updateData(
+                    adapter.getCurrentList().filter { it !in pendingDeleteItems }
+                )
+
+                updateSelectionUI()
+
+                val activity = requireActivity() as MainActivity
+
+                val snackbar = Snackbar.make(
+                    binding.root,
+                    "${pendingDeleteItems.size} file dihapus",
+                    Snackbar.LENGTH_LONG
+                )
+
+                // 🔥 UNDO → KEMBALIKAN UI + DB
+                snackbar.setAction("UNDO") {
+
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        reloadHistory(suppressToast = true)
+                    }
                 }
 
-                viewLifecycleOwner.lifecycleScope.launch {
+                // 🔥 ANIMASI
+                snackbar.setAnimationMode(Snackbar.ANIMATION_MODE_FADE)
 
-                    val deletedItems = items.toList()
+                // 🔥 POSISI
+                val bottomNavHeight = activity.getBottomNavHeight()
+                val params = snackbar.view.layoutParams as ViewGroup.MarginLayoutParams
+                params.bottomMargin = bottomNavHeight + 40
+                snackbar.view.layoutParams = params
 
-                    viewModel.deleteMultiple(items)
+                // 🔥 HIDE NAV
+                activity.hideBottomNav()
 
-                    adapter.clearSelection()
-                    adapter.refreshVisible(binding.recyclerViewHistory)
+                // 🔥 CALLBACK (INI KUNCI FIX)
+                snackbar.addCallback(object : Snackbar.Callback() {
 
-                    updateSelectionUI()
+                    override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
 
-                    reloadHistory(suppressToast = true)
+                        activity.showBottomNav()
 
-                    Snackbar.make(
-                        binding.root,
-                        "${deletedItems.size} file dihapus",
-                        Snackbar.LENGTH_LONG
-                    ).setAction("UNDO") {
+                        // ❗ HANYA JIKA TIDAK UNDO
+                        if (event != DISMISS_EVENT_ACTION) {
 
-                        viewLifecycleOwner.lifecycleScope.launch {
-
-                            deletedItems.forEach {
-                                viewModel.insert(it)
+                            // 🔥 HAPUS FILE FISIK
+                            pendingDeleteItems.forEach {
+                                deleteFilePhysical(it)
                             }
 
-                            reloadHistory(suppressToast = true)
+                            // 🔥 HAPUS DARI DATABASE
+                            viewLifecycleOwner.lifecycleScope.launch {
+                                viewModel.deleteMultiple(pendingDeleteItems)
+                            }
                         }
+                    }
+                })
 
-                    }.show()
-                }
+                snackbar.show()
             }
         }
         binding.iconFilter.setOnClickListener {

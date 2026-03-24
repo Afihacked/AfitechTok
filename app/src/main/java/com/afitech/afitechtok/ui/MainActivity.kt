@@ -14,6 +14,7 @@ import android.text.style.ForegroundColorSpan
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
 import android.widget.TextView
@@ -230,7 +231,13 @@ class MainActivity : AppCompatActivity() {
             dialog.dismiss()
         }
     }
+    fun getBottomNavHeight(): Int {
+        val bottomNav = findViewById<View>(R.id.bottom_nav_container)
 
+        val marginBottom = (bottomNav.layoutParams as ViewGroup.MarginLayoutParams).bottomMargin
+
+        return bottomNav.height + marginBottom
+    }
     private fun showExitDialog() {
 
         val view = layoutInflater.inflate(

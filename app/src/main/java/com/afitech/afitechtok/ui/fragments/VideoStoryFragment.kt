@@ -7,11 +7,15 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.afitech.afitechtok.data.model.StoryViewModel
 import com.afitech.afitechtok.databinding.FragmentVideoStoryBinding
+import com.afitech.afitechtok.ui.MainActivity
 import com.afitech.afitechtok.ui.adapters.StoryAdapter
 import com.afitech.afitechtok.utils.areAdsEnabled
 import com.google.android.gms.ads.*
@@ -38,7 +42,7 @@ class VideoStoryFragment : Fragment() {
         adapter = StoryAdapter(emptyList(), requireContext())
         binding.recyclerView.layoutManager = GridLayoutManager(requireContext(), 3)
         binding.recyclerView.adapter = adapter
-
+        binding.recyclerView.clipToPadding = false
         // ===== ViewModel =====
         storyViewModel = ViewModelProvider(requireActivity())[StoryViewModel::class.java]
 
@@ -51,11 +55,61 @@ class VideoStoryFragment : Fragment() {
         binding.swipeRefresh.setOnRefreshListener {
             refreshStories()
         }
+        ViewCompat.setOnApplyWindowInsetsListener(binding.recyclerView) { view, insets ->
 
-//        // ===== Ads =====
-//        try { MobileAds.initialize(requireContext()) } catch (_: Throwable) {}
-//        adView = try { binding.adView } catch (_: Throwable) { null }
-//        setupAdView()
+            val navBar = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+
+            val activity = requireActivity() as MainActivity
+            val bottomNavHeight = activity.getBottomNavHeight()
+
+            view.setPadding(
+                view.paddingLeft,
+                view.paddingTop,
+                view.paddingRight,
+                navBar + bottomNavHeight + 24
+            )
+            insets
+
+        }
+        binding.recyclerView.addOnScrollListener(
+            object : RecyclerView.OnScrollListener() {
+
+                private var isNavVisible = true
+
+                override fun onScrolled(
+                    recyclerView: RecyclerView,
+                    dx: Int,
+                    dy: Int
+                ) {
+
+                    val activity = activity as? MainActivity ?: return
+
+                    // 🔽 scroll ke bawah → hide
+                    if (dy > 10 && isNavVisible) {
+                        activity.hideBottomNav()
+                        isNavVisible = false
+                    }
+
+                    // 🔼 scroll ke atas → show
+                    else if (dy < -10 && !isNavVisible) {
+                        activity.showBottomNav()
+                        isNavVisible = true
+                    }
+
+                    // 🔥 mentok bawah → paksa hide (tanpa spam)
+                    if (!recyclerView.canScrollVertically(1) && isNavVisible) {
+                        activity.hideBottomNav()
+                        isNavVisible = false
+                    }
+
+                    // 🔥 mentok atas → paksa show (tanpa spam)
+                    if (!recyclerView.canScrollVertically(-1) && !isNavVisible) {
+                        activity.showBottomNav()
+                        isNavVisible = true
+                    }
+                }
+            }
+        )
 
         return binding.root
     }

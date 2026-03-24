@@ -99,12 +99,14 @@ class DownloadServiceTT : Service() {
         // 🔥 title sesuai format
         val notifTitle = getNotifTitleByFormat(format)
 
-        ensureForegroundStarted(notifTitle)
+        if (format != "Gambar") {
+            ensureForegroundStarted(notifTitle)
+        }
 
         serviceScope.launch {
             try {
 // tampilkan hanya sekali di awal task
-                if (slideCompletedCount == 0) {
+                if (slideCompletedCount == 0 && format != "Gambar") {
                     updateNotification(notifTitle, 0, "Menghubungkan ke TikTok…")
                 }
 
@@ -194,14 +196,7 @@ class DownloadServiceTT : Service() {
 
                     slideCompletedCount++
 
-                    val overall =
-                        ((slideCompletedCount.toFloat() / slideTotalCount) * 100).roundToInt()
-
-                    updateNotification(
-                        "Mengunduh gambar…",
-                        overall,
-                        "$overall% (${slideCompletedCount}/${slideTotalCount})"
-                    )
+                    // ❌ HAPUS SEMUA PROGRESS
 
                     if (slideCompletedCount >= slideTotalCount) {
                         slideTaskActive = false
@@ -464,28 +459,6 @@ class DownloadServiceTT : Service() {
         )
     }
 
-//    private fun broadcastResult(
-//        success: Boolean,
-//        errorReason: String? = null
-//    ) {
-//        DownloadSession.isDownloading = false
-//        DownloadSession.lastDownloadFinished = success
-//        DownloadSession.lastProgress = 0
-//
-//        LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(
-//            Intent(ACTION_COMPLETE).apply {
-//                putExtra(EXTRA_SUCCESS, success)
-//                errorReason?.let {
-//                    putExtra(EXTRA_ERROR_REASON, it)
-//                }
-//            }
-//        )
-//
-//        if (!slideTaskActive) {
-//            stopForeground(STOP_FOREGROUND_DETACH)
-//        }
-////        stopSelf()
-//    }
 private fun broadcastResult(
     success: Boolean,
     errorReason: String? = null
@@ -504,21 +477,6 @@ private fun broadcastResult(
     stopForeground(STOP_FOREGROUND_REMOVE)
     stopSelf() // 🔥 WAJIB
 }
-//    private fun showNoInternetNotification(format: String) {
-//        stopForeground(true)
-//        val errorNotif = NotificationCompat.Builder(this, NOTIF_CHANNEL_ID)
-//            .setContentTitle(getNotifTitleByFormat(format))
-//            .setContentText("Koneksi terputus")
-//            .setSmallIcon(R.drawable.ic_download)
-//            .setOngoing(false)
-//            .setAutoCancel(true)
-//            .setOnlyAlertOnce(false)
-//            .setContentIntent(createNotificationIntent())
-//            .build()
-//
-//        // 🔔 PASANG NOTIF BARU (BUKAN FOREGROUND)
-//        notificationManager.notify(NOTIF_ID, errorNotif)
-//    }
 private fun showNoInternetNotification(format: String) {
 
     val errorNotif = NotificationCompat.Builder(this, NOTIF_CHANNEL_ID)

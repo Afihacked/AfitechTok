@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.*
 import android.content.pm.ActivityInfo
 import android.content.res.ColorStateList
-import android.graphics.Outline
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
@@ -18,8 +17,6 @@ import android.view.Gravity
 import android.view.Gravity.CENTER
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewOutlineProvider
-import android.view.ViewTreeObserver
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.AppCompatImageView
@@ -49,7 +46,6 @@ import com.google.android.gms.ads.AdView
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.*
-import kotlin.coroutines.resume
 
 class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
@@ -666,7 +662,7 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
             try {
                 val isSlide = viewModel.isTikTokSlide(url)
                 val formats = buildFormatOptions(platform, isSlide)
-                showFormatPopup(view, formats, url, isSlide, buttonLayout)
+                showFormatPopup(view, formats, url, buttonLayout)
             } finally {
                 parent.removeView(progressBar)
                 buttonLayout.isEnabled = true
@@ -685,74 +681,12 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
     private fun buildFormatOptions(platform: String, isSlide: Boolean): List<String> {
         return when {
             platform == "tiktok" && isSlide ->
-                listOf("Gambar", "Music", "Unduh Semua")
+                listOf("Gambar", "Audio")
 
             platform == "tiktok" ->
-                listOf("Videos", "Music", "Unduh Semua")
+                listOf("Videos", "Audio")
 
             else -> emptyList()
-        }
-    }
-
-    private fun downloadVideoThenAudio(
-        url: String,
-        buttonLayout: LinearLayout
-    ) {
-        val unduhText = buttonLayout.findViewById<TextView>(R.id.unduhtext)
-
-        lifecycleScope.launch {
-
-            // STEP 1 — VIDEO
-            unduhText.text = "Mengunduh video..."
-            startDownloadService(url, "Videos", unduhText)
-
-            // tunggu selesai
-            waitUntilOneDownloadFinished()
-
-            // ⭐ pastikan service benar-benar idle
-            while (DownloadSession.isDownloading) {
-                delay(200)
-            }
-
-            delay(400) // ⭐ penting untuk stabilitas foreground
-
-            // STEP 2 — AUDIO
-            unduhText.text = "Mengunduh audio..."
-            startDownloadService(url, "Music", unduhText)
-        }
-    }
-
-    private fun downloadSlideThenAudio(
-        url: String,
-        buttonLayout: LinearLayout
-    ) {
-        lifecycleScope.launch {
-
-            val images = viewModel.getImageUrlsIfSlide(url)
-
-            if (images.isNullOrEmpty()) {
-                showToastSafe("Gambar tidak ditemukan")
-                return@launch
-            }
-
-            // STEP 1 — DOWNLOAD SEMUA GAMBAR
-            downloadSelectedImages(images, buttonLayout)
-
-            // tunggu semua selesai
-            waitUntilOneDownloadFinished()
-
-            // ⭐ pastikan service benar-benar idle
-            while (DownloadSession.isDownloading) {
-                delay(200)
-            }
-
-            delay(400) // ⭐ penting
-
-            // STEP 2 — AUDIO
-            val unduhText = buttonLayout.findViewById<TextView>(R.id.unduhtext)
-            unduhText.text = "Mengunduh audio..."
-
-            startDownloadService(url, "Music", unduhText)
         }
     }
 
@@ -760,7 +694,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         anchor: View,
         formats: List<String>,
         url: String,
-        isSlide: Boolean,
         buttonLayout: LinearLayout,
     ) {
         val popupMenu = PopupMenu(
@@ -796,18 +729,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
             when (selectedFormat) {
 
-                "Unduh Semua" -> {
-                    val unduhText = buttonLayout.findViewById<TextView>(R.id.unduhtext)
-                    unduhText.text = "Menyiapkan..."
-                    buttonLayout.isEnabled = false
-
-                    if (isSlide) {
-                        downloadSlideThenAudio(url, buttonLayout)
-                    } else {
-                        downloadVideoThenAudio(url, buttonLayout)
-                    }
-                }
-
                 "Gambar" -> {
                     showSlideSelectionPopup(url, buttonLayout)
                 }
@@ -817,9 +738,15 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                     unduhText.text = "Menunggu..."
                     buttonLayout.isEnabled = false
 
+                    // 🔥 mapping Audio → Music
+                    val realFormat = when (selectedFormat) {
+                        "Audio" -> "Music"
+                        else -> selectedFormat
+                    }
+
                     requestDownloadWithAdGate(
                         url = url,
-                        format = selectedFormat,
+                        format = realFormat,
                         unduhText = unduhText
                     )
                 }
@@ -895,60 +822,64 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                     val checkOverlay = view.findViewById<ImageView>(R.id.checkOverlay)
                     val imageUrl = imageUrls[position]
 
-                    shimmerLayout.startShimmer()
-                    shimmerLayout.visibility = View.VISIBLE
-                    imageView.visibility = View.INVISIBLE
+                    // =========================
+                    // FUNCTION LOAD IMAGE
+                    // =========================
+                    fun loadImage() {
+                        shimmerLayout.startShimmer()
+                        shimmerLayout.visibility = View.VISIBLE
+                        imageView.visibility = View.INVISIBLE
 
-                    imageView.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
-                        override fun onPreDraw(): Boolean {
-                            imageView.viewTreeObserver.removeOnPreDrawListener(this)
-                            imageView.outlineProvider = object : ViewOutlineProvider() {
-                                override fun getOutline(v: View, outline: Outline) {
-                                    outline.setRoundRect(0, 0, v.width, v.height, 16f)
+                        Glide.with(view.context.applicationContext)
+                            .load(imageUrl)
+                            .centerCrop()
+                            .listener(object : RequestListener<Drawable> {
+                                override fun onLoadFailed(
+                                    e: GlideException?,
+                                    model: Any?,
+                                    target: Target<Drawable>,
+                                    isFirstResource: Boolean
+                                ): Boolean {
+                                    shimmerLayout.stopShimmer()
+                                    shimmerLayout.visibility = View.GONE
+                                    imageView.setImageResource(R.drawable.ic_error)
+                                    imageView.visibility = View.VISIBLE
+                                    return true
                                 }
-                            }
-                            imageView.clipToOutline = true
-                            return true
-                        }
-                    })
 
-                    Glide.with(view.context.applicationContext)
-                        .load(imageUrl)
-                        .centerCrop()
-                        .listener(object : RequestListener<Drawable> {
-                            override fun onLoadFailed(
-                                e: GlideException?,
-                                model: Any?,
-                                target: Target<Drawable>,
-                                isFirstResource: Boolean
-                            ): Boolean {
-                                shimmerLayout.stopShimmer()
-                                shimmerLayout.visibility = View.GONE
-                                imageView.setImageResource(R.drawable.ic_error)
-                                imageView.visibility = View.VISIBLE
-                                return true
-                            }
+                                override fun onResourceReady(
+                                    resource: Drawable,
+                                    model: Any,
+                                    target: Target<Drawable>,
+                                    dataSource: DataSource,
+                                    isFirstResource: Boolean
+                                ): Boolean {
+                                    shimmerLayout.stopShimmer()
+                                    shimmerLayout.visibility = View.GONE
+                                    imageView.setImageDrawable(resource)
+                                    imageView.alpha = 0f
+                                    imageView.visibility = View.VISIBLE
+                                    imageView.animate().alpha(1f).setDuration(300).start()
+                                    return true
+                                }
+                            })
+                            .into(imageView)
+                    }
 
-                            override fun onResourceReady(
-                                resource: Drawable,
-                                model: Any,
-                                target: Target<Drawable>,
-                                dataSource: DataSource,
-                                isFirstResource: Boolean
-                            ): Boolean {
-                                shimmerLayout.stopShimmer()
-                                shimmerLayout.visibility = View.GONE
-                                imageView.setImageDrawable(resource)
-                                imageView.alpha = 0f
-                                imageView.visibility = View.VISIBLE
-                                imageView.animate().alpha(1f).setDuration(300).start()
-                                return true
-                            }
-                        })
-                        .into(imageView)
+                    // =========================
+                    // PANGGIL PERTAMA
+                    // =========================
+                    loadImage()
 
-                    checkOverlay.visibility = if (selectedImages.contains(imageUrl)) View.VISIBLE else View.GONE
+                    // =========================
+                    // STATUS CHECKLIST
+                    // =========================
+                    checkOverlay.visibility =
+                        if (selectedImages.contains(imageUrl)) View.VISIBLE else View.GONE
 
+                    // =========================
+                    // CLICK SELECT
+                    // =========================
                     view.setOnClickListener {
                         if (selectedImages.contains(imageUrl)) {
                             selectedImages.remove(imageUrl)
@@ -960,6 +891,14 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
                         isSelectAllActive = selectedImages.size == imageUrls.size
                         updateButtonLabels()
+                    }
+
+                    // =========================
+                    // 🔥 RETRY SAAT LONG CLICK
+                    // =========================
+                    view.setOnLongClickListener {
+                        loadImage()
+                        true
                     }
                 }
             }
@@ -1080,55 +1019,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         // tampil mulai dari 0%
         unduhtext.text = "Mengunduh… 0% (0/$slideTotal)"
 
-        lifecycleScope.launch {
-            for (imageUrl in images) {
-
-                val intent = Intent(
-                    requireContext(),
-                    DownloadServiceTT::class.java
-                ).apply {
-                    putExtra(DownloadServiceTT.EXTRA_VIDEO_URL, imageUrl)
-                    putExtra(DownloadServiceTT.EXTRA_FORMAT, "Gambar")
-                    putExtra("SLIDE_TOTAL", slideTotal) // ⭐ PENTING
-                }
-
-                requireContext().startService(intent)
-
-                // ⏳ tunggu sampai file selesai dulu
-                waitUntilOneDownloadFinished()
-
-                delay(150)
-            }
-        }
-    }
-    private suspend fun waitUntilOneDownloadFinished() =
-        suspendCancellableCoroutine { cont ->
-
-            val lbm = LocalBroadcastManager.getInstance(requireContext())
-
-            val receiver = object : BroadcastReceiver() {
-                override fun onReceive(context: Context?, intent: Intent?) {
-                    if (intent?.action == DownloadServiceTT.ACTION_COMPLETE) {
-                        lbm.unregisterReceiver(this)
-                        if (!cont.isCompleted) cont.resume(Unit)
-                    }
-                }
-            }
-
-            lbm.registerReceiver(receiver, IntentFilter(DownloadServiceTT.ACTION_COMPLETE))
-
-            cont.invokeOnCancellation {
-                lbm.unregisterReceiver(receiver)
-            }
-        }
-    fun onNotificationOpened(videoUrl: String?) {
-        if (videoUrl.isNullOrEmpty() || !isAdded) return
-
-        editText.setText(videoUrl)
-        editText.setSelection(videoUrl.length)
-
-        // hanya sync STATE, bukan teks
-        syncButtonState()
     }
 
     private fun syncButtonState() {

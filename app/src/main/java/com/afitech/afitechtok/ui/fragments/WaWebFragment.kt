@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -41,10 +42,12 @@ class WaWebFragment : Fragment() {
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (filePathCallback == null) return@registerForActivityResult
 
+//            val results = if (result.resultCode == Activity.RESULT_OK) {
+//                WebChromeClient.FileChooserParams.parseResult(result.resultCode, result.data)
+//            } else null
             val results = if (result.resultCode == Activity.RESULT_OK) {
-                WebChromeClient.FileChooserParams.parseResult(result.resultCode, result.data)
+                result.data?.data?.let { arrayOf(it) }
             } else null
-
             filePathCallback?.onReceiveValue(results)
             filePathCallback = null
         }
@@ -59,7 +62,11 @@ class WaWebFragment : Fragment() {
             } else {
                 // hanya tampil jika benar-benar belum pernah granted
                 if (!prefs.getBoolean("perm_granted", false)) {
-                    Toast.makeText(requireContext(), "Perizinan diperlukan untuk upload & voice", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "Perizinan diperlukan untuk upload & voice",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
@@ -104,7 +111,10 @@ class WaWebFragment : Fragment() {
         }
 
         val notGranted = permissions.filter {
-            ContextCompat.checkSelfPermission(requireContext(), it) != PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(
+                requireContext(),
+                it
+            ) != PackageManager.PERMISSION_GRANTED
         }
 
         if (notGranted.isNotEmpty()) {
@@ -147,7 +157,13 @@ class WaWebFragment : Fragment() {
         webView.webChromeClient = object : WebChromeClient() {
 
             override fun onPermissionRequest(request: PermissionRequest) {
-                request.grant(request.resources)
+                if (request.resources.contains(PermissionRequest.RESOURCE_VIDEO_CAPTURE) ||
+                    request.resources.contains(PermissionRequest.RESOURCE_AUDIO_CAPTURE)
+                ) {
+                    request.grant(request.resources)
+                } else {
+                    request.deny()
+                }
             }
 
             override fun onShowFileChooser(
@@ -159,8 +175,24 @@ class WaWebFragment : Fragment() {
                 this@WaWebFragment.filePathCallback?.onReceiveValue(null)
                 this@WaWebFragment.filePathCallback = filePathCallback
 
-                val intent = fileChooserParams?.createIntent()
-                fileChooserLauncher.launch(intent)
+                val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+
+                    // 🔥 INI POSISINYA DI SINI
+                    type = "*/*"
+                    putExtra(Intent.EXTRA_MIME_TYPES, arrayOf(
+                        "image/*",
+                        "video/*",
+                        "audio/*",
+                        "application/pdf",
+                        "application/msword",
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    ))
+
+                    putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false)
+                }
+
+                fileChooserLauncher.launch(Intent.createChooser(intent, "Pilih file"))
 
                 return true
             }
@@ -187,7 +219,11 @@ class WaWebFragment : Fragment() {
 
         webView.webViewClient = object : WebViewClient() {
 
-            override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+            override fun onPageStarted(
+                view: WebView?,
+                url: String?,
+                favicon: android.graphics.Bitmap?
+            ) {
                 progressBar.visibility = android.view.View.VISIBLE
             }
 
@@ -274,7 +310,8 @@ class WaWebFragment : Fragment() {
                 val bytes = android.util.Base64.decode(pureBase64, android.util.Base64.DEFAULT)
 
                 val cleanName = fileNameRaw.trim().replace("[\\\\/:*?\"<>|]".toRegex(), "")
-                val fileName = if (cleanName.contains(".")) cleanName else "$cleanName.bin"
+                val safeName = cleanName.ifBlank { "file_${System.currentTimeMillis()}" }
+                val fileName = if (safeName.contains(".")) safeName else "$safeName.bin"
 
                 val mime = getMimeFromFileName(fileName)
 
@@ -284,7 +321,9 @@ class WaWebFragment : Fragment() {
                     put(MediaStore.MediaColumns.MIME_TYPE, mime)
                     put(MediaStore.MediaColumns.RELATIVE_PATH, "Download/Afitech-Web")
                 }
-
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    values.put(MediaStore.MediaColumns.IS_PENDING, 1)
+                }
                 val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
                 val out: OutputStream? = uri?.let { resolver.openOutputStream(it) }
 
@@ -292,14 +331,20 @@ class WaWebFragment : Fragment() {
                     it.write(bytes)
                     it.flush()
                 }
-
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    values.clear()
+                    values.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                    uri?.let { resolver.update(it, values, null, null) }
+                }
                 requireActivity().runOnUiThread {
+                    if (bytes.size > 0) {
                     Toast.makeText(
                         requireContext(),
                         "Tersimpan: Download/Afitech-Web/$fileName",
                         Toast.LENGTH_LONG
                     ).show()
                 }
+                    }
 
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -331,16 +376,29 @@ class WaWebFragment : Fragment() {
             webView.reload()
         }
     }
+
     override fun onPause() {
         super.onPause()
         (activity as? com.afitech.afitechtok.ui.MainActivity)?.showBottomNav()
     }
+
     override fun onResume() {
         super.onResume()
         (activity as? com.afitech.afitechtok.ui.MainActivity)?.hideBottomNav()
     }
+
     override fun onDestroyView() {
         super.onDestroyView()
-        webView.destroy()
+        webView.apply {
+            stopLoading()
+            webChromeClient = WebChromeClient()
+            webViewClient = WebViewClient()
+            removeJavascriptInterface("AndroidDownloader")
+            clearHistory()
+            clearCache(true)
+            removeAllViews()
+            loadUrl("about:blank")
+            destroy()
+        }
     }
 }
