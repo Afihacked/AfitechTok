@@ -56,7 +56,7 @@ Setiap hasil unduhan tersimpan otomatis ke **Riwayat Unduhan** yang rapi dan mud
 | 📋 **Auto Paste Link** | Deteksi link TikTok otomatis dari clipboard |
 | 🗂 **Riwayat Unduhan** | Simpan semua hasil unduhan dengan metadata dan waktu |
 | 🎞 **Preview Gambar Slide** | Pilih gambar tertentu sebelum diunduh |
-| 📢 **Iklan Aman** | Menggunakan AdMob + Start.io dengan fallback otomatis |
+| 📢 **Iklan Aman** | Menggunakan AdMob |
 | 📱 **UI Modern** | Material Design, responsif, dan ringan |
 | 💾 **Storage Modern** | Kompatibel Scoped Storage & Android 13+ |
 
@@ -94,7 +94,7 @@ AfitechTok/
 | UI | **Material Components**, RecyclerView, Shimmer |
 | Web | **Android WebView (Desktop Mode)** |
 | Gambar | **Glide** |
-| Iklan | **AdMob**, **Start.io** |
+| Iklan | **AdMob** |
 | Asinkron | **Kotlin Coroutines**, LifecycleScope |
 | Analytics | **Firebase Analytics** |
 | Build | **Gradle Kotlin DSL** |
