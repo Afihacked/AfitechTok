@@ -20,8 +20,7 @@ jobs:
 
       - name: Decode Keystore
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" > keystore.txt
-          base64 -d keystore.txt > keystore.jks
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > keystore.jks
 
       - name: Move Keystore
         run: mkdir -p app/keystore && mv keystore.jks app/keystore/
