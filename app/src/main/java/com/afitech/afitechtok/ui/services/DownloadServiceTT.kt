@@ -67,9 +67,18 @@ class DownloadServiceTT : Service() {
     private var lastStartId: Int = 0
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val format = intent?.getStringExtra(EXTRA_FORMAT) ?: "Videos"
+        val notifTitle = getNotifTitleByFormat(format)
+
+// 🔥 WAJIB: start foreground PALING AWAL
+        if (format != "Gambar") {
+            ensureForegroundStarted(notifTitle)
+            Log.d("FOREGROUND_DEBUG", "startForeground dipanggil")
+        }
+
+// 🔥 BARU cek internet
         if (!NetworkHelper.isInternetAvailable(this)) {
             broadcastResult(false)
-            lastStartId = startId
             return START_NOT_STICKY
         }
         val imageList = intent?.getStringArrayListExtra(EXTRA_IMAGE_LIST)
@@ -80,7 +89,6 @@ class DownloadServiceTT : Service() {
             return START_NOT_STICKY
         }
 
-        val format = intent.getStringExtra(EXTRA_FORMAT) ?: "Videos"
         val slideTotal = intent.getIntExtra(EXTRA_SLIDE_TOTAL, 0)
         if (format == "Gambar" && slideTotal > 0) {
 
@@ -103,8 +111,6 @@ class DownloadServiceTT : Service() {
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannel()
 
-        // 🔥 title sesuai format
-        val notifTitle = getNotifTitleByFormat(format)
 
         if (format != "Gambar") {
             ensureForegroundStarted(notifTitle)
@@ -259,30 +265,65 @@ class DownloadServiceTT : Service() {
                 val dao = AppDatabase.getDatabase(applicationContext).downloadHistoryDao()
                 val tmpFile = File.createTempFile("afitech_tmp_", info.ext, cacheDir)
 
-                val downloadOk = downloadToFile(
-                    info.url,
-                    format,
-                    tmpFile
-                ) { percent, downloaded, total ->
-                    val pct = percent.coerceIn(0, 100)
+                var downloadOk = false
+                var attempt = 0
+                val maxRetry = 2
 
-                    // 🔑 SIMPAN PROGRESS TERAKHIR
-                    DownloadSession.lastProgress = pct
+                while (!downloadOk && attempt < maxRetry) {
+                    attempt++
 
-                    sendProgress(pct, "Mengunduh… $pct%")
+                    Log.d("VIDEO_DL", "TRY attempt=$attempt")
 
-                    // update notif hanya jika bukan slide mode
-                    if (!slideTaskActive) {
-                        updateNotification(
-                            notifTitle,
-                            pct,
-                            "Mengunduh… $pct% (${formatBytes(downloaded)} / ${formatBytes(total)})"
-                        )
+                    downloadOk = downloadToFile(
+                        info.url,
+                        format,
+                        tmpFile
+                    ) { percent, downloaded, total ->
+                        val pct = percent.coerceIn(0, 100)
+
+                        DownloadSession.lastProgress = pct
+                        sendProgress(pct, "Mengunduh… $pct%")
+
+                        if (!slideTaskActive) {
+                            updateNotification(
+                                notifTitle,
+                                pct,
+                                "Mengunduh… $pct% (${formatBytes(downloaded)} / ${formatBytes(total)})"
+                            )
+                        }
+                    }
+
+                    if (!downloadOk) {
+                        Log.w("VIDEO_DL", "RETRY FAILED attempt=$attempt")
+                        delay(500)
                     }
                 }
-
+                if (downloadOk) {
+                    Log.d("VIDEO_DL", "FINAL SUCCESS")
+                } else {
+                    Log.e("VIDEO_DL", "FINAL FAILED")
+                }
+                if (downloadOk && tmpFile.length() < 10_000) {
+                    Log.e("VIDEO_DL", "File terlalu kecil (corrupt)")
+                    downloadOk = false
+                }
                 if (!downloadOk) {
-                    broadcastResult(false)
+
+                    val errorMessage = when {
+                        !NetworkHelper.isInternetAvailable(this@DownloadServiceTT) ->
+                            "Internet terputus saat mengunduh"
+
+                        tmpFile.length() < 10_000 ->
+                            "File rusak atau tidak valid"
+
+                        else ->
+                            "Gagal mengunduh, coba lagi"
+                    }
+
+                    broadcastResult(
+                        success = false,
+                        errorReason = errorMessage
+                    )
                     return@launch
                 }
 
@@ -367,16 +408,22 @@ class DownloadServiceTT : Service() {
 
             val contentType = conn.contentType ?: ""
 
-            // 🔧 FIX: pastikan isi FILE SESUAI FORMAT (API-driven)
             when (format) {
-                "Music" -> if (!contentType.startsWith("audio/"))
-                    throw IllegalStateException("Bukan audio asli: $contentType")
+
+                "Music" -> {
+                    if (!contentType.contains("audio") && !urlStr.contains(".mp3")) {
+                        Log.w("DownloadServiceTT", "ContentType aneh (audio): $contentType")
+                    }
+                }
+
+                "Videos" -> {
+                    if (!contentType.contains("video") && !urlStr.contains(".mp4")) {
+                        Log.w("DownloadServiceTT", "ContentType aneh (video): $contentType")
+                    }
+                }
 
                 "Gambar" -> if (!contentType.startsWith("image/"))
-                    throw IllegalStateException("Bukan image asli: $contentType")
-
-                "Videos" -> if (!contentType.startsWith("video/"))
-                    throw IllegalStateException("Bukan video asli: $contentType")
+                    throw IllegalStateException("Bukan image asli")
             }
 
             val total = conn.contentLengthLong
@@ -597,6 +644,7 @@ private fun broadcastResult(
     LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(
         Intent(ACTION_COMPLETE).apply {
             putExtra(EXTRA_SUCCESS, success)
+            putExtra(EXTRA_FORMAT, DownloadSession.lastFormat) //
             errorReason?.let { putExtra(EXTRA_ERROR_REASON, it) }
         }
     )

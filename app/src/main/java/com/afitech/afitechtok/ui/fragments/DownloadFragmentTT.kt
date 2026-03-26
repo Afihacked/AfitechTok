@@ -108,7 +108,10 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                 // ===============================
                 // COMPLETE (SEMUA SELESAI)
                 // ===============================
+
                 DownloadServiceTT.ACTION_COMPLETE -> {
+
+                    val format = intent.getStringExtra(DownloadServiceTT.EXTRA_FORMAT) ?: "Unknown"
                     if (!isAdded) return
 
                     val success = intent.getBooleanExtra(
@@ -135,7 +138,6 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                             return
                         }
 
-                        // 🔥 progress berdasarkan jumlah file selesai
                         val overall = (slideFinished * 100) / slideTotal
 
                         Log.d(TAG_DL, "UPDATED overall progress = $overall%")
@@ -159,12 +161,18 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
 
                         syncButtonState()
 
-                        requireContext().showToastSafe(
-                            if (slideFailed)
-                                "Sebagian gambar gagal diunduh"
-                            else
-                                "Semua gambar berhasil diunduh"
-                        )
+                        val message = when {
+                            slideFailed && slideFinished > 0 ->
+                                "Beberapa gambar gagal diunduh ($slideFinished/$slideTotal)"
+
+                            slideFailed ->
+                                "Gagal mengunduh gambar"
+
+                            else ->
+                                "Gambar berhasil diunduh ($slideTotal item)"
+                        }
+
+                        requireContext().showToastSafe(message)
                         hasShownNoInternetToast = false
                         return
                     }
@@ -186,19 +194,28 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
                         }
 
                         success -> {
-                            requireContext().showToastSafe(
-                                "Unduhan TikTok selesai"
-                            )
+                            val message = when (format) {
+                                "Videos" -> "Video berhasil diunduh"
+                                "Music" -> "Audio berhasil diunduh"
+                                "Gambar" -> "Gambar berhasil diunduh"
+                                else -> "Unduhan selesai"
+                            }
+
+                            requireContext().showToastSafe(message)
                         }
 
                         else -> {
-                            requireContext().showToastSafe(
-                                "Unduhan TikTok gagal"
-                            )
+                            val message = when (format) {
+                                "Videos" -> errorReason ?: "Gagal mengunduh video"
+                                "Music" -> errorReason ?: "Gagal mengunduh audio"
+                                "Gambar" -> errorReason ?: "Gagal mengunduh gambar"
+                                else -> errorReason ?: "Unduhan gagal"
+                            }
+
+                            requireContext().showToastSafe(message)
                         }
                     }
 
-                    // ✅ reset flag di akhir NORMAL
                     hasShownNoInternetToast = false
                 }
             }
