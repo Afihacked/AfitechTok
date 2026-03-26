@@ -12,8 +12,15 @@ android {
         applicationId = "com.afitech.afitechtok"
         minSdk = 29
         targetSdk = 35
-        versionCode = 7
-        versionName = "1.2.5"
+        versionCode = (System.currentTimeMillis() / 1000).toInt()
+        val buildNumber = File(rootDir, "build_number.txt").let {
+            if (!it.exists()) it.writeText("1")
+            val num = it.readText().toInt()
+            it.writeText((num + 1).toString())
+            num
+        }
+
+        versionName = "1.2.$buildNumber"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -42,12 +49,14 @@ android {
         viewBinding = true
     }
 
-    applicationVariants.configureEach {
-        outputs.configureEach {
-            val appName = "AfitechTok"
-            val versionName = "1.2.4"
-            val outputImpl = this as? com.android.build.gradle.api.ApkVariantOutput
-            outputImpl?.outputFileName = "${appName}_v${versionName}.apk"
+    applicationVariants.all {
+
+        val appName = "AfitechTok"
+        val vName = versionName
+
+        outputs.all {
+            (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl)
+                .outputFileName = "${appName}_v${vName}.apk"
         }
     }
 
