@@ -18,11 +18,24 @@ jobs:
         with:
           java-version: '17'
 
+      - name: Decode Keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" > keystore.txt
+          base64 -d keystore.txt > keystore.jks
+
+      - name: Move Keystore
+        run: mkdir -p app/keystore && mv keystore.jks app/keystore/
+
       - name: Grant permission
         run: chmod +x gradlew
 
-      - name: Build APK
+      - name: Build Signed APK
         run: ./gradlew assembleRelease
+        env:
+          STORE_FILE: app/keystore/keystore.jks
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
       - name: Upload Release APK
         uses: softprops/action-gh-release@v1
