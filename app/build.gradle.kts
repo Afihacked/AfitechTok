@@ -27,9 +27,9 @@ android {
     signingConfigs {
         create("release") {
             storeFile = file(project.properties["STORE_FILE"]?.toString() ?: "")
-            storePassword = project.properties["qwerty"]?.toString() ?: ""
-            keyAlias = project.properties["afitech"]?.toString() ?: ""
-            keyPassword = project.properties["qwerty"]?.toString() ?: ""
+            storePassword = project.properties["STORE_PASSWORD"]?.toString() ?: ""
+            keyAlias = project.properties["KEY_ALIAS"]?.toString() ?: ""
+            keyPassword = project.properties["KEY_PASSWORD"]?.toString() ?: ""
         }
     }
 
@@ -112,4 +112,27 @@ dependencies {
     implementation("androidx.media3:media3-ui:1.8.0")
 
 //    implementation("com.google.android.gms:play-services-ads:25.0.0")
+}
+tasks.register("releaseFull") {
+
+    dependsOn("assembleRelease")
+
+    doLast {
+
+        val versionName = android.defaultConfig.versionName
+        val tag = "v$versionName"
+
+        println("🚀 Releasing $tag")
+
+        exec { commandLine("git", "add", ".") }
+
+        exec {
+            commandLine("git", "commit", "-m", "Release $tag")
+            isIgnoreExitValue = true
+        }
+
+        exec { commandLine("git", "tag", tag) }
+        exec { commandLine("git", "push") }
+        exec { commandLine("git", "push", "origin", tag) }
+    }
 }
