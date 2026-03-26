@@ -1,3 +1,0 @@
-feat: <deskripsi singkat>
-
-- detail perubahan

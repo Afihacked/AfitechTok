@@ -43,18 +43,10 @@ jobs:
         run: |
           echo "🚀 AfitechTok ${{ github.ref_name }}" > CHANGELOG.txt
           echo "" >> CHANGELOG.txt
-          
-          echo "✨ Fitur:" >> CHANGELOG.txt
-          git log $(git describe --tags --abbrev=0 2>/dev/null || echo "")..HEAD --pretty=format:"%s" | grep "^feat:" | sed 's/^feat:/-/' >> CHANGELOG.txt || true
-          
-          echo "" >> CHANGELOG.txt
-          echo "🐛 Perbaikan:" >> CHANGELOG.txt
-          git log $(git describe --tags --abbrev=0 2>/dev/null || echo "")..HEAD --pretty=format:"%s" | grep "^fix:" | sed 's/^fix:/-/' >> CHANGELOG.txt || true
-          
-          echo "" >> CHANGELOG.txt
-          echo "⚡ Peningkatan:" >> CHANGELOG.txt
-          git log $(git describe --tags --abbrev=0 2>/dev/null || echo "")..HEAD --pretty=format:"%s" | grep "^perf:" | sed 's/^perf:/-/' >> CHANGELOG.txt || true
-          
+
+          echo "📝 Perubahan:" >> CHANGELOG.txt
+          git log $(git describe --tags --abbrev=0 2>/dev/null || echo "")..HEAD --pretty=format:"- %s" >> CHANGELOG.txt
+
           echo "" >> CHANGELOG.txt
           echo "📦 Build:" >> CHANGELOG.txt
           echo "- commit: ${{ github.sha }}" >> CHANGELOG.txt
