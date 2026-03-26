@@ -139,8 +139,27 @@ class DownloadServiceTT : Service() {
                         val fileName = generateFileName(info.ext)
                         val tmpFile = File.createTempFile("afitech_tmp_", info.ext, cacheDir)
 
-                        val ok = downloadToFile(info.url, format, tmpFile) { _, _, _ -> }
+                        var ok = false
+                        var attempt = 0
+                        val maxRetry = 3
 
+                        while (!ok && attempt < maxRetry) {
+                            attempt++
+
+                            Log.d("SERVICE_QUEUE", "TRY [$index] attempt=$attempt")
+
+                            ok = downloadToFile(info.url, format, tmpFile) { _, _, _ -> }
+
+                            if (!ok) {
+                                Log.w("SERVICE_QUEUE", "RETRY FAILED [$index] attempt=$attempt")
+                                delay(500) // jeda kecil sebelum retry
+                            }
+                        }
+                        if (ok) {
+                            Log.d("SERVICE_QUEUE", "FINAL SUCCESS [$index]")
+                        } else {
+                            Log.e("SERVICE_QUEUE", "FINAL FAILED [$index]")
+                        }
                         if (!ok) {
                             LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(
                                 Intent(ACTION_COMPLETE).apply {
@@ -191,7 +210,7 @@ class DownloadServiceTT : Service() {
                                 putExtra(EXTRA_SUCCESS, true)
                             }
                         )
-
+                        delay(200)
                     } catch (e: Exception) {
                         Log.e("SERVICE_QUEUE", "ERROR: ${e.message}")
 
