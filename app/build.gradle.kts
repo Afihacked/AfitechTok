@@ -15,7 +15,7 @@ android {
         versionCode = (System.currentTimeMillis() / 1000).toInt()
         val buildNumber = File(rootDir, "build_number.txt").let {
             if (!it.exists()) it.writeText("1")
-            val num = it.readText().toInt()
+            val num = it.readText().trim().toInt()
             it.writeText((num + 1).toString())
             num
         }
