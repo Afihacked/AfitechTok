@@ -45,7 +45,7 @@ class DownloadServiceTT : Service() {
         const val NOTIF_ID = 2
         const val EXTRA_ERROR_REASON = "error_reason"
         const val ERROR_NO_INTERNET = "no_internet"
-
+        const val EXTRA_IMAGE_LIST = "IMAGE_LIST"
         @Volatile
         var slideTaskActive = false
 
@@ -72,11 +72,16 @@ class DownloadServiceTT : Service() {
             lastStartId = startId
             return START_NOT_STICKY
         }
+        val imageList = intent?.getStringArrayListExtra(EXTRA_IMAGE_LIST)
         val videoUrl = intent?.getStringExtra(EXTRA_VIDEO_URL)
-            ?: return START_NOT_STICKY
+
+        if (imageList == null && videoUrl == null) {
+            Log.e("SERVICE_QUEUE", "NO DATA RECEIVED")
+            return START_NOT_STICKY
+        }
+
         val format = intent.getStringExtra(EXTRA_FORMAT) ?: "Videos"
         val slideTotal = intent.getIntExtra(EXTRA_SLIDE_TOTAL, 0)
-
         if (format == "Gambar" && slideTotal > 0) {
 
             if (!slideTaskActive) {
@@ -106,13 +111,114 @@ class DownloadServiceTT : Service() {
         }
 
         serviceScope.launch {
+            Log.d("SERVICE_QUEUE", "CHECK QUEUE MODE")
+            if (format == "Gambar" && !imageList.isNullOrEmpty()) {
+
+                Log.d("SERVICE_QUEUE", "START QUEUE: ${imageList.size}")
+
+                for ((index, imageUrl) in imageList.withIndex()) {
+
+                    try {
+                        Log.d("SERVICE_QUEUE", "DOWNLOAD [$index]")
+
+                        val meta = TikTokDownloader.probeRemote(imageUrl)
+
+                        val (ext, mime) = TikTokDownloader.run {
+                            val ct = meta.contentType
+                            when {
+                                ct?.startsWith("image/") == true -> {
+                                    if (ct.contains("png")) ".png" to "image/png"
+                                    else ".jpg" to "image/jpeg"
+                                }
+                                else -> ".jpg" to "image/jpeg"
+                            }
+                        }
+
+                        val info = TikTokDownloader.DownloadInfo(imageUrl, ext, mime)
+
+                        val fileName = generateFileName(info.ext)
+                        val tmpFile = File.createTempFile("afitech_tmp_", info.ext, cacheDir)
+
+                        val ok = downloadToFile(info.url, format, tmpFile) { _, _, _ -> }
+
+                        if (!ok) {
+                            LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(
+                                Intent(ACTION_COMPLETE).apply {
+                                    putExtra(EXTRA_SUCCESS, false)
+                                }
+                            )
+                            continue
+                        }
+
+                        val saved = saveFileToMediaStore(
+                            applicationContext,
+                            tmpFile,
+                            fileName,
+                            info.mime
+                        )
+
+                        if (saved == null) {
+                            LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(
+                                Intent(ACTION_COMPLETE).apply {
+                                    putExtra(EXTRA_SUCCESS, false)
+                                }
+                            )
+                            continue
+                        }
+                        val dao = AppDatabase.getDatabase(applicationContext).downloadHistoryDao()
+
+                        dao.insertDownload(
+                            DownloadHistory(
+                                0L,
+                                fileName,
+                                saved.toString(),
+                                info.url,
+                                info.mime,
+                                info.ext,
+                                "Image",
+                                tmpFile.length(),
+                                null,
+                                false,
+                                System.currentTimeMillis(),
+                                "tiktok"
+                            )
+                        )
+                        slideCompletedCount++
+
+                        // 🔥 WAJIB: broadcast per file
+                        LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(
+                            Intent(ACTION_COMPLETE).apply {
+                                putExtra(EXTRA_SUCCESS, true)
+                            }
+                        )
+
+                    } catch (e: Exception) {
+                        Log.e("SERVICE_QUEUE", "ERROR: ${e.message}")
+
+                        LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(
+                            Intent(ACTION_COMPLETE).apply {
+                                putExtra(EXTRA_SUCCESS, false)
+                            }
+                        )
+                    }
+                }
+
+                Log.d("SERVICE_QUEUE", "ALL DONE")
+
+                stopSelfResult(lastStartId)
+                return@launch
+            }
             try {
 // tampilkan hanya sekali di awal task
                 if (slideCompletedCount == 0 && format != "Gambar") {
                     updateNotification(notifTitle, 0, "Menghubungkan ke TikTok…")
                 }
 
-                val info = if (format == "Gambar" && videoUrl.startsWith("http")) {
+                val info = if (
+                    format == "Gambar" &&
+                    videoUrl != null &&
+                    videoUrl.startsWith("http")
+                ) {
                     val meta = TikTokDownloader.probeRemote(videoUrl)
                     val (ext, mime) = TikTokDownloader.run {
                         val ct = meta.contentType
@@ -126,7 +232,7 @@ class DownloadServiceTT : Service() {
                     }
                     TikTokDownloader.DownloadInfo(videoUrl, ext, mime)
                 } else {
-                    TikTokDownloader.getDownloadInfo(videoUrl, format)
+                    TikTokDownloader.getDownloadInfo(videoUrl ?: "", format)
                         ?: throw Exception("Download info null")
                 }
 

@@ -1019,24 +1019,16 @@ class DownloadFragmentTT : Fragment(R.layout.fragment_download_tt) {
         Log.d(TAG_DL, "START slide download | total=$slideTotal")
 
 
-        viewLifecycleOwner.lifecycleScope.launch {
-
-            images.forEachIndexed { index, imageUrl ->
-
-                Log.d(TAG_DL, "QUEUE DOWNLOAD [$index]")
-
-                val intent = Intent(requireContext(), DownloadServiceTT::class.java).apply {
-                    putExtra(DownloadServiceTT.EXTRA_VIDEO_URL, imageUrl)
-                    putExtra(DownloadServiceTT.EXTRA_FORMAT, "Gambar")
-                    putExtra(DownloadServiceTT.EXTRA_SLIDE_TOTAL, images.size)
-                }
-
-                requireContext().startService(intent)
-
-                // 🔥 WAJIB: kasih jeda biar tidak tabrakan service
-                delay(800)
-            }
+        val intent = Intent(requireContext(), DownloadServiceTT::class.java).apply {
+            putStringArrayListExtra(
+                DownloadServiceTT.EXTRA_IMAGE_LIST,
+                ArrayList(images)
+            )
+            putExtra(DownloadServiceTT.EXTRA_FORMAT, "Gambar")
+            putExtra(DownloadServiceTT.EXTRA_SLIDE_TOTAL, images.size)
         }
+
+        requireContext().startService(intent)
     }
 
     private fun syncButtonState() {
