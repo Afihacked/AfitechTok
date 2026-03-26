@@ -13,14 +13,14 @@ android {
         minSdk = 29
         targetSdk = 35
         versionCode = (System.currentTimeMillis() / 1000).toInt()
+
         val buildNumber = File(rootDir, "build_number.txt").let {
             if (!it.exists()) it.writeText("1")
-            val num = it.readText().trim().toInt()
-            it.writeText((num + 1).toString())
-            num
+            it.readText().trim().toInt() // ❌ TIDAK increment di sini
         }
 
         versionName = "1.2.$buildNumber"
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -114,6 +114,16 @@ dependencies {
 //    implementation("com.google.android.gms:play-services-ads:25.0.0")
 }
 tasks.register("releaseFull") {
+
+    doFirst {
+        val file = File(rootDir, "build_number.txt")
+        val current = file.readText().trim().toInt()
+        val next = current + 1
+
+        file.writeText(next.toString())
+
+        println("🔥 Build number updated: $current → $next")
+    }
 
     dependsOn("assembleRelease")
 
