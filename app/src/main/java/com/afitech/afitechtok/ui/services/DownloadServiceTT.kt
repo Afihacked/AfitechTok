@@ -64,10 +64,12 @@ class DownloadServiceTT : Service() {
     private val serviceJob = SupervisorJob()
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
 
+    private var lastStartId: Int = 0
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (!NetworkHelper.isInternetAvailable(this)) {
             broadcastResult(false)
-            stopSelf()
+            lastStartId = startId
             return START_NOT_STICKY
         }
         val videoUrl = intent?.getStringExtra(EXTRA_VIDEO_URL)
@@ -155,7 +157,7 @@ class DownloadServiceTT : Service() {
                 }
 
                 if (!downloadOk) {
-//                    broadcastResult(false)
+                    broadcastResult(false)
                     return@launch
                 }
 
@@ -475,7 +477,7 @@ private fun broadcastResult(
     )
 
     stopForeground(STOP_FOREGROUND_REMOVE)
-    stopSelf() // 🔥 WAJIB
+    stopSelfResult(lastStartId)
 }
 private fun showNoInternetNotification(format: String) {
 
