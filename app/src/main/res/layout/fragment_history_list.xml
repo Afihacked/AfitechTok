@@ -120,7 +120,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Unduh video untuk melihatnya di sini"
+                android:text="Unduh file untuk melihatnya di sini"
                 android:textSize="13sp"
                 android:textColor="?attr/colorOutline"
                 android:layout_marginTop="4dp"/>

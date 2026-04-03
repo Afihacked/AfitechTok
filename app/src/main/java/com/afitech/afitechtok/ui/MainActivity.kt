@@ -309,7 +309,6 @@ class MainActivity : AppCompatActivity() {
             isUserInputEnabled = true
             viewPager.getChildAt(0).overScrollMode = View.OVER_SCROLL_NEVER
 
-            // 🔥 membuat swipe lebih smooth seperti PlayStore
             getChildAt(0).overScrollMode = View.OVER_SCROLL_NEVER
 
             setPageTransformer { page, position ->
@@ -317,9 +316,7 @@ class MainActivity : AppCompatActivity() {
                 val absPos = kotlin.math.abs(position)
 
                 page.alpha = 1f - (absPos * 0.15f)
-
                 page.scaleY = 0.96f + (1 - absPos) * 0.04f
-
             }
         }
 
@@ -333,20 +330,8 @@ class MainActivity : AppCompatActivity() {
 
                 setActiveNav(position)
 
-                when (position) {
-
-                    0 -> supportActionBar?.title =
-                        getString(R.string.btn_tiktok_downloader)
-
-                    1 -> supportActionBar?.title =
-                        getString(R.string.btn_whatsapp_story)
-
-                    2 -> supportActionBar?.title =
-                        getString(R.string.nav_history)
-
-                    3 -> supportActionBar?.title =
-                        getString(R.string.nav_settings)
-                }
+                // 🔥 pakai 1 pintu
+                updateToolbarTitle(position)
 
                 invalidateOptionsMenu()
             }
@@ -535,12 +520,23 @@ class MainActivity : AppCompatActivity() {
 
         supportFragmentManager.executePendingTransactions()
 
-        // 🔥 RESET NAV SESUAI PAGE SEKARANG
         setActiveNav(viewPager.currentItem)
+
+        // 🔥 FIX UTAMA
+        updateToolbarTitle(viewPager.currentItem)
 
         invalidateOptionsMenu()
     }
 
+    private fun updateToolbarTitle(position: Int) {
+        supportActionBar?.title = when (position) {
+            0 -> getString(R.string.btn_tiktok_downloader)
+            1 -> getString(R.string.btn_whatsapp_story)
+            2 -> getString(R.string.nav_history)
+            3 -> getString(R.string.nav_settings)
+            else -> getString(R.string.app_name)
+        }
+    }
     // ===========================
     // Back Press
     // ===========================
@@ -551,14 +547,12 @@ class MainActivity : AppCompatActivity() {
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
 
-                    findViewById<View>(R.id.extra_fragment_container)
-
                     if (supportFragmentManager.backStackEntryCount > 0) {
+
                         supportFragmentManager.popBackStack()
 
-                        if (supportFragmentManager.backStackEntryCount == 1) {
-                            showTabs()
-                        }
+                        // 🔥 langsung reset ke tab aktif
+                        showTabs()
 
                         return
                     }
@@ -575,6 +569,7 @@ class MainActivity : AppCompatActivity() {
 
         if (findViewById<View>(R.id.viewPager).isVisible) {
             setActiveNav(viewPager.currentItem)
+            updateToolbarTitle(viewPager.currentItem)
         }
     }
 }
